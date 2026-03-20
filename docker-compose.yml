@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: cong_alameda
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./pg_hba.conf:/etc/postgresql/15/main/pg_hba.conf
+    ports:
+      - "5432:5432"
+    command: postgres -c hba_file=/etc/postgresql/15/main/pg_hba.conf
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d cong_alameda"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      DATABASE_URL: postgres://app:${DB_PASSWORD:-password123}@db:5432/cong_alameda?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-key-change-in-production}
+      JWT_EXPIRY_HOURS: "24"
+      PORT: "8080"
+      ENV: "development"
+      FRONTEND_URL: "http://localhost:4200"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

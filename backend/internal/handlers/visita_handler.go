@@ -1,0 +1,282 @@
+package handlers
+
+import (
+	"errors"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+
+	"cong-alameda-backend/internal/dto"
+	"cong-alameda-backend/internal/models"
+	"cong-alameda-backend/internal/repositories"
+	"cong-alameda-backend/internal/services"
+)
+
+type VisitaHandler struct {
+	visitaService *services.VisitaService
+}
+
+func NewVisitaHandler(visitaService *services.VisitaService) *VisitaHandler {
+	return &VisitaHandler{
+		visitaService: visitaService,
+	}
+}
+
+// List returns all visitas with filters
+// GET /api/visitas
+func (h *VisitaHandler) List(c *fiber.Ctx) error {
+	filter := dto.VisitaFilter{
+		Estado: c.Query("estado"),
+		Page:   c.QueryInt("page", 1),
+		Limit:  c.QueryInt("limit", 20),
+	}
+
+	var casaID *uuid.UUID
+	if casaIDStr := c.Query("casa_id"); casaIDStr != "" {
+		id, err := uuid.Parse(casaIDStr)
+		if err == nil {
+			casaID = &id
+		}
+	}
+
+	visitas, total, err := h.visitaService.List(c.Context(), casaID, filter.Estado, filter.Page, filter.Limit)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: "Error al obtener las visitas",
+		})
+	}
+
+	// Convert to response DTOs
+	data := make([]dto.VisitaResponse, 0, len(visitas))
+	for _, v := range visitas {
+		data = append(data, h.visitaToResponse(v))
+	}
+
+	return c.JSON(dto.VisitaListResponse{
+		Data:  data,
+		Total: total,
+	})
+}
+
+func (h *VisitaHandler) visitaToResponse(v *models.Visita) dto.VisitaResponse {
+	resp := dto.VisitaResponse{
+		ID:              v.ID,
+		CasaID:          v.CasaID,
+		FechaProgramada: v.FechaProgramada.Format("2006-01-02"),
+		Visitante1ID:    v.Visitante1ID,
+		Visitante2ID:    v.Visitante2ID,
+		Observaciones:   v.Observaciones,
+		Estado:          string(v.Estado),
+		CreatedAt:       v.CreatedAt.Format("2006-01-02T15:04:05Z"),
+	}
+	if v.FechaRealizada != nil {
+		fechaStr := v.FechaRealizada.Format("2006-01-02")
+		resp.FechaRealizada = &fechaStr
+	}
+	if v.DeseaSeguirRecibiendo != nil {
+		resp.DeseaSeguirRecibiendo = v.DeseaSeguirRecibiendo
+	}
+	return resp
+}
+
+// GetByID returns a single visita with detail
+// GET /api/visitas/:id
+func (h *VisitaHandler) GetByID(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_id",
+			Message: "ID de visita inválido",
+		})
+	}
+
+	detail, err := h.visitaService.GetDetail(c.Context(), id)
+	if err != nil {
+		if errors.Is(err, repositories.ErrVisitaNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(dto.ErrorResponse{
+				Error:   "not_found",
+				Message: "Visita no encontrada",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: "Error al obtener la visita",
+		})
+	}
+
+	// Convert detail
+	resp := dto.VisitaDetailResponse{
+		VisitaResponse: h.visitaToResponse(&detail.Visita),
+	}
+	if detail.Casa != nil {
+		casaResp := dto.ToCasaResponse(detail.Casa)
+		resp.Casa = &casaResp
+	}
+	if detail.Visitante1 != nil {
+		userResp := dto.ToUserResponse(detail.Visitante1)
+		resp.Visitante1 = &userResp
+	}
+	if detail.Visitante2 != nil {
+		userResp := dto.ToUserResponse(detail.Visitante2)
+		resp.Visitante2 = &userResp
+	}
+
+	return c.JSON(resp)
+}
+
+// Create programs a new visita
+// POST /api/visitas
+func (h *VisitaHandler) Create(c *fiber.Ctx) error {
+	var req dto.CreateVisitaRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Datos inválidos",
+		})
+	}
+
+	// Validation
+	if req.CasaID == uuid.Nil || req.Visitante1ID == uuid.Nil || req.Visitante2ID == uuid.Nil || req.FechaProgramada == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: "Campos requeridos: casa_id, visitante_1_id, visitante_2_id, fecha_programada",
+		})
+	}
+
+	fechaProg, err := time.Parse("2006-01-02", req.FechaProgramada)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: "Formato de fecha inválido. Use YYYY-MM-DD",
+		})
+	}
+
+	visita := &models.Visita{
+		CasaID:          req.CasaID,
+		FechaProgramada: fechaProg,
+		Visitante1ID:    req.Visitante1ID,
+		Visitante2ID:    req.Visitante2ID,
+	}
+
+	result, err := h.visitaService.Create(c.Context(), visita)
+	if err != nil {
+		switch err {
+		case services.ErrCasaNotFound:
+			return c.Status(fiber.StatusNotFound).JSON(dto.ErrorResponse{
+				Error:   "not_found",
+				Message: "Casa no encontrada",
+			})
+		case services.ErrInvalidVisitante:
+			return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+				Error:   "invalid_visitante",
+				Message: "Uno o más visitantes no son válidos",
+			})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+				Error:   "internal_error",
+				Message: "Error al crear la visita",
+			})
+		}
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(h.visitaToResponse(result))
+}
+
+// Update modifies an existing visita (records result)
+// PUT /api/visitas/:id
+func (h *VisitaHandler) Update(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_id",
+			Message: "ID de visita inválido",
+		})
+	}
+
+	var req dto.UpdateVisitaRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Datos inválidos",
+		})
+	}
+
+	updates := make(map[string]interface{})
+	if req.FechaRealizada != nil {
+		fecha, err := time.Parse("2006-01-02", *req.FechaRealizada)
+		if err == nil {
+			updates["fecha_realizada"] = fecha
+		}
+	}
+	if req.Observaciones != nil {
+		updates["observaciones"] = *req.Observaciones
+	}
+	if req.DeseaSeguirRecibiendo != nil {
+		updates["desea_seguir_recibiendo"] = *req.DeseaSeguirRecibiendo
+	}
+	if req.Estado != nil {
+		updates["estado"] = *req.Estado
+	}
+
+	result, err := h.visitaService.Update(c.Context(), id, updates)
+	if err != nil {
+		if errors.Is(err, services.ErrVisitaNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(dto.ErrorResponse{
+				Error:   "not_found",
+				Message: "Visita no encontrada",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: "Error al actualizar la visita",
+		})
+	}
+
+	return c.JSON(h.visitaToResponse(result))
+}
+
+// Delete removes a visita
+// DELETE /api/visitas/:id
+func (h *VisitaHandler) Delete(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_id",
+			Message: "ID de visita inválido",
+		})
+	}
+
+	if err := h.visitaService.Delete(c.Context(), id); err != nil {
+		if errors.Is(err, repositories.ErrVisitaNotFound) {
+			return c.Status(fiber.StatusNotFound).JSON(dto.ErrorResponse{
+				Error:   "not_found",
+				Message: "Visita no encontrada",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: "Error al eliminar la visita",
+		})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// GetStats returns dashboard statistics
+// GET /api/visitas/stats
+func (h *VisitaHandler) GetStats(c *fiber.Ctx) error {
+	stats, err := h.visitaService.GetStats(c.Context())
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: "Error al obtener estadísticas",
+		})
+	}
+
+	return c.JSON(stats)
+}

@@ -1,0 +1,37 @@
+# Go
+# Binaries (compiled executables - files only, not directories)
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build output - compiled binary names
+/main$
+/server$
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+backend.env
+
+# Uploaded files (territorios PDF)
+uploads/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
