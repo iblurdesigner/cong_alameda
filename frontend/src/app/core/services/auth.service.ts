@@ -37,8 +37,14 @@ export class AuthService {
   }
 
   private loadUser(): User | null {
-    const userJson = localStorage.getItem(this.USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    try {
+      const userJson = localStorage.getItem(this.USER_KEY);
+      return userJson ? JSON.parse(userJson) : null;
+    } catch {
+      // Handle corrupted localStorage data
+      localStorage.removeItem(this.USER_KEY);
+      return null;
+    }
   }
 
   login(email: string, password: string) {
@@ -55,6 +61,7 @@ export class AuthService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.userSignal.set(null);
+    this.router.navigate(['/']);
   }
 
   isSuperintendente(): boolean {
