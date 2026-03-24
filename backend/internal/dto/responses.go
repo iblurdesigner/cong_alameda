@@ -106,10 +106,12 @@ type CreateVisitaRequest struct {
 }
 
 type UpdateVisitaRequest struct {
-	FechaRealizada        *string `json:"fecha_realizada,omitempty"`
-	Observaciones         *string `json:"observaciones,omitempty"`
-	DeseaSeguirRecibiendo *bool   `json:"desea_seguir_recibiendo,omitempty"`
-	Estado                *string `json:"estado,omitempty"`
+	FechaRealizada        *string    `json:"fecha_realizada,omitempty"`
+	Observaciones         *string    `json:"observaciones,omitempty"`
+	DeseaSeguirRecibiendo *bool      `json:"desea_seguir_recibiendo,omitempty"`
+	Estado                *string    `json:"estado,omitempty"`
+	Visitante1ID          *uuid.UUID `json:"visitante_1_id,omitempty"`
+	Visitante2ID          *uuid.UUID `json:"visitante_2_id,omitempty"`
 }
 
 type CasaInfo struct {

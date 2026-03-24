@@ -234,6 +234,12 @@ func (h *VisitaHandler) Update(c *fiber.Ctx) error {
 	if req.Estado != nil {
 		updates["estado"] = *req.Estado
 	}
+	if req.Visitante1ID != nil {
+		updates["visitante_1_id"] = *req.Visitante1ID
+	}
+	if req.Visitante2ID != nil {
+		updates["visitante_2_id"] = *req.Visitante2ID
+	}
 
 	result, err := h.visitaService.Update(c.Context(), id, updates)
 	if err != nil {
