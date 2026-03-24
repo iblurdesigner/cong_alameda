@@ -11,31 +11,36 @@ import { NotificationService } from './core/services/notification.service';
   template: `
     @if (authService.isAuthenticated()) {
       <div class="app-layout">
-        <nav class="sidebar">
+        <!-- Overlay para móvil -->
+        @if (sidebarOpen()) {
+          <div class="overlay" (click)="closeSidebar()"></div>
+        }
+        
+        <nav class="sidebar" [class.open]="sidebarOpen()">
           <div class="sidebar-header">
             <h2>App Alameda</h2>
           </div>
           <ul class="nav-list">
             <li>
-              <a routerLink="/dashboard" routerLinkActive="active">
+              <a routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">📊</span>
                 Dashboard
               </a>
             </li>
             <li>
-              <a routerLink="/casas" routerLinkActive="active">
+              <a routerLink="/casas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">🏠</span>
                 Casas
               </a>
             </li>
             <li>
-              <a routerLink="/visitas" routerLinkActive="active">
+              <a routerLink="/visitas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">📅</span>
                 Visitas
               </a>
             </li>
             <li>
-              <a routerLink="/notificaciones" routerLinkActive="active">
+              <a routerLink="/notificaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">🔔</span>
                 Notificaciones
                 @if (notificationService.unreadCount() > 0) {
@@ -48,19 +53,19 @@ import { NotificationService } from './core/services/notification.service';
               <span class="section-label">Visita Superintendente</span>
             </li>
             <li>
-              <a routerLink="/grupos" routerLinkActive="active">
+              <a routerLink="/grupos" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">👥</span>
                 Grupos
               </a>
             </li>
             <li>
-              <a routerLink="/territorios" routerLinkActive="active">
+              <a routerLink="/territorios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">📁</span>
                 Territorios
               </a>
             </li>
             <li>
-              <a routerLink="/semanas" routerLinkActive="active">
+              <a routerLink="/semanas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">📅</span>
                 Semanas
               </a>
@@ -70,7 +75,7 @@ import { NotificationService } from './core/services/notification.service';
               <span class="section-label">Asignaciones</span>
             </li>
             <li>
-              <a routerLink="/asignaciones" routerLinkActive="active">
+              <a routerLink="/asignaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">📋</span>
                 Asignaciones
               </a>
@@ -87,6 +92,16 @@ import { NotificationService } from './core/services/notification.service';
           </div>
         </nav>
         <main class="main-content">
+          <header class="mobile-header">
+            <button class="hamburger-btn" (click)="toggleSidebar()" aria-label="Menú">
+              <span class="hamburger-icon" [class.open]="sidebarOpen()">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+            <span class="mobile-title">App Alameda</span>
+          </header>
           <router-outlet />
         </main>
       </div>
@@ -100,12 +115,29 @@ import { NotificationService } from './core/services/notification.service';
       min-height: 100vh;
     }
 
+    /* Overlay para móvil */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 40;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
     .sidebar {
       width: 260px;
       background: var(--surface-color);
       border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      z-index: 50;
+      transition: transform 0.3s ease;
     }
 
     .sidebar-header {
@@ -137,6 +169,7 @@ import { NotificationService } from './core/services/notification.service';
         text-decoration: none;
         font-weight: 500;
         transition: all 0.15s;
+        cursor: pointer;
 
         .icon {
           font-size: 1.25rem;
@@ -219,6 +252,86 @@ import { NotificationService } from './core/services/notification.service';
       flex: 1;
       padding: 2rem;
       overflow-y: auto;
+      margin-left: 260px;
+      transition: margin-left 0.3s ease;
+    }
+
+    /* Header móvil */
+    .mobile-header {
+      display: none;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .hamburger-btn {
+      background: none;
+      border: none;
+      padding: 0.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hamburger-icon {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      width: 24px;
+      
+      span {
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: var(--text-primary);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+      }
+
+      &.open {
+        span:nth-child(1) {
+          transform: rotate(45deg) translate(5px, 5px);
+        }
+        span:nth-child(2) {
+          opacity: 0;
+        }
+        span:nth-child(3) {
+          transform: rotate(-45deg) translate(5px, -5px);
+        }
+      }
+    }
+
+    .mobile-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    /* Responsive - Tablet y móvil */
+    @media (max-width: 768px) {
+      .overlay {
+        display: block;
+      }
+
+      .sidebar {
+        transform: translateX(-100%);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+
+      .mobile-header {
+        display: flex;
+      }
     }
   `]
 })
@@ -226,10 +339,27 @@ export class AppComponent {
   authService = inject(AuthService);
   notificationService = inject(NotificationService);
   private router = inject(Router);
+  
+  sidebarOpen = signal(false);
 
   constructor() {
     if (this.authService.isAuthenticated()) {
       this.notificationService.loadNotifications();
+    }
+  }
+
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
+  }
+
+  closeSidebar() {
+    this.sidebarOpen.set(false);
+  }
+
+  closeSidebarOnMobile() {
+    // Cerrar sidebar al hacer click en móvil
+    if (window.innerWidth <= 768) {
+      this.sidebarOpen.set(false);
     }
   }
 
