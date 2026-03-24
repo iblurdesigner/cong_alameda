@@ -46,6 +46,16 @@
   box-sizing: border-box;
 }
 
+// Global input styles for dark mode
+input, textarea, select {
+  color: var(--text-primary);
+  background: var(--surface-color);
+  
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+}
+
 html {
   transition: background-color 0.3s ease;
 }
@@ -147,7 +157,12 @@ body {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--surface-color);
+    color: var(--text-primary);
     transition: border-color 0.2s, box-shadow 0.2s;
+    
+    &::placeholder {
+      color: var(--text-secondary);
+    }
     
     &:focus {
       outline: none;
