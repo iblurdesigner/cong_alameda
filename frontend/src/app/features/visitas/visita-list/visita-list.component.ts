@@ -43,6 +43,19 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                 </span>
               </div>
               
+              @if (visita.casa) {
+                <div class="visita-address">
+                  📍 {{ visita.casa.calle_principal }} {{ visita.casa.numeracion }}
+                  @if (visita.casa.calle_secundaria) {
+                    , {{ visita.casa.calle_secundaria }}
+                  }
+                  <span class="sector-badge">{{ visita.casa.sector }}</span>
+                </div>
+                @if (visita.casa.referencia) {
+                  <p class="visita-ref">📝 {{ visita.casa.referencia }}</p>
+                }
+              }
+              
               @if (visita.fecha_realizada) {
                 <p class="visita-realizada">✅ Realizada: {{ formatDate(visita.fecha_realizada) }}</p>
               }
@@ -118,7 +131,18 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
     }
     
     .visita-date { font-weight: 600; font-size: 1rem; }
-    .visita-address { font-size: 0.875rem; color: var(--text-secondary); margin: 0.5rem 0; font-weight: 500; }
+    .visita-address { font-size: 0.9rem; color: var(--text-primary); margin: 0.5rem 0; font-weight: 500; }
+    .sector-badge { 
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary-color);
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      margin-left: 0.5rem;
+    }
+    .visita-ref { font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0; font-style: italic; }
     .visita-realizada, .visita-obs, .visita-resp { font-size: 0.875rem; color: var(--text-secondary); margin: 0.25rem 0; }
     
     .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; min-height: 28px; display: inline-flex; align-items: center; }

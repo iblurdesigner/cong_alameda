@@ -50,7 +50,7 @@ type CreateCasaRequest struct {
 	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
 	Sector          string  `json:"sector"`
 	Referencia      *string `json:"referencia,omitempty"`
-	MotivoNoVolver  string  `json:"motivo_no_volver"`
+	MotivoNoVolver  *string `json:"motivo_no_volver,omitempty"`
 	PersonaRegistra string  `json:"persona_registra"`
 }
 
@@ -112,9 +112,18 @@ type UpdateVisitaRequest struct {
 	Estado                *string `json:"estado,omitempty"`
 }
 
+type CasaInfo struct {
+	CallePrincipal  string  `json:"calle_principal"`
+	Numeracion      string  `json:"numeracion"`
+	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
+	Sector          string  `json:"sector"`
+	Referencia      *string `json:"referencia,omitempty"`
+}
+
 type VisitaResponse struct {
 	ID                    uuid.UUID `json:"id"`
 	CasaID                uuid.UUID `json:"casa_id"`
+	Casa                  *CasaInfo `json:"casa,omitempty"`
 	FechaProgramada       string    `json:"fecha_programada"`
 	FechaRealizada        *string   `json:"fecha_realizada,omitempty"`
 	Visitante1ID          uuid.UUID `json:"visitante_1_id"`

@@ -3,9 +3,18 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { tap } from 'rxjs/operators';
 
+export interface CasaInfo {
+  calle_principal: string;
+  numeracion: string;
+  calle_secundaria?: string;
+  sector: string;
+  referencia?: string;
+}
+
 export interface Visita {
   id: string;
   casa_id: string;
+  casa?: CasaInfo;
   fecha_programada: string;
   fecha_realizada?: string;
   visitante_1_id: string;

@@ -125,10 +125,10 @@ func (h *CasaHandler) Create(c *fiber.Ctx) error {
 	}
 
 	// Validation
-	if req.CallePrincipal == "" || req.Numeracion == "" || req.Sector == "" || req.MotivoNoVolver == "" {
+	if req.CallePrincipal == "" || req.Numeracion == "" || req.Sector == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
 			Error:   "validation_error",
-			Message: "Campos requeridos: calle_principal, numeracion, sector, motivo_no_volver",
+			Message: "Campos requeridos: calle_principal, numeracion, sector",
 		})
 	}
 
@@ -138,8 +138,21 @@ func (h *CasaHandler) Create(c *fiber.Ctx) error {
 		CalleSecundaria: req.CalleSecundaria,
 		Sector:          req.Sector,
 		Referencia:      req.Referencia,
-		MotivoNoVolver:  req.MotivoNoVolver,
-		PersonaRegistra: req.PersonaRegistra,
+	}
+	if req.MotivoNoVolver != nil {
+		casa.MotivoNoVolver = *req.MotivoNoVolver
+	}
+
+	// Get current user from auth middleware
+	if userEmail, ok := c.Locals("user_email").(string); ok && userEmail != "" {
+		casa.PersonaRegistra = userEmail
+	} else if req.PersonaRegistra != "" {
+		casa.PersonaRegistra = req.PersonaRegistra
+	}
+
+	// Fallback if still empty
+	if casa.PersonaRegistra == "" {
+		casa.PersonaRegistra = "Sistema"
 	}
 
 	result, err := h.casaService.Create(c.Context(), casa)

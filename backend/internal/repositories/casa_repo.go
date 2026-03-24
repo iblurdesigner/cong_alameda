@@ -31,6 +31,8 @@ func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 	`
 
 	casa.ID = uuid.New()
+	// Convert enum to plain string to avoid String() method being called by driver
+	estadoStr := string(casa.Estado)
 	err := r.db.QueryRow(ctx, query,
 		casa.ID,
 		casa.CallePrincipal,
@@ -41,7 +43,7 @@ func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 		casa.MotivoNoVolver,
 		casa.FechaRegistro,
 		casa.PersonaRegistra,
-		casa.Estado,
+		estadoStr,
 	).Scan(&casa.CreatedAt, &casa.UpdatedAt)
 
 	if err != nil {

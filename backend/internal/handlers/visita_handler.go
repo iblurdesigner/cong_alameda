@@ -15,11 +15,13 @@ import (
 
 type VisitaHandler struct {
 	visitaService *services.VisitaService
+	casaService   *services.CasaService
 }
 
-func NewVisitaHandler(visitaService *services.VisitaService) *VisitaHandler {
+func NewVisitaHandler(visitaService *services.VisitaService, casaService *services.CasaService) *VisitaHandler {
 	return &VisitaHandler{
 		visitaService: visitaService,
+		casaService:   casaService,
 	}
 }
 
@@ -51,7 +53,18 @@ func (h *VisitaHandler) List(c *fiber.Ctx) error {
 	// Convert to response DTOs
 	data := make([]dto.VisitaResponse, 0, len(visitas))
 	for _, v := range visitas {
-		data = append(data, h.visitaToResponse(v))
+		resp := h.visitaToResponse(v)
+		// Fetch casa info
+		if casa, err := h.casaService.GetByID(c.Context(), v.CasaID); err == nil && casa != nil {
+			resp.Casa = &dto.CasaInfo{
+				CallePrincipal:  casa.CallePrincipal,
+				Numeracion:      casa.Numeracion,
+				CalleSecundaria: casa.CalleSecundaria,
+				Sector:          casa.Sector,
+				Referencia:      casa.Referencia,
+			}
+		}
+		data = append(data, resp)
 	}
 
 	return c.JSON(dto.VisitaListResponse{
