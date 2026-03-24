@@ -66,6 +66,17 @@ func (h *VisitaHandler) List(c *fiber.Ctx) error {
 				Referencia:      casa.Referencia,
 			}
 		}
+		// Fetch visitor names
+		if v.Visitante1ID != uuid.Nil {
+			if user, err := h.userService.GetByID(c.Context(), v.Visitante1ID); err == nil && user != nil {
+				resp.Visitante1Nombre = &user.Nombre
+			}
+		}
+		if v.Visitante2ID != uuid.Nil {
+			if user, err := h.userService.GetByID(c.Context(), v.Visitante2ID); err == nil && user != nil {
+				resp.Visitante2Nombre = &user.Nombre
+			}
+		}
 		data = append(data, resp)
 	}
 

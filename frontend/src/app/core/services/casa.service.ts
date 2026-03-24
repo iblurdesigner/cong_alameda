@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { tap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { Visita } from './visita.service';
 
 export interface Casa {
   id: string;
@@ -15,6 +16,7 @@ export interface Casa {
   fecha_registro: string;
   persona_registra: string;
   estado: 'NO_VISITAR' | 'EN_ESPERA_VISITA' | 'RECONTACTADA' | 'ACTIVA';
+  visitas?: Visita[];
 }
 
 export interface CasaListResponse {
