@@ -1,8 +1,9 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, effect, OnDestroy } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
-export class ThemeService {
+export class ThemeService implements OnDestroy {
   private readonly STORAGE_KEY = 'app-theme';
+  private mediaQuery: MediaQueryList | null = null;
   
   isDark = signal(this.getInitialTheme());
 
@@ -11,7 +12,27 @@ export class ThemeService {
     effect(() => {
       this.applyTheme(this.isDark());
     });
+
+    // Escuchar cambios de preferencia del sistema en tiempo real
+    if (window.matchMedia) {
+      this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      this.mediaQuery.addEventListener('change', this.handleSystemThemeChange);
+    }
   }
+
+  ngOnDestroy() {
+    if (this.mediaQuery) {
+      this.mediaQuery.removeEventListener('change', this.handleSystemThemeChange);
+    }
+  }
+
+  private handleSystemThemeChange = (e: MediaQueryListEvent) => {
+    // Solo actualizar si el usuario no tiene preferencia manual guardada
+    const stored = localStorage.getItem(this.STORAGE_KEY);
+    if (!stored) {
+      this.isDark.set(e.matches);
+    }
+  };
 
   private getInitialTheme(): boolean {
     // Verificar localStorage
@@ -37,5 +58,13 @@ export class ThemeService {
 
   setDark(value: boolean) {
     this.isDark.set(value);
+  }
+
+  // Método para resetear a preferencia del sistema
+  resetToSystemPreference() {
+    localStorage.removeItem(this.STORAGE_KEY);
+    if (window.matchMedia) {
+      this.isDark.set(window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
   }
 }
