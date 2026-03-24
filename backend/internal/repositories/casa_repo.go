@@ -171,6 +171,9 @@ func (r *CasaRepository) List(ctx context.Context, sector, estado, search string
 }
 
 func (r *CasaRepository) Update(ctx context.Context, id uuid.UUID, casa *models.Casa) (*models.Casa, error) {
+	// Convert enum to plain string to avoid String() method being called by driver
+	estadoStr := string(casa.Estado)
+
 	query := `
 		UPDATE casas 
 		SET calle_principal = $1, numeracion = $2, calle_secundaria = $3, sector = $4, 
@@ -186,7 +189,7 @@ func (r *CasaRepository) Update(ctx context.Context, id uuid.UUID, casa *models.
 		casa.Sector,
 		casa.Referencia,
 		casa.MotivoNoVolver,
-		casa.Estado,
+		estadoStr,
 		id,
 	).Scan(&casa.CreatedAt, &casa.UpdatedAt)
 

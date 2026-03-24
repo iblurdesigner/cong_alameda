@@ -91,7 +91,7 @@ func main() {
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 
-	// Create Fiber app
+	// Create Fiber app with UTF-8 support
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
@@ -103,6 +103,11 @@ func main() {
 				"message": err.Error(),
 			})
 		},
+		CaseSensitive:         false,
+		StrictRouting:         false,
+		DisableStartupMessage: false,
+		BodyLimit:             4 * 1024 * 1024,
+		Concurrency:           256 * 1024,
 	})
 
 	// Global middleware
@@ -110,6 +115,13 @@ func main() {
 	app.Use(logger.New(logger.Config{
 		Format: "[${time}] ${status} - ${method} ${path} - ${latency}\n",
 	}))
+
+	// UTF-8 encoding middleware for all responses
+	app.Use(func(c *fiber.Ctx) error {
+		c.Set("Content-Type", "application/json; charset=utf-8")
+		return c.Next()
+	})
+
 	app.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 
 	// Health check
