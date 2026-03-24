@@ -14,20 +14,22 @@ import { AuthService } from '../../../core/services/auth.service';
       <header class="page-header">
         <div class="header-content">
           <h1>Casas</h1>
-          <p>Gestión de casas con motivo "no visitar"</p>
+          <p class="header-subtitle">Gestión de casas con motivo "no visitar"</p>
         </div>
         @if (authService.isSuperintendente()) {
-          <a routerLink="/casas/new" class="btn btn-primary">
-            ➕ Nueva Casa
+          <a routerLink="/casas/new" class="btn btn-primary btn-mobile-full">
+            <span class="btn-icon-only">➕</span>
+            <span class="btn-text">Nueva Casa</span>
           </a>
         }
       </header>
       
       <div class="filters-bar">
         <div class="search-box">
+          <span class="search-icon">🔍</span>
           <input 
             type="text" 
-            placeholder="Buscar por dirección..." 
+            placeholder="Buscar dirección..." 
             [(ngModel)]="searchTerm"
             (ngModelChange)="onSearch()"
           />
@@ -55,12 +57,43 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (casaService.casas().length === 0) {
         <div class="empty-state">
+          <div class="empty-icon">🏠</div>
           <p>No hay casas registradas</p>
           @if (authService.isSuperintendente()) {
             <a routerLink="/casas/new" class="btn btn-primary">Registrar primera casa</a>
           }
         </div>
       } @else {
+        <!-- Vista Mobile: Cards -->
+        <div class="cards-grid">
+          @for (casa of casaService.casas(); track casa.id) {
+            <div class="casa-card" [routerLink]="['/casas', casa.id]">
+              <div class="card-header">
+                <span class="badge" [ngClass]="getEstadoClass(casa.estado)">
+                  {{ getEstadoLabel(casa.estado) }}
+                </span>
+                <span class="card-sector">{{ casa.sector }}</span>
+              </div>
+              <div class="card-body">
+                <h3 class="card-address">
+                  <span class="street">{{ casa.calle_principal }} {{ casa.numeracion }}</span>
+                </h3>
+                @if (casa.calle_secundaria) {
+                  <p class="card-secondary">Entre {{ casa.calle_secundaria }}</p>
+                }
+                @if (casa.referencia) {
+                  <p class="card-ref">{{ casa.referencia }}</p>
+                }
+              </div>
+              <div class="card-footer">
+                <span class="card-date">📅 {{ formatDate(casa.fecha_registro) }}</span>
+                <span class="card-action">Ver →</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Vista Desktop: Tabla -->
         <div class="data-table-container">
           <table class="data-table">
             <thead>
@@ -109,7 +142,7 @@ import { AuthService } from '../../../core/services/auth.service';
             >
               Anterior
             </button>
-            <span>Página {{ casaService.currentPage() }}</span>
+            <span class="page-info">Página {{ casaService.currentPage() }}</span>
             <button 
               class="btn btn-outline btn-sm"
               [disabled]="casaService.casas().length < 20"
@@ -132,6 +165,7 @@ import { AuthService } from '../../../core/services/auth.service';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 1rem;
       margin-bottom: 1.5rem;
       
       h1 {
@@ -139,9 +173,18 @@ import { AuthService } from '../../../core/services/auth.service';
         font-weight: 700;
       }
       
-      p {
+      .header-subtitle {
         color: var(--text-secondary);
         margin-top: 0.25rem;
+      }
+
+      .btn-mobile-full {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+        
+        .btn-icon-only { display: none; }
       }
     }
     
@@ -153,25 +196,45 @@ import { AuthService } from '../../../core/services/auth.service';
       
       .search-box {
         flex: 1;
-        min-width: 250px;
+        min-width: 200px;
+        position: relative;
+        
+        .search-icon {
+          position: absolute;
+          left: 0.875rem;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 0.875rem;
+          opacity: 0.5;
+        }
         
         input {
           width: 100%;
-          padding: 0.625rem 0.875rem;
+          padding: 0.625rem 0.875rem 0.625rem 2.5rem;
           border: 1px solid var(--border-color);
           border-radius: var(--radius-md);
+          font-size: 1rem;
+          min-height: 44px;
         }
       }
       
       .filter-group {
         display: flex;
         gap: 0.5rem;
+        flex-wrap: wrap;
         
         select {
-          padding: 0.625rem 0.875rem;
+          padding: 0.625rem 2rem 0.625rem 0.875rem;
           border: 1px solid var(--border-color);
           border-radius: var(--radius-md);
           background: white;
+          font-size: 0.875rem;
+          min-height: 44px;
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 0.75rem center;
         }
       }
     }
@@ -181,26 +244,70 @@ import { AuthService } from '../../../core/services/auth.service';
       padding: 3rem;
       color: var(--text-secondary);
     }
-    
+
     .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 1rem;
+      
+      .empty-icon { font-size: 3rem; opacity: 0.5; }
     }
+    
+    /* Cards Grid - Mobile First */
+    .cards-grid { display: none; }
+
+    .casa-card {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+      }
+      
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        
+        .badge { font-size: 0.75rem; padding: 0.25rem 0.625rem; }
+        .card-sector { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+      }
+      
+      .card-body {
+        margin-bottom: 0.75rem;
+        
+        .card-address { font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem; }
+        .card-secondary { font-size: 0.875rem; color: var(--text-secondary); margin: 0; }
+        .card-ref { font-size: 0.75rem; color: var(--text-secondary); margin: 0.5rem 0 0; font-style: italic; }
+      }
+      
+      .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--border-color);
+        
+        .card-date { font-size: 0.75rem; color: var(--text-secondary); }
+        .card-action { font-size: 0.875rem; font-weight: 600; color: var(--primary-color); }
+      }
+    }
+
+    .data-table-container { display: block; }
     
     .address-cell {
       display: flex;
       flex-direction: column;
-      
-      .address {
-        font-weight: 500;
-      }
-      
-      .secondary {
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-      }
+      .address { font-weight: 500; }
+      .secondary { font-size: 0.75rem; color: var(--text-secondary); }
     }
     
     .btn-icon {
@@ -210,10 +317,12 @@ import { AuthService } from '../../../core/services/auth.service';
       border-radius: var(--radius-sm);
       cursor: pointer;
       text-decoration: none;
-      
-      &:hover {
-        background: var(--background-color);
-      }
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      min-height: 36px;
+      &:hover { background: var(--background-color); }
     }
     
     .pagination {
@@ -223,17 +332,56 @@ import { AuthService } from '../../../core/services/auth.service';
       margin-top: 1.5rem;
       padding-top: 1rem;
       border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 1rem;
       
-      .page-buttons {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
+      .page-buttons { display: flex; align-items: center; gap: 0.5rem; }
+      .page-info { font-size: 0.875rem; color: var(--text-secondary); }
+      .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; min-height: 40px; }
+    }
+
+    /* Mobile (< 768px) */
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        h1 { font-size: 1.5rem; }
+        .btn-mobile-full {
+          width: 100%;
+          justify-content: center;
+          .btn-icon-only { display: inline; }
+          .btn-text { display: none; }
+        }
       }
       
-      .btn-sm {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.75rem;
+      .filters-bar {
+        .search-box { min-width: 100%; }
+        .filter-group {
+          width: 100%;
+          select { flex: 1; min-width: calc(50% - 0.25rem); }
+        }
       }
+      
+      .cards-grid { display: grid; }
+      .data-table-container { display: none; }
+      
+      .pagination {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        .page-buttons { justify-content: center; flex-wrap: wrap; }
+      }
+    }
+
+    /* Tablet (768px - 1024px) */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .data-table-container { display: none; }
+    }
+
+    /* Desktop (> 1024px) */
+    @media (min-width: 1025px) {
+      .cards-grid { display: none; }
+      .data-table-container { display: block; }
     }
   `]
 })

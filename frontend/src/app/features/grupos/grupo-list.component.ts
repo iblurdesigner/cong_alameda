@@ -14,11 +14,12 @@ import { AuthService } from '../../core/services/auth.service';
       <header class="page-header">
         <div class="header-content">
           <h1>Grupos de Predicación</h1>
-          <p>5 grupos de predicación con territorios PDF</p>
+          <p class="header-subtitle">5 grupos de predicación con territorios PDF</p>
         </div>
         @if (authService.isSuperintendente()) {
-          <button class="btn btn-primary" (click)="showModal = true">
-            ➕ Nuevo Grupo
+          <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
+            <span class="btn-icon-only">➕</span>
+            <span class="btn-text">Nuevo Grupo</span>
           </button>
         }
       </header>
@@ -27,6 +28,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (grupoService.grupos().length === 0) {
         <div class="empty-state">
+          <div class="empty-icon">👥</div>
           <p>No hay grupos registrados</p>
           @if (authService.isSuperintendente()) {
             <button class="btn btn-primary" (click)="showModal = true">Crear primer grupo</button>
@@ -42,17 +44,15 @@ import { AuthService } from '../../core/services/auth.service';
                   <span class="badge badge-secondary">Inactivo</span>
                 }
               </div>
-              <h3>{{ grupo.nombre }}</h3>
+              <h3 class="grupo-nombre">{{ grupo.nombre }}</h3>
               @if (grupo.descripcion) {
                 <p class="descripcion">{{ grupo.descripcion }}</p>
               }
               <div class="grupo-stats">
-                <span class="stat">
-                  📁 {{ grupo.territorio_count || 0 }} territorios
-                </span>
+                <span class="stat">📁 {{ grupo.territorio_count || 0 }} territorios</span>
               </div>
               <div class="grupo-actions">
-                <a [routerLink]="['/grupos', grupo.id]" class="btn btn-outline btn-sm">
+                <a [routerLink]="['/grupos', grupo.id]" class="btn btn-outline btn-sm btn-mobile-full">
                   Ver Detalle
                 </a>
                 @if (authService.isSuperintendente()) {
@@ -161,6 +161,7 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 1rem;
       margin-bottom: 1.5rem;
       
       h1 {
@@ -168,9 +169,19 @@ import { AuthService } from '../../core/services/auth.service';
         font-weight: 700;
       }
       
-      p {
+      .header-subtitle {
         color: var(--text-secondary);
         margin-top: 0.25rem;
+      }
+
+      .btn-mobile-full {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+        min-height: 44px;
+        
+        .btn-icon-only { display: none; }
       }
     }
     
@@ -185,28 +196,36 @@ import { AuthService } from '../../core/services/auth.service';
       flex-direction: column;
       align-items: center;
       gap: 1rem;
+      .empty-icon { font-size: 3rem; opacity: 0.5; }
     }
     
     .grupos-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 1.5rem;
+      gap: 1rem;
+      grid-template-columns: 1fr;
     }
     
     .grupo-card {
       background: white;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+      }
       
       &.inactive {
         opacity: 0.6;
         background: var(--background-color);
       }
       
-      h3 {
+      .grupo-nombre {
         margin: 0.5rem 0;
-        font-size: 1.25rem;
+        font-size: 1.125rem;
       }
       
       .descripcion {
@@ -349,6 +368,104 @@ import { AuthService } from '../../core/services/auth.service';
     .text-muted {
       color: var(--text-secondary);
       font-size: 0.875rem;
+    }
+
+    .btn-icon {
+      padding: 0.5rem;
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      min-width: 40px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      
+      &:hover {
+        background: var(--background-color);
+      }
+      
+      &.btn-danger:hover {
+        background: #fee2e2;
+        border-color: #dc2626;
+      }
+    }
+
+    .btn-mobile-full {
+      min-height: 44px;
+      padding: 0.625rem 1rem;
+    }
+
+    .grupo-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal {
+      background: white;
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      &.modal-sm { max-width: 400px; }
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      label { font-size: 0.875rem; }
+      input, textarea, select {
+        font-size: 1rem;
+        min-height: 44px;
+        padding: 0.75rem;
+      }
+      textarea { min-height: 100px; }
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        h1 { font-size: 1.5rem; }
+        .btn-mobile-full {
+          width: 100%;
+          justify-content: center;
+          .btn-icon-only { display: inline; }
+          .btn-text { display: none; }
+        }
+      }
+      .grupos-grid { gap: 0.75rem; }
+    }
+
+    @media (min-width: 769px) {
+      .grupos-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 1200px) {
+      .grupos-grid { grid-template-columns: repeat(3, 1fr); }
     }
   `]
 })
