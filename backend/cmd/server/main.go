@@ -55,8 +55,8 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(userService)
-	casaHandler := handlers.NewCasaHandler(casaService)
-	visitaHandler := handlers.NewVisitaHandler(visitaService, casaService)
+	casaHandler := handlers.NewCasaHandler(casaService, userService)
+	visitaHandler := handlers.NewVisitaHandler(visitaService, casaService, userService)
 	notifHandler := handlers.NewNotificacionHandler(notifService)
 	userHandler := handlers.NewUserHandler(userService)
 

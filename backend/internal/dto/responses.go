@@ -130,6 +130,8 @@ type VisitaResponse struct {
 	FechaRealizada        *string   `json:"fecha_realizada,omitempty"`
 	Visitante1ID          uuid.UUID `json:"visitante_1_id"`
 	Visitante2ID          uuid.UUID `json:"visitante_2_id"`
+	Visitante1Nombre      *string   `json:"visitante_1_nombre,omitempty"`
+	Visitante2Nombre      *string   `json:"visitante_2_nombre,omitempty"`
 	Observaciones         *string   `json:"observaciones,omitempty"`
 	DeseaSeguirRecibiendo *bool     `json:"desea_seguir_recibiendo,omitempty"`
 	Estado                string    `json:"estado"`

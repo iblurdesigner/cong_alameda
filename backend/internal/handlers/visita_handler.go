@@ -16,12 +16,14 @@ import (
 type VisitaHandler struct {
 	visitaService *services.VisitaService
 	casaService   *services.CasaService
+	userService   *services.UserService
 }
 
-func NewVisitaHandler(visitaService *services.VisitaService, casaService *services.CasaService) *VisitaHandler {
+func NewVisitaHandler(visitaService *services.VisitaService, casaService *services.CasaService, userService *services.UserService) *VisitaHandler {
 	return &VisitaHandler{
 		visitaService: visitaService,
 		casaService:   casaService,
+		userService:   userService,
 	}
 }
 
@@ -255,7 +257,33 @@ func (h *VisitaHandler) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(h.visitaToResponse(result))
+	// Build response with casa info and visitor names
+	resp := h.visitaToResponse(result)
+
+	// Fetch casa info
+	if casa, err := h.casaService.GetByID(c.Context(), result.CasaID); err == nil && casa != nil {
+		resp.Casa = &dto.CasaInfo{
+			CallePrincipal:  casa.CallePrincipal,
+			Numeracion:      casa.Numeracion,
+			CalleSecundaria: casa.CalleSecundaria,
+			Sector:          casa.Sector,
+			Referencia:      casa.Referencia,
+		}
+	}
+
+	// Fetch visitor names
+	if result.Visitante1ID != uuid.Nil {
+		if user, err := h.userService.GetByID(c.Context(), result.Visitante1ID); err == nil && user != nil {
+			resp.Visitante1Nombre = &user.Nombre
+		}
+	}
+	if result.Visitante2ID != uuid.Nil {
+		if user, err := h.userService.GetByID(c.Context(), result.Visitante2ID); err == nil && user != nil {
+			resp.Visitante2Nombre = &user.Nombre
+		}
+	}
+
+	return c.JSON(resp)
 }
 
 // Delete removes a visita

@@ -19,6 +19,8 @@ export interface Visita {
   fecha_realizada?: string;
   visitante_1_id: string;
   visitante_2_id: string;
+  visitante_1_nombre?: string;
+  visitante_2_nombre?: string;
   observaciones?: string;
   desea_seguir_recibiendo?: boolean;
   estado: 'PROGRAMADA' | 'REALIZADA' | 'CANCELADA';
