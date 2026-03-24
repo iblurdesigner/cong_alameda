@@ -11,8 +11,10 @@ import { CasaService } from '../../core/services/casa.service';
   template: `
     <div class="dashboard">
       <header class="page-header">
-        <h1>Dashboard</h1>
-        <p>Resumen del sistema</p>
+        <div class="header-content">
+          <h1>Dashboard</h1>
+          <p class="header-subtitle">Resumen del sistema</p>
+        </div>
       </header>
       
       @if (loading()) {
@@ -107,8 +109,9 @@ import { CasaService } from '../../core/services/casa.service';
         color: var(--text-primary);
       }
       
-      p {
+      .header-subtitle {
         color: var(--text-secondary);
+        margin-top: 0.25rem;
       }
     }
     
@@ -120,38 +123,42 @@ import { CasaService } from '../../core/services/casa.service';
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
+      grid-template-columns: repeat(2, 1fr);
       margin-bottom: 2rem;
     }
     
     .stat-card {
       background: var(--surface-color);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--border-color);
       
       .stat-icon {
-        font-size: 2rem;
+        font-size: 1.75rem;
+        flex-shrink: 0;
       }
       
       .stat-content {
         display: flex;
         flex-direction: column;
+        min-width: 0;
         
         .stat-value {
-          font-size: 1.75rem;
+          font-size: 1.5rem;
           font-weight: 700;
           color: var(--text-primary);
+          line-height: 1.2;
         }
         
         .stat-label {
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
+          white-space: nowrap;
         }
       }
       
@@ -171,21 +178,23 @@ import { CasaService } from '../../core/services/casa.service';
     
     .actions-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
     }
     
     .action-card {
       background: var(--surface-color);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
       text-decoration: none;
       border: 1px solid var(--border-color);
       transition: all 0.2s;
+      min-height: 100px;
+      justify-content: center;
       
       &:hover {
         border-color: var(--primary-color);
@@ -201,7 +210,25 @@ import { CasaService } from '../../core/services/casa.service';
         font-size: 0.875rem;
         font-weight: 500;
         color: var(--text-primary);
+        text-align: center;
       }
+    }
+
+    @media (max-width: 768px) {
+      .page-header h1 { font-size: 1.5rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .actions-grid { grid-template-columns: 1fr; }
+      .stat-card { padding: 0.875rem; }
+      .action-card { min-height: 90px; padding: 1rem; }
+    }
+
+    @media (min-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(6, 1fr); }
+      .actions-grid { grid-template-columns: repeat(4, 1fr); }
     }
   `]
 })
