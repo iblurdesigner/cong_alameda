@@ -3,6 +3,7 @@ import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/rou
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
 import { NotificationService } from './core/services/notification.service';
+import { ThemeService } from './core/services/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -86,6 +87,10 @@ import { NotificationService } from './core/services/notification.service';
               <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
               <span class="user-role">{{ authService.currentUser()?.rol }}</span>
             </div>
+            <button class="theme-toggle" (click)="themeService.toggle()" [attr.aria-label]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+              <span class="theme-icon">{{ themeService.isDark() ? '☀️' : '🌙' }}</span>
+              <span class="theme-label">{{ themeService.isDark() ? 'Modo Claro' : 'Modo Oscuro' }}</span>
+            </button>
             <button class="btn-logout" (click)="logout()">
               Cerrar Sesión
             </button>
@@ -239,11 +244,41 @@ import { NotificationService } from './core/services/notification.service';
         color: var(--text-secondary);
         cursor: pointer;
         transition: all 0.15s;
+        margin-top: 0.5rem;
         
         &:hover {
           background: var(--background-color);
           color: var(--danger-color);
           border-color: var(--danger-color);
+        }
+      }
+
+      .theme-toggle {
+        width: 100%;
+        padding: 0.5rem;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        
+        .theme-icon {
+          font-size: 1.125rem;
+        }
+        
+        .theme-label {
+          font-size: 0.875rem;
+        }
+        
+        &:hover {
+          background: var(--background-color);
+          border-color: var(--primary-color);
+          color: var(--primary-color);
         }
       }
     }
@@ -338,6 +373,7 @@ import { NotificationService } from './core/services/notification.service';
 export class AppComponent {
   authService = inject(AuthService);
   notificationService = inject(NotificationService);
+  themeService = inject(ThemeService);
   private router = inject(Router);
   
   sidebarOpen = signal(false);
