@@ -79,7 +79,7 @@ import { AuthService } from '../../../core/services/auth.service';
     }
     
     .login-card {
-      background: white;
+      background: var(--surface-color);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-lg);
       padding: 2.5rem;

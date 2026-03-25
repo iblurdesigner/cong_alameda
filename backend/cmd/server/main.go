@@ -144,6 +144,7 @@ func main() {
 
 	// Auth protected routes
 	protected.Get("/auth/me", authHandler.GetCurrentUser)
+	protected.Put("/auth/profile", authHandler.UpdateCurrentUserProfile)
 
 	// Casa routes
 	casas := protected.Group("/casas")

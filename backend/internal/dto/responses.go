@@ -49,6 +49,13 @@ type UpdateUserRequest struct {
 	Rol                    *string `json:"rol,omitempty"`
 }
 
+type UpdateProfileRequest struct {
+	Nombre                 *string `json:"nombre,omitempty"`
+	Telefono               *string `json:"telefono,omitempty"`
+	NotificacionesEmail    *bool   `json:"notificaciones_email,omitempty"`
+	NotificacionesWhatsapp *bool   `json:"notificaciones_whatsapp,omitempty"`
+}
+
 // ========== Casa DTOs ==========
 
 type CreateCasaRequest struct {

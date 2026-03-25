@@ -29,6 +29,12 @@ import { ThemeService } from './core/services/theme.service';
               </a>
             </li>
             <li>
+              <a routerLink="/perfil" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+                <span class="icon">👤</span>
+                Mi Perfil
+              </a>
+            </li>
+            <li>
               <a routerLink="/casas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">🏠</span>
                 Casas
