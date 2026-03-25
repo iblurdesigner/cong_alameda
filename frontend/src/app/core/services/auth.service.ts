@@ -7,9 +7,12 @@ export interface User {
   id: string;
   nombre: string;
   telefono?: string;
+  telefono_validado: boolean;
   email: string;
-  rol: 'SUPERINTENDENTE' | 'ANCIANO' | 'VISITANTE';
+  rol: 'SUPER_ADMIN' | 'SUPERINTENDENTE' | 'ANCIANO' | 'VISITANTE';
   activo: boolean;
+  notificaciones_email: boolean;
+  notificaciones_whatsapp: boolean;
 }
 
 export interface LoginResponse {
@@ -74,6 +77,10 @@ export class AuthService {
 
   isVisitante(): boolean {
     return this.currentUser()?.rol === 'VISITANTE';
+  }
+
+  isSuperAdmin(): boolean {
+    return this.currentUser()?.rol === 'SUPER_ADMIN';
   }
 
   getUsers() {

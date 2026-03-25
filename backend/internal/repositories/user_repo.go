@@ -56,7 +56,8 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, email, password, rol, activo, created_at, updated_at
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
@@ -66,10 +67,13 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 		&user.ID,
 		&user.Nombre,
 		&user.Telefono,
+		&user.TelefonoValidado,
 		&user.Email,
 		&user.Password,
 		&user.Rol,
 		&user.Activo,
+		&user.NotificacionesEmail,
+		&user.NotificacionesWhatsapp,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -86,7 +90,8 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, email, password, rol, activo, created_at, updated_at
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -96,10 +101,13 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 		&user.ID,
 		&user.Nombre,
 		&user.Telefono,
+		&user.TelefonoValidado,
 		&user.Email,
 		&user.Password,
 		&user.Rol,
 		&user.Activo,
+		&user.NotificacionesEmail,
+		&user.NotificacionesWhatsapp,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -116,7 +124,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 
 func (r *UserRepository) List(ctx context.Context, rol *models.Rol, activo *bool) ([]*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, email, password, rol, activo, created_at, updated_at
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE 1=1
 	`
@@ -150,10 +159,13 @@ func (r *UserRepository) List(ctx context.Context, rol *models.Rol, activo *bool
 			&user.ID,
 			&user.Nombre,
 			&user.Telefono,
+			&user.TelefonoValidado,
 			&user.Email,
 			&user.Password,
 			&user.Rol,
 			&user.Activo,
+			&user.NotificacionesEmail,
+			&user.NotificacionesWhatsapp,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		)

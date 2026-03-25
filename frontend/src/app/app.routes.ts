@@ -78,6 +78,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/asignaciones/asignacion-list.component').then(m => m.AsignacionListComponent),
     canActivate: [authGuard]
   },
+  // ====== Backoffice: Gestión de Usuarios ======
+  {
+    path: 'usuarios',
+    loadComponent: () => import('./features/admin/usuarios/usuarios-list.component').then(m => m.UsuariosListComponent),
+    canActivate: [authGuard]
+  },
   {
     path: '**',
     redirectTo: 'dashboard'

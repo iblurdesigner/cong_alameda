@@ -81,6 +81,18 @@ import { ThemeService } from './core/services/theme.service';
                 Asignaciones
               </a>
             </li>
+            <!-- Backoffice - Solo SUPER_ADMIN -->
+            @if (authService.isSuperAdmin()) {
+              <li class="nav-section">
+                <span class="section-label">Administración</span>
+              </li>
+              <li>
+                <a routerLink="/usuarios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+                  <span class="icon">👤</span>
+                  Usuarios
+                </a>
+              </li>
+            }
           </ul>
           <div class="sidebar-footer">
             <div class="user-info">

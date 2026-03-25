@@ -57,16 +57,10 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		}
 	}
 
+	userResp := dto.ToUserResponse(result.User)
 	return c.Status(fiber.StatusOK).JSON(dto.LoginResponse{
 		Token: result.Token,
-		User: &dto.UserResponse{
-			ID:       result.User.ID,
-			Nombre:   result.User.Nombre,
-			Telefono: result.User.Telefono,
-			Email:    result.User.Email,
-			Rol:      string(result.User.Rol),
-			Activo:   result.User.Activo,
-		},
+		User:  &userResp,
 	})
 }
 

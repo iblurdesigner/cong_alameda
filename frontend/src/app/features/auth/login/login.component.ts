@@ -62,8 +62,8 @@ import { AuthService } from '../../../core/services/auth.service';
         </form>
         
         <div class="demo-credentials">
-          <p>Credenciales de prueba:</p>
-          <code>superintendente&#64;iglesia.org / password123</code>
+          <p>Credenciales de administrador:</p>
+          <code>davidisaac.floresmedrano&#64;gmail.com / admin123</code>
         </div>
       </div>
     </div>

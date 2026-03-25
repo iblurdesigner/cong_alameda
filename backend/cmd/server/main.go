@@ -169,14 +169,14 @@ func main() {
 	notificaciones.Put("/:id/read", notifHandler.MarkAsRead)
 	notificaciones.Put("/read-all", notifHandler.MarkAllAsRead)
 
-	// User routes
+	// User routes - SUPER_ADMIN can manage all, SUPERINTENDENTE can create
 	users := protected.Group("/users")
 	users.Get("/", userHandler.List)
 	users.Get("/visitantes", userHandler.GetVisitantes)
 	users.Get("/:id", userHandler.GetByID)
-	users.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), userHandler.Create)
-	users.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), userHandler.Update)
-	users.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), userHandler.Delete)
+	users.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), userHandler.Create)
+	users.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), userHandler.Update)
+	users.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN"), userHandler.Delete)
 
 	// ====== FASE 2 ROUTES ======
 
