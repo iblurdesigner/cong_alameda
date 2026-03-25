@@ -118,7 +118,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
     
     .info-card {
-      background: white;
+      background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 1rem 1.5rem;
@@ -158,7 +158,7 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       align-items: center;
       gap: 1rem;
-      background: white;
+      background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 1rem 1.5rem;

@@ -158,11 +158,12 @@ import { ThemeService } from './core/services/theme.service';
     }
 
     .sidebar-header {
-      padding: 1.5rem;
+      padding: 1rem 1.25rem;
       border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
       
       h2 {
-        font-size: 1.25rem;
+        font-size: 1.125rem;
         font-weight: 600;
         color: var(--primary-color);
       }
@@ -170,34 +171,36 @@ import { ThemeService } from './core/services/theme.service';
 
     .nav-list {
       list-style: none;
-      padding: 1rem 0;
+      padding: 0.5rem 0;
       flex: 1;
+      overflow-y: auto;
 
       li {
-        margin: 0.25rem 0;
+        margin: 0.125rem 0;
       }
 
       a {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        padding: 0.75rem 1.5rem;
+        padding: 0.625rem 1.25rem;
         color: var(--text-secondary);
         text-decoration: none;
         font-weight: 500;
         transition: all 0.15s;
         cursor: pointer;
+        font-size: 0.9rem;
 
         .icon {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
         }
 
         .badge {
           margin-left: auto;
           background: var(--danger-color);
           color: white;
-          font-size: 0.75rem;
-          padding: 0.125rem 0.5rem;
+          font-size: 0.7rem;
+          padding: 0.125rem 0.4rem;
           border-radius: 9999px;
         }
 
@@ -215,10 +218,10 @@ import { ThemeService } from './core/services/theme.service';
     }
     
     .nav-section {
-      padding: 1rem 1.5rem 0.5rem;
+      padding: 0.75rem 1.25rem 0.375rem;
       
       .section-label {
-        font-size: 0.625rem;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -227,21 +230,24 @@ import { ThemeService } from './core/services/theme.service';
     }
 
     .sidebar-footer {
-      padding: 1.5rem;
+      padding: 1rem 1.25rem;
       border-top: 1px solid var(--border-color);
+      background: var(--surface-color);
+      flex-shrink: 0;
       
       .user-info {
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         
         .user-name {
           display: block;
           font-weight: 600;
           color: var(--text-primary);
+          font-size: 0.9rem;
         }
         
         .user-role {
           display: block;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: var(--text-secondary);
           text-transform: uppercase;
         }
@@ -249,35 +255,37 @@ import { ThemeService } from './core/services/theme.service';
       
       .btn-logout {
         width: 100%;
-        padding: 0.5rem;
-        background: transparent;
+        padding: 0.625rem 0.75rem;
+        background: var(--background-color);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        color: var(--text-secondary);
+        color: var(--text-primary);
         cursor: pointer;
         transition: all 0.15s;
         margin-top: 0.5rem;
+        font-weight: 500;
         
         &:hover {
-          background: var(--background-color);
-          color: var(--danger-color);
+          background: var(--danger-color);
           border-color: var(--danger-color);
+          color: white;
         }
       }
 
       .theme-toggle {
         width: 100%;
-        padding: 0.5rem;
-        background: transparent;
+        padding: 0.625rem 0.75rem;
+        background: var(--background-color);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        color: var(--text-secondary);
+        color: var(--text-primary);
         cursor: pointer;
         transition: all 0.15s;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
+        font-weight: 500;
         
         .theme-icon {
           font-size: 1.125rem;
@@ -288,9 +296,9 @@ import { ThemeService } from './core/services/theme.service';
         }
         
         &:hover {
-          background: var(--background-color);
+          background: var(--primary-color);
           border-color: var(--primary-color);
-          color: var(--primary-color);
+          color: white;
         }
       }
     }

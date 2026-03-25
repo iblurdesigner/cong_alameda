@@ -206,7 +206,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
     
     .grupo-card {
-      background: white;
+      background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       padding: 1rem;
@@ -296,7 +296,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
     
     .modal {
-      background: white;
+      background: var(--surface-color);
       border-radius: var(--radius-lg);
       width: 90%;
       max-width: 500px;
@@ -356,6 +356,8 @@ import { AuthService } from '../../core/services/auth.service';
         padding: 0.625rem 0.875rem;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
+        background: var(--background-color);
+        color: var(--text-primary);
         
         &:focus {
           outline: none;
@@ -418,7 +420,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
 
     .modal {
-      background: white;
+      background: var(--surface-color);
       border-radius: var(--radius-lg);
       width: 100%;
       max-width: 500px;
