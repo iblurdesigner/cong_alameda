@@ -94,13 +94,22 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                   </div>
                 </td>
                 <td>
-                  <button 
-                    class="btn-delete"
-                    (click)="deleteUser(user)"
-                    title="Eliminar usuario"
-                  >
-                    🗑️
-                  </button>
+                  <div class="action-buttons">
+                    <button 
+                      class="btn-edit"
+                      (click)="openEditModal(user)"
+                      title="Editar usuario"
+                    >
+                      ✏️
+                    </button>
+                    <button 
+                      class="btn-delete"
+                      (click)="deleteUser(user)"
+                      title="Eliminar usuario"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </td>
               </tr>
             }
@@ -111,6 +120,77 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       @if (users().length === 0 && !loading()) {
         <div class="empty-state">
           <p>No hay usuarios registrados</p>
+        </div>
+      }
+
+      <!-- Modal de Edición -->
+      @if (editingUser()) {
+        <div class="modal-overlay" (click)="closeEditModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Editar Usuario</h2>
+              <button class="btn-close" (click)="closeEditModal()">✕</button>
+            </div>
+            
+            <form (ngSubmit)="saveUser()" class="edit-form">
+              <div class="form-group">
+                <label for="edit-nombre">Nombre</label>
+                <input 
+                  type="text" 
+                  id="edit-nombre"
+                  [(ngModel)]="editForm().nombre"
+                  name="nombre"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="edit-email">Email</label>
+                <input 
+                  type="email" 
+                  id="edit-email"
+                  [(ngModel)]="editForm().email"
+                  name="email"
+                  required
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="edit-telefono">Teléfono</label>
+                <input 
+                  type="tel" 
+                  id="edit-telefono"
+                  [(ngModel)]="editForm().telefono"
+                  name="telefono"
+                  placeholder="+593 99 123 4567"
+                >
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [(ngModel)]="editForm().telefono_validado"
+                    name="telefono_validado"
+                  >
+                  Teléfono validado
+                </label>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="closeEditModal()">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                  @if (saving()) {
+                    Guardando...
+                  } @else {
+                    Guardar Cambios
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       }
     </div>
@@ -231,7 +311,12 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       }
     }
 
-    .btn-delete {
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-edit, .btn-delete {
       background: none;
       border: none;
       cursor: pointer;
@@ -241,8 +326,12 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       transition: background 0.2s;
 
       &:hover {
-        background: var(--danger-color);
+        background: var(--border-color);
       }
+    }
+
+    .btn-delete:hover {
+      background: var(--danger-color);
     }
 
     .loading, .error-message {
@@ -262,6 +351,136 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       padding: 3rem;
       color: var(--text-secondary);
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: var(--surface-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 100%;
+      max-width: 450px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+
+      h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+      }
+
+      .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        color: var(--text-secondary);
+        padding: 0.25rem;
+        border-radius: var(--radius-sm);
+
+        &:hover {
+          background: var(--border-color);
+        }
+      }
+    }
+
+    .edit-form {
+      padding: 1.25rem;
+
+      .form-group {
+        margin-bottom: 1rem;
+
+        label {
+          display: block;
+          margin-bottom: 0.375rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: var(--text-primary);
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"] {
+          width: 100%;
+          padding: 0.625rem;
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          background: var(--background-color);
+          color: var(--text-primary);
+          font-size: 0.875rem;
+
+          &:focus {
+            outline: none;
+            border-color: var(--primary-color);
+          }
+        }
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+      }
+    }
+
+    .btn {
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+
+      &:hover {
+        opacity: 0.9;
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-secondary {
+      background: var(--border-color);
+      color: var(--text-primary);
+
+      &:hover {
+        background: var(--text-secondary);
+        color: white;
+      }
+    }
   `]
 })
 export class UsuariosListComponent implements OnInit {
@@ -270,6 +489,20 @@ export class UsuariosListComponent implements OnInit {
   users = signal<User[]>([]);
   loading = signal(true);
   error = signal<string | null>(null);
+  editingUser = signal<User | null>(null);
+  saving = signal(false);
+
+  editForm = signal<{
+    nombre: string;
+    email: string;
+    telefono: string;
+    telefono_validado: boolean;
+  }>({
+    nombre: '',
+    email: '',
+    telefono: '',
+    telefono_validado: false
+  });
 
   ngOnInit() {
     this.loadUsers();
@@ -287,6 +520,48 @@ export class UsuariosListComponent implements OnInit {
       error: (err) => {
         this.error.set('Error al cargar usuarios');
         this.loading.set(false);
+      }
+    });
+  }
+
+  openEditModal(user: User) {
+    this.editingUser.set(user);
+    this.editForm.set({
+      nombre: user.nombre,
+      email: user.email,
+      telefono: user.telefono || '',
+      telefono_validado: user.telefono_validado
+    });
+  }
+
+  closeEditModal() {
+    this.editingUser.set(null);
+  }
+
+  saveUser() {
+    const user = this.editingUser();
+    if (!user) return;
+
+    const form = this.editForm();
+    this.saving.set(true);
+
+    const update: UpdateUserRequest = {
+      nombre: form.nombre,
+      telefono: form.telefono || undefined,
+      telefono_validado: form.telefono_validado
+    };
+
+    this.userService.updateUser(user.id, update).subscribe({
+      next: (updatedUser) => {
+        this.users.update(users => 
+          users.map(u => u.id === user.id ? updatedUser : u)
+        );
+        this.saving.set(false);
+        this.closeEditModal();
+      },
+      error: () => {
+        this.error.set('Error al guardar cambios');
+        this.saving.set(false);
       }
     });
   }
