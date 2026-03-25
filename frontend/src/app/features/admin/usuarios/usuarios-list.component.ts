@@ -117,6 +117,85 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
         </table>
       </div>
 
+      <!-- Mobile Card View -->
+      <div class="user-cards">
+        @for (user of users(); track user.id) {
+          <div class="user-card" [class.inactive]="!user.activo">
+            <div class="user-card-header">
+              <div>
+                <div class="user-card-name">{{ user.nombre }}</div>
+                <div class="user-card-email">{{ user.email }}</div>
+              </div>
+              <div class="user-card-actions">
+                <button class="btn-edit" (click)="openEditModal(user)" title="Editar">✏️</button>
+                <button class="btn-delete" (click)="deleteUser(user)" title="Eliminar">🗑️</button>
+              </div>
+            </div>
+            <div class="user-card-body">
+              <div class="user-card-field">
+                <span class="user-card-label">Teléfono</span>
+                <span class="user-card-value">
+                  @if (user.telefono) {
+                    {{ user.telefono }}
+                    @if (user.telefono_validado) {
+                      <span class="badge-valid">✓</span>
+                    }
+                  } @else {
+                    <span class="text-muted">Sin teléfono</span>
+                  }
+                </span>
+              </div>
+              <div class="user-card-field">
+                <span class="user-card-label">Rol</span>
+                <select 
+                  [value]="user.rol" 
+                  (change)="updateRole(user, $event)"
+                  class="role-select"
+                  [class.super-admin]="user.rol === 'SUPER_ADMIN'"
+                >
+                  <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                  <option value="SUPERINTENDENTE">SUPERINTENDENTE</option>
+                  <option value="ANCIANO">ANCIANO</option>
+                  <option value="VISITANTE">VISITANTE</option>
+                </select>
+              </div>
+              <div class="user-card-field">
+                <span class="user-card-label">Estado</span>
+                <button 
+                  class="btn-toggle"
+                  [class.active]="user.activo"
+                  [class.inactive]="!user.activo"
+                  (click)="toggleActive(user)"
+                >
+                  {{ user.activo ? 'Activo' : 'Inactivo' }}
+                </button>
+              </div>
+              <div class="user-card-field full-width">
+                <span class="user-card-label">Notificaciones</span>
+                <div class="user-card-notifications">
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [checked]="user.notificaciones_email"
+                      (change)="toggleNotificacion(user, 'email', $event)"
+                    >
+                    📧 Email
+                  </label>
+                  <label class="checkbox-label">
+                    <input 
+                      type="checkbox" 
+                      [checked]="user.notificaciones_whatsapp"
+                      (change)="toggleNotificacion(user, 'whatsapp', $event)"
+                    >
+                    📱 WhatsApp
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+
       @if (users().length === 0 && !loading()) {
         <div class="empty-state">
           <p>No hay usuarios registrados</p>
@@ -197,14 +276,14 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
   `,
   styles: [`
     .page-container {
-      padding: 1.5rem;
+      padding: 1rem;
     }
 
     .page-header {
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
 
       h1 {
-        font-size: 1.75rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-primary);
         margin-bottom: 0.5rem;
@@ -212,11 +291,13 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
 
       .subtitle {
         color: var(--text-secondary);
+        font-size: 0.875rem;
       }
     }
 
     .users-table {
       overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       background: var(--surface-color);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-md);
@@ -224,28 +305,42 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       table {
         width: 100%;
         border-collapse: collapse;
-
-        th, td {
-          padding: 1rem;
-          text-align: left;
-          border-bottom: 1px solid var(--border-color);
-        }
-
-        th {
-          background: var(--background-color);
-          font-weight: 600;
-          color: var(--text-secondary);
-          font-size: 0.875rem;
-        }
-
-        tr:hover {
-          background: var(--background-color);
-        }
-
-        tr.inactive {
-          opacity: 0.6;
-        }
+        min-width: 800px; /* Force horizontal scroll on mobile */
       }
+
+      th, td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+      }
+
+      th {
+        background: var(--background-color);
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      td {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+      }
+
+      tr:hover {
+        background: var(--background-color);
+      }
+
+      tr.inactive {
+        opacity: 0.6;
+      }
+    }
+
+    /* Card view for mobile */
+    .user-cards {
+      display: none;
     }
 
     .badge-valid {
@@ -264,7 +359,10 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       border-radius: var(--radius-sm);
       background: var(--surface-color);
       color: var(--text-primary);
-      font-size: 0.875rem;
+      font-size: 0.75rem;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
 
       &.super-admin {
         background: #fef3c7;
@@ -277,10 +375,11 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       padding: 0.375rem 0.75rem;
       border: none;
       border-radius: var(--radius-sm);
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
+      white-space: nowrap;
 
       &.active {
         background: #d1fae5;
@@ -303,17 +402,20 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       display: flex;
       align-items: center;
       gap: 0.375rem;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       cursor: pointer;
+      white-space: nowrap;
 
       input {
         cursor: pointer;
+        width: 14px;
+        height: 14px;
       }
     }
 
     .action-buttons {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.25rem;
     }
 
     .btn-edit, .btn-delete {
@@ -352,7 +454,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       color: var(--text-secondary);
     }
 
-    /* Modal Styles */
+    /* Modal Styles - Responsive */
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -364,7 +466,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      padding: 1rem;
+      padding: 0.5rem;
     }
 
     .modal-content {
@@ -375,17 +477,18 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       max-width: 450px;
       max-height: 90vh;
       overflow-y: auto;
+      margin: 0.5rem;
     }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.25rem;
+      padding: 1rem;
       border-bottom: 1px solid var(--border-color);
 
       h2 {
-        font-size: 1.25rem;
+        font-size: 1.125rem;
         font-weight: 600;
         color: var(--text-primary);
         margin: 0;
@@ -479,6 +582,185 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
       &:hover {
         background: var(--text-secondary);
         color: white;
+      }
+    }
+
+    /* ========== RESPONSIVE DESIGN ========== */
+    
+    /* Tablet */
+    @media (max-width: 768px) {
+      .page-container {
+        padding: 1rem;
+      }
+
+      .page-header h1 {
+        font-size: 1.25rem;
+      }
+
+      .users-table {
+        border-radius: var(--radius-md);
+        
+        th, td {
+          padding: 0.5rem;
+        }
+
+        th {
+          font-size: 0.7rem;
+        }
+
+        td {
+          font-size: 0.8rem;
+        }
+      }
+
+      .notifications-config {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .checkbox-label {
+        font-size: 0.65rem;
+      }
+    }
+
+    /* Mobile - Card Layout */
+    @media (max-width: 640px) {
+      .page-container {
+        padding: 0.75rem;
+      }
+
+      .page-header {
+        margin-bottom: 1rem;
+        
+        h1 {
+          font-size: 1.25rem;
+        }
+        
+        .subtitle {
+          font-size: 0.8rem;
+        }
+      }
+
+      /* Hide table on mobile, show cards */
+      .users-table table {
+        display: none;
+      }
+
+      .user-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .user-card {
+        background: var(--surface-color);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+      }
+
+      .user-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .user-card-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-primary);
+      }
+
+      .user-card-email {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
+      }
+
+      .user-card-actions {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .user-card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+
+      .user-card-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      .user-card-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        letter-spacing: 0.05em;
+      }
+
+      .user-card-value {
+        font-size: 0.875rem;
+        color: var(--text-primary);
+      }
+
+      .user-card-field.full-width {
+        grid-column: 1 / -1;
+      }
+
+      .user-card-notifications {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+      }
+
+      .modal-content {
+        margin: 0.5rem;
+        max-height: 85vh;
+      }
+
+      .modal-header {
+        padding: 0.875rem;
+        
+        h2 {
+          font-size: 1rem;
+        }
+      }
+
+      .edit-form {
+        padding: 1rem;
+
+        .form-group {
+          margin-bottom: 0.75rem;
+        }
+
+        .modal-footer {
+          flex-direction: column;
+          gap: 0.5rem;
+
+          .btn {
+            width: 100%;
+            text-align: center;
+          }
+        }
+      }
+    }
+
+    /* Extra small mobile */
+    @media (max-width: 380px) {
+      .user-card-body {
+        grid-template-columns: 1fr;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+        gap: 0.25rem;
       }
     }
   `]
