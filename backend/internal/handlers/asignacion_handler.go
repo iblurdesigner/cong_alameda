@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -12,10 +14,14 @@ import (
 
 type AsignacionHandler struct {
 	asignacionService *services.AsignacionService
+	userService       *services.UserService
 }
 
-func NewAsignacionHandler(asignacionService *services.AsignacionService) *AsignacionHandler {
-	return &AsignacionHandler{asignacionService: asignacionService}
+func NewAsignacionHandler(asignacionService *services.AsignacionService, userService *services.UserService) *AsignacionHandler {
+	return &AsignacionHandler{
+		asignacionService: asignacionService,
+		userService:       userService,
+	}
 }
 
 // GetTiposAsignacion returns all assignment types
@@ -98,6 +104,45 @@ func (h *AsignacionHandler) Create(c *fiber.Ctx) error {
 	}); err != nil {
 		return c.Status(500).JSON(dto.ErrorResponse{Error: err.Error()})
 	}
+
+	// Send notification email (async)
+	go func() {
+		// Get user info
+		user, err := h.userService.GetByID(c.Context(), userID)
+		if err != nil || user == nil {
+			log.Printf("[NOTIFICATION] Could not get user for assignment notification: %v", err)
+			return
+		}
+
+		// Get tipo asignacion name
+		tipo, err := h.asignacionService.GetTipoAsignacionByID(c.Context(), tipoID)
+		if err != nil {
+			log.Printf("[NOTIFICATION] Could not get tipo asignacion: %v", err)
+			return
+		}
+
+		// Get week info
+		semana, err := h.asignacionService.GetSemanaByID(c.Context(), semanaID)
+		if err != nil {
+			log.Printf("[NOTIFICATION] Could not get semana: %v", err)
+			return
+		}
+
+		// Format date
+		fecha := semana.FechaInicio.Format("02/01/2006")
+		if req.DiaSemana > 0 && req.DiaSemana <= 7 {
+			fecha += " - Día " + string(rune('0'+req.DiaSemana))
+		}
+
+		obs := ""
+		if req.Observaciones != nil {
+			obs = *req.Observaciones
+		}
+
+		if err := services.GetNotificationService().SendNewAssignmentNotification(user, tipo.Nombre, fecha, obs); err != nil {
+			log.Printf("[NOTIFICATION] Failed to send assignment notification: %v", err)
+		}
+	}()
 
 	return c.Status(201).JSON(fiber.Map{"message": "Asignación creada"})
 }

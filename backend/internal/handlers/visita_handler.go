@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -207,6 +208,44 @@ func (h *VisitaHandler) Create(c *fiber.Ctx) error {
 			})
 		}
 	}
+
+	// Send notification emails (async)
+	go func() {
+		// Get casa info
+		casa, err := h.casaService.GetByID(c.Context(), result.CasaID)
+		if err != nil {
+			log.Printf("[NOTIFICATION] Could not get casa for visit notification: %v", err)
+			return
+		}
+
+		// Build address from casa fields
+		direccion := casa.CallePrincipal + " " + casa.Numeracion
+		if casa.CalleSecundaria != nil && *casa.CalleSecundaria != "" {
+			direccion += " y " + *casa.CalleSecundaria
+		}
+		direccion += ", " + casa.Sector
+
+		// Send to both visitors
+		visitorIDs := []uuid.UUID{result.Visitante1ID, result.Visitante2ID}
+		fecha := result.FechaProgramada.Format("02/01/2006")
+
+		for _, vid := range visitorIDs {
+			user, err := h.userService.GetByID(c.Context(), vid)
+			if err != nil || user == nil {
+				log.Printf("[NOTIFICATION] Could not get visitor %s: %v", vid, err)
+				continue
+			}
+
+			obs := ""
+			if result.Observaciones != nil {
+				obs = *result.Observaciones
+			}
+
+			if err := services.GetNotificationService().SendVisitScheduledNotification(user, direccion, fecha, obs); err != nil {
+				log.Printf("[NOTIFICATION] Failed to send visit notification to %s: %v", user.Email, err)
+			}
+		}
+	}()
 
 	return c.Status(fiber.StatusCreated).JSON(h.visitaToResponse(result))
 }

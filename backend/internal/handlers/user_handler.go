@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -144,6 +146,13 @@ func (h *UserHandler) Create(c *fiber.Ctx) error {
 			Message: "Error al crear usuario",
 		})
 	}
+
+	// Send welcome email notification
+	go func() {
+		if err := services.GetNotificationService().SendUserRegisteredNotification(user); err != nil {
+			log.Printf("[NOTIFICATION] Failed to send welcome email: %v", err)
+		}
+	}()
 
 	return c.Status(fiber.StatusCreated).JSON(dto.ToUserResponse(user))
 }

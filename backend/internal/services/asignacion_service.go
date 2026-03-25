@@ -116,3 +116,11 @@ func (s *AsignacionService) BulkCreate(ctx context.Context, asignaciones []*mode
 func (s *AsignacionService) ClearSemana(ctx context.Context, semanaID uuid.UUID) error {
 	return s.asignacionRepo.DeleteBySemana(ctx, semanaID)
 }
+
+func (s *AsignacionService) GetTipoAsignacionByID(ctx context.Context, id uuid.UUID) (*models.TipoAsignacion, error) {
+	return s.tipoAsignRepo.GetByID(ctx, id)
+}
+
+func (s *AsignacionService) GetSemanaByID(ctx context.Context, id uuid.UUID) (*models.SemanaVisita, error) {
+	return s.semanaRepo.GetByID(ctx, id)
+}

@@ -53,6 +53,18 @@ func main() {
 	visitaService := services.NewVisitaService(visitaRepo, casaRepo, userRepo, notifService)
 	userService := services.NewUserService(userRepo, jwtManager)
 
+	// Initialize email/notification service
+	emailConfig := services.EmailConfig{
+		SMTPHost:     cfg.SMTPHost,
+		SMTPPort:     cfg.SMTPPort,
+		SMTPUsername: cfg.SMTPUsername,
+		SMTPPassword: cfg.SMTPPassword,
+		FromEmail:    cfg.FromEmail,
+		FromName:     cfg.FromName,
+		Enabled:      cfg.SMTPEnabled,
+	}
+	services.InitNotificationService(emailConfig)
+
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(userService)
 	casaHandler := handlers.NewCasaHandler(casaService, userService)
@@ -86,7 +98,7 @@ func main() {
 	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo)
 
 	// Initialize Fase 3 handlers
-	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)
+	asignacionHandler := handlers.NewAsignacionHandler(asignacionService, userService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)

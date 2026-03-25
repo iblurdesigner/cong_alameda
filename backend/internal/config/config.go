@@ -12,6 +12,14 @@ type Config struct {
 	Port        string
 	Env         string
 	FrontendURL string
+	// Email configuration
+	SMTPEnabled  bool
+	SMTPHost     string
+	SMTPPort     string
+	SMTPUsername string
+	SMTPPassword string
+	FromEmail    string
+	FromName     string
 }
 
 func Load() *Config {
@@ -22,7 +30,22 @@ func Load() *Config {
 		Port:        getEnv("PORT", "8080"),
 		Env:         getEnv("ENV", "development"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:4200"),
+		// Email configuration
+		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
+		SMTPPort:     getEnv("SMTP_PORT", "587"),
+		SMTPUsername: getEnv("SMTP_USERNAME", ""),
+		SMTPPassword: getEnv("SMTP_PASSWORD", ""),
+		FromEmail:    getEnv("FROM_EMAIL", "noreply@congalameda.org"),
+		FromName:     getEnv("FROM_NAME", "Congregación Alameda"),
+		SMTPEnabled:  getEnvBool("SMTP_ENABLED", false),
 	}
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	if value := os.Getenv(key); value != "" {
+		return value == "true" || value == "1" || value == "yes"
+	}
+	return defaultValue
 }
 
 func getEnv(key, defaultValue string) string {
