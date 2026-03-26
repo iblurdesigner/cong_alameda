@@ -14,11 +14,13 @@ export interface Asignacion {
   id: string;
   semana_id: string;
   tipo_asignacion_id: string;
-  user_id: string;
+  user_id?: string;
+  grupo_id?: string;
   dia_semana: number;
   observaciones?: string;
   tipo_asignacion?: TipoAsignacion;
   user?: any;
+  grupo?: any;
   created_at: string;
 }
 
@@ -91,9 +93,10 @@ export class AsignacionService {
     });
   }
 
-  updateAsignacion(id: string, userId: string, observaciones?: string) {
+  updateAsignacion(id: string, userId?: string, grupoId?: string, observaciones?: string) {
     return this.http.put(`${environment.apiUrl}/asignaciones/${id}`, {
-      user_id: userId,
+      user_id: userId || null,
+      grupo_id: grupoId || null,
       observaciones: observaciones
     });
   }

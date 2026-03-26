@@ -18,11 +18,16 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           <h1>📅 Asignaciones Semanales</h1>
           <p>Programa el equipo de servicio para cada día de la semana</p>
         </div>
-        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-          <button class="btn btn-primary btn-lg" (click)="openBulkModal()">
-            ➕ Nueva Programación
+        <div class="header-actions">
+          <button class="btn btn-outline" (click)="exportAllToPDF()">
+            📄 Exportar PDF
           </button>
-        }
+          @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+            <button class="btn btn-primary btn-lg" (click)="openBulkModal()">
+              ➕ Nueva Programación
+            </button>
+          }
+        </div>
       </header>
 
       <!-- Calendar -->
@@ -90,9 +95,14 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                     <span class="icono">{{ tipo.icono || '📋' }}</span>
                     <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
                   </div>
-                  @if (asignacion && asignacion.user) {
+                  @if (asignacion && (asignacion.user || asignacion.grupo)) {
                     <div class="assignment-person">
-                      <span class="person-name">{{ asignacion.user.nombre }}</span>
+                      <span class="person-name">
+                        {{ asignacion.user?.nombre || asignacion.grupo?.nombre || 'Asignado' }}
+                        @if (asignacion.grupo) {
+                          <span class="grupo-badge">Grupo</span>
+                        }
+                      </span>
                       @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                         <button class="btn-icon" (click)="editAsignacion(asignacion, tipo, getDayOfWeek(selectedDate!))">
                           ✏️
@@ -150,10 +160,22 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="modal-overlay" (click)="closeAssignModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Gestionar Asignaciones</h2>
+            <h2>{{ assignForm.isEditing ? '✏️ Editar Asignación' : 'Agregar Persona' }}</h2>
             <button class="btn-close" (click)="closeAssignModal()">×</button>
           </div>
           <div class="modal-body">
+            <!-- Show current assignment info when editing -->
+            @if (assignForm.isEditing && editingAsignacion) {
+              <div class="current-assignment-info">
+                <p><strong>Asignación actual:</strong> 
+                  {{ editingAsignacion.user?.nombre || editingAsignacion.grupo?.nombre || 'Sin asignar' }}
+                  @if (editingAsignacion.grupo) {
+                    <span class="grupo-badge">Grupo</span>
+                  }
+                </p>
+              </div>
+            }
+
             <!-- Assignment Type Selector -->
             <div class="form-group">
               <label for="tipoAsignacion">Tipo de Asignación *</label>
@@ -165,23 +187,36 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               </select>
             </div>
 
-            <!-- Show assignments for selected type -->
-            @if (assignForm.tipo_id && getCurrentAssignmentsForTipo().length > 0) {
+            <!-- Show assignments for selected type (only when not editing) -->
+            @if (!assignForm.isEditing && assignForm.tipo_id && getCurrentAssignmentsForTipo().length > 0) {
               <div class="current-assignments">
                 <h4>Personas Asignadas:</h4>
                 @for (assignment of getCurrentAssignmentsForTipo(); track assignment.id) {
                   <div class="assignment-item">
-                    <span>{{ assignment.user?.nombre || 'Usuario' }}</span>
+                    <span>{{ assignment.user?.nombre || assignment.grupo?.nombre || 'Asignado' }}</span>
                     <button class="btn-icon btn-danger" (click)="removeAssignment(assignment.id)">🗑️</button>
                   </div>
                 }
               </div>
             }
 
-            <!-- Add new person -->
+            <!-- Add/Edit person -->
             @if (assignForm.tipo_id) {
+              <!-- Show groups for ASEO_SALON type -->
+              @if (assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4') {
+                <div class="form-group">
+                  <label for="grupoSelect">Seleccionar Grupo:</label>
+                  <select id="grupoSelect" [(ngModel)]="assignForm.grupo_id">
+                    <option value="">Seleccionar grupo...</option>
+                    @for (grupo of getGruposList(); track grupo.id) {
+                      <option [value]="grupo.id">{{ grupo.nombre }} ({{ grupo.numero }})</option>
+                    }
+                  </select>
+                </div>
+              }
+              
               <div class="form-group">
-                <label for="nuevaPersona">Agregar Persona:</label>
+                <label for="nuevaPersona">{{ assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4' ? 'O seleccionar Persona:' : 'Seleccionar Persona:' }}</label>
                 <div class="add-person-row">
                   <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
                     <option value="">Seleccionar persona...</option>
@@ -189,19 +224,25 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                       <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
                     }
                   </select>
-                  <button 
-                    class="btn btn-primary" 
-                    (click)="saveAsignacion()"
-                    [disabled]="!assignForm.user_id"
-                  >
-                    Agregar
-                  </button>
                 </div>
+              </div>
+
+              <div class="form-group">
+                <label for="observaciones">Observaciones:</label>
+                <textarea id="observaciones" [(ngModel)]="assignForm.observaciones" rows="2" 
+                  placeholder="Observaciones opcionales..."></textarea>
               </div>
             }
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" (click)="closeAssignModal()">Cerrar</button>
+            <button class="btn btn-outline" (click)="closeAssignModal()">Cancelar</button>
+            <button 
+              class="btn btn-primary" 
+              (click)="saveAsignacion()"
+              [disabled]="!assignForm.user_id && !assignForm.grupo_id"
+            >
+              {{ assignForm.isEditing ? '💾 Guardar Cambios' : '➕ Agregar' }}
+            </button>
           </div>
         </div>
       </div>
@@ -318,7 +359,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           <div class="modal-body">
             <p class="summary-intro">Se han guardado las siguientes asignaciones:</p>
             
-            @for (semanaData of summaryData; track semanaData.semana.id) {
+            @for (semanaData of getSortedSummaryData(); track semanaData.semana.id) {
               <div class="summary-semana">
                 <h3>{{ semanaData.semana.nombre }}</h3>
                 <p class="date-range">
@@ -463,6 +504,10 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .assignment-item:last-child { margin-bottom: 0; }
     .add-person-row { display: flex; gap: 0.5rem; }
     .add-person-row select { flex: 1; }
+    .current-assignment-info { margin-bottom: 1rem; padding: 1rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); }
+    .current-assignment-info p { margin: 0; color: #1e40af; }
+    .grupo-badge { display: inline-block; margin-left: 0.5rem; padding: 0.125rem 0.5rem; background: #dcfce7; color: #166534; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+    .person-name .grupo-badge { margin-left: 0.5rem; }
     
     /* Summary modal styles */
     .summary-intro { margin-bottom: 1.5rem; color: var(--text-primary); }
@@ -788,7 +833,7 @@ export class AsignacionListComponent implements OnInit {
   editingDiaSemana = -1;
   editingAsignacion: Asignacion | null = null;
   
-  assignForm = { user_id: '', observaciones: '', tipo_id: '' };
+  assignForm = { user_id: '', grupo_id: '', observaciones: '', tipo_id: '', isEditing: false };
   bulkDias: { dia: number; nombre: string; asignaciones: Record<string, string> }[] = [];
   
   // New bulk assignment properties
@@ -953,11 +998,25 @@ export class AsignacionListComponent implements OnInit {
       this.bulkAssignments[tipo.id] = [{ userId: '' }];
     });
     
-    // Load existing assignments for this day of week
-    if (this.allAsignaciones.length > 0) {
+    // Get the week ID that contains this date
+    const targetSemana = this.semanas().find(semana => {
+      const inicio = new Date(semana.fecha_inicio);
+      const fin = new Date(semana.fecha_fin);
+      const targetDate = new Date(date);
+      return targetDate >= inicio && targetDate <= fin;
+    });
+    
+    // Load existing assignments for this specific week AND day of week
+    if (targetSemana && this.allAsignaciones.length > 0) {
       this.allAsignaciones
-        .filter((a: Asignacion) => a.dia_semana === dayOfWeek)
+        .filter((a: Asignacion) => {
+          // Must match the week AND the day of week
+          const matchesSemana = (a as any).semana_id === targetSemana.id;
+          const matchesDia = a.dia_semana === dayOfWeek;
+          return matchesSemana && matchesDia;
+        })
         .forEach((a: Asignacion) => {
+          // Check for user assignments
           if (a.user_id && a.tipo_asignacion_id) {
             if (!this.bulkAssignments[a.tipo_asignacion_id]) {
               this.bulkAssignments[a.tipo_asignacion_id] = [];
@@ -967,6 +1026,18 @@ export class AsignacionListComponent implements OnInit {
               this.bulkAssignments[a.tipo_asignacion_id][0].userId = a.user_id;
             } else {
               this.bulkAssignments[a.tipo_asignacion_id].push({ userId: a.user_id });
+            }
+          }
+          // Check for group assignments (grupo_id)
+          if (a.grupo_id && a.tipo_asignacion_id) {
+            if (!this.bulkAssignments[a.tipo_asignacion_id]) {
+              this.bulkAssignments[a.tipo_asignacion_id] = [];
+            }
+            // Add group with "grupo_" prefix
+            if (this.bulkAssignments[a.tipo_asignacion_id].length === 1 && !this.bulkAssignments[a.tipo_asignacion_id][0].userId) {
+              this.bulkAssignments[a.tipo_asignacion_id][0].userId = 'grupo_' + a.grupo_id;
+            } else {
+              this.bulkAssignments[a.tipo_asignacion_id].push({ userId: 'grupo_' + a.grupo_id });
             }
           }
         });
@@ -1121,7 +1192,7 @@ export class AsignacionListComponent implements OnInit {
     this.editingAsignacion = null;
     // If tipo is provided, set it in the form; otherwise leave empty for user to select
     const tipoId = tipo ? tipo.id : '';
-    this.assignForm = { user_id: '', observaciones: '', tipo_id: tipoId };
+    this.assignForm = { user_id: '', grupo_id: '', observaciones: '', tipo_id: tipoId, isEditing: false };
     this.showAssignModal = true;
   }
   
@@ -1130,9 +1201,11 @@ export class AsignacionListComponent implements OnInit {
     this.editingDiaSemana = diaSemana;
     this.editingAsignacion = asignacion;
     this.assignForm = { 
-      user_id: asignacion.user_id, 
+      user_id: asignacion.user_id || '', 
+      grupo_id: asignacion.grupo_id || '',
       observaciones: asignacion.observaciones || '',
-      tipo_id: tipo ? tipo.id : ''
+      tipo_id: tipo ? tipo.id : '',
+      isEditing: true
     };
     this.showAssignModal = true;
   }
@@ -1176,16 +1249,39 @@ export class AsignacionListComponent implements OnInit {
     this.editingTipo = null;
     this.editingDiaSemana = -1;
     this.editingAsignacion = null;
-    this.assignForm = { user_id: '', observaciones: '', tipo_id: '' };
+    this.assignForm = { user_id: '', grupo_id: '', observaciones: '', tipo_id: '', isEditing: false };
   }
   
   saveAsignacion() {
-    if (!this.assignForm.user_id || !this.assignForm.tipo_id) return;
+    if (!this.assignForm.tipo_id) return;
+    
+    // If editing, update the existing assignment
+    if (this.assignForm.isEditing && this.editingAsignacion) {
+      const userId = this.assignForm.user_id || undefined;
+      const grupoId = this.assignForm.grupo_id || undefined;
+      
+      this.asignacionService.updateAsignacion(
+        this.editingAsignacion.id,
+        userId,
+        grupoId,
+        this.assignForm.observaciones || undefined
+      ).subscribe({
+        next: () => {
+          this.loadSemana();
+          this.closeAssignModal();
+        }
+      });
+      return;
+    }
+    
+    // Otherwise, create new assignment
+    if (!this.assignForm.user_id && !this.assignForm.grupo_id) return;
     
     const asignacion = {
       semana_id: this.selectedSemanaId,
       tipo_asignacion_id: this.assignForm.tipo_id,
-      user_id: this.assignForm.user_id,
+      user_id: this.assignForm.user_id || null,
+      grupo_id: this.assignForm.grupo_id || null,
       dia_semana: this.editingDiaSemana,
       observaciones: this.assignForm.observaciones || undefined
     };
@@ -1195,6 +1291,7 @@ export class AsignacionListComponent implements OnInit {
         this.loadSemana();
         // Reset user selection but keep tipo selected
         this.assignForm.user_id = '';
+        this.assignForm.grupo_id = '';
       }
     });
   }
@@ -1275,12 +1372,13 @@ export class AsignacionListComponent implements OnInit {
       this.bulkAssignments[tipo.id] = [{ userId: '' }];
     });
     
-    // Load existing assignments for this day
+    // Load existing assignments for this day (both users AND grupos)
     if (this.semanaActual && this.semanaActual.asignaciones) {
       const asignaciones = this.semanaActual.asignaciones as Asignacion[];
       asignaciones
         .filter((a: Asignacion) => a.dia_semana === diaSemana)
         .forEach((a: Asignacion) => {
+          // Check for user assignments
           if (a.user_id && a.tipo_asignacion_id) {
             if (!this.bulkAssignments[a.tipo_asignacion_id]) {
               this.bulkAssignments[a.tipo_asignacion_id] = [];
@@ -1290,6 +1388,18 @@ export class AsignacionListComponent implements OnInit {
               this.bulkAssignments[a.tipo_asignacion_id][0].userId = a.user_id;
             } else {
               this.bulkAssignments[a.tipo_asignacion_id].push({ userId: a.user_id });
+            }
+          }
+          // Check for group assignments (grupo_id)
+          if (a.grupo_id && a.tipo_asignacion_id) {
+            if (!this.bulkAssignments[a.tipo_asignacion_id]) {
+              this.bulkAssignments[a.tipo_asignacion_id] = [];
+            }
+            // Add group with "grupo_" prefix
+            if (this.bulkAssignments[a.tipo_asignacion_id].length === 1 && !this.bulkAssignments[a.tipo_asignacion_id][0].userId) {
+              this.bulkAssignments[a.tipo_asignacion_id][0].userId = 'grupo_' + a.grupo_id;
+            } else {
+              this.bulkAssignments[a.tipo_asignacion_id].push({ userId: 'grupo_' + a.grupo_id });
             }
           }
         });
@@ -1452,6 +1562,13 @@ export class AsignacionListComponent implements OnInit {
     this.loadSemana();
   }
   
+  // Get sorted summary data for display (ascending by fecha_inicio)
+  getSortedSummaryData(): any[] {
+    return [...this.summaryData].sort((a: any, b: any) => 
+      new Date(a.semana.fecha_inicio).getTime() - new Date(b.semana.fecha_inicio).getTime()
+    );
+  }
+  
   summaryData: any[] = [];
   showSummaryModalFlag = false;
 
@@ -1599,7 +1716,11 @@ export class AsignacionListComponent implements OnInit {
 
     // Generate content for each week
     const tipos = this.getTiposList();
-    this.summaryData.forEach((semanaData: any) => {
+    // Sort weeks by start date (ascending - oldest first)
+    const sortedSummary = [...this.summaryData].sort((a: any, b: any) => 
+      new Date(a.semana.fecha_inicio).getTime() - new Date(b.semana.fecha_inicio).getTime()
+    );
+    sortedSummary.forEach((semanaData: any) => {
       html += `
         <div class="semana-section">
           <div class="semana-title">${semanaData.semana.nombre}</div>
@@ -1656,6 +1777,257 @@ export class AsignacionListComponent implements OnInit {
       </html>
     `;
 
+    // Open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
+  }
+  
+  exportAllToPDF() {
+    // Load all weeks with their assignments and generate PDF
+    const semanasData: any[] = [];
+    const semanasList = this.semanas();
+    
+    if (semanasList.length === 0) {
+      alert('No hay semanas configuradas');
+      return;
+    }
+    
+    // Collect all assignments from all weeks
+    // Since allAsignaciones already has all data from loadAllAsignaciones, we can group by week
+    const groupedByWeek = new Map<string, any[]>();
+    
+    this.allAsignaciones.forEach((a: Asignacion) => {
+      // Find which week this assignment belongs to
+      const semana = semanasList.find((s: Semana) => {
+        const inicio = new Date(s.fecha_inicio);
+        const fin = new Date(s.fecha_fin);
+        // We don't have the week ID directly in assignment, but we can match by dates
+        // Actually, assignments have semana_id
+        return s.id === (a as any).semana_id;
+      });
+      
+      if (semana) {
+        const key = semana.id;
+        if (!groupedByWeek.has(key)) {
+          groupedByWeek.set(key, []);
+        }
+        groupedByWeek.get(key)!.push(a);
+      }
+    });
+    
+    // Generate PDF HTML with all data
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Asignaciones Semanales - Congregación Alameda</title>
+        <style>
+          @page { size: A4; margin: 1.5cm; }
+          body { 
+            font-family: Arial, sans-serif; 
+            font-size: 11pt; 
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+          }
+          .header h1 {
+            color: #2563eb;
+            margin: 0 0 5px 0;
+            font-size: 24pt;
+          }
+          .header p {
+            color: #666;
+            margin: 0;
+            font-size: 12pt;
+          }
+          .semana-section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+          }
+          .semana-title {
+            background: #2563eb;
+            color: white;
+            padding: 10px 15px;
+            font-size: 14pt;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+            margin-bottom: 10px;
+          }
+          .semana-dates {
+            color: #666;
+            font-size: 10pt;
+            margin-bottom: 15px;
+            padding-left: 15px;
+          }
+          .tabla-asignaciones {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .tabla-asignaciones th {
+            background: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+          }
+          .tabla-asignaciones td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+          }
+          .categoria {
+            font-weight: bold;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+          }
+          .personas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+          }
+          .persona-tag {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10pt;
+          }
+          .grupo-tag {
+            background: #dcfce7;
+            color: #166534;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10pt;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 9pt;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+          }
+          .no-assignments {
+            color: #999;
+            font-style: italic;
+          }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>📅 Asignaciones Semanales</h1>
+          <p>Congregación Alameda - Programa de Servicio</p>
+        </div>
+    `;
+    
+    const tipos = this.getTiposList();
+    
+    // Sort weeks by start date (ascending - oldest first)
+    const sortedSemanas = [...semanasList].sort((a: Semana, b: Semana) => 
+      new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime()
+    );
+    
+    // Generate content for each week
+    sortedSemanas.forEach((semana: Semana) => {
+      const asignaciones = groupedByWeek.get(semana.id) || [];
+      
+      html += `
+        <div class="semana-section">
+          <div class="semana-title">${semana.nombre}</div>
+          <div class="semana-dates">
+            📅 ${this.formatDate(semana.fecha_inicio)} - ${this.formatDate(semana.fecha_fin)}
+          </div>
+          <table class="tabla-asignaciones">
+            <thead>
+              <tr>
+                <th style="width: 25%;">Categoría</th>
+                <th style="width: 75%;">Personas Asignadas</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      tipos.forEach((tipo: TipoAsignacion) => {
+        const tipoAsignaciones = asignaciones.filter((a: Asignacion) => a.tipo_asignacion_id === tipo.id);
+        
+        if (tipoAsignaciones.length > 0) {
+          const personasHtml = tipoAsignaciones.map((a: Asignacion) => {
+            if (a.grupo) {
+              return `<span class="grupo-tag">${a.grupo.nombre}</span>`;
+            }
+            return `<span class="persona-tag">${a.user?.nombre || 'Usuario'}</span>`;
+          }).join('');
+          
+          html += `
+            <tr>
+              <td>
+                <div class="categoria">
+                  <span>${tipo.icono || '📋'}</span>
+                  <span>${this.getTipoNombre(tipo.nombre)}</span>
+                </div>
+              </td>
+              <td>
+                <div class="personas">
+                  ${personasHtml}
+                </div>
+              </td>
+            </tr>
+          `;
+        } else {
+          html += `
+            <tr>
+              <td>
+                <div class="categoria">
+                  <span>${tipo.icono || '📋'}</span>
+                  <span>${this.getTipoNombre(tipo.nombre)}</span>
+                </div>
+              </td>
+              <td>
+                <span class="no-assignments">Sin asignar</span>
+              </td>
+            </tr>
+          `;
+        }
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+    
+    html += `
+        <div class="footer">
+          <p>Generado el ${new Date().toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })} - Congregación Alameda</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
     // Open print dialog
     const printWindow = window.open('', '_blank');
     if (printWindow) {
