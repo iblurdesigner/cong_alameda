@@ -10,164 +10,406 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="page-container">
-      <header class="page-header">
-        <div class="header-content">
-          <h1>Asignaciones Semanales</h1>
-          <p>Programa las asignaciones internas: acomodadores, parqueadero, micrófono, plataforma</p>
+    <div class="asignaciones-page">
+      <!-- Header -->
+      <header class="header">
+        <div class="header-left">
+          <h1>📅 Asignaciones Semanales</h1>
+          <p>Programa el equipo de servicio para cada día de la semana</p>
         </div>
-        @if (authService.isSuperintendente()) {
-          <button class="btn btn-primary" (click)="openBulkModal()">
-            ✏️ Programar Semana
+        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+          <button class="btn btn-primary btn-lg" (click)="openBulkModal()">
+            ➕ Nueva Programación
           </button>
         }
       </header>
-      
-      <div class="filters-bar">
-        <select [(ngModel)]="selectedSemanaId" (ngModelChange)="loadSemana()">
-          <option value="">Seleccionar semana...</option>
-          @for (semana of semanas(); track semana.id) {
-            <option [value]="semana.id">{{ semana.nombre }}</option>
-          }
-        </select>
-      </div>
-      
-      @if (asignacionService.loading()) {
-        <div class="loading">Cargando...</div>
-      } @else if (!selectedSemanaId) {
-        <div class="empty-state">
-          <p>Selecciona una semana para ver sus asignaciones</p>
-        </div>
-      } @else if (semanaActual) {
-        <div class="semana-info">
-          <h2>{{ semanaActual.nombre }}</h2>
-          <span class="date-range">
-            {{ formatDate(semanaActual.fecha_inicio) }} - {{ formatDate(semanaActual.fecha_fin) }}
-          </span>
-        </div>
-        
-        <div class="dias-grid">
-          @for (dia of semanaActual.dias; track dia.id) {
-            <div class="dia-card">
-              <div class="dia-header">
-                <h3>{{ getDiaNombre(dia.dia_semana) }}</h3>
-                <span class="fecha">{{ formatDiaFecha(dia.dia_semana, semanaActual.fecha_inicio) }}</span>
-              </div>
-              
-              <div class="asignaciones-list">
-                @for (tipo of tipos(); track tipo.id) {
-                  <ng-container *ngTemplateOutlet="asignacionItem; context: {tipo: tipo, dia: dia}"></ng-container>
+
+      <!-- Calendar -->
+      <div class="calendar-container">
+        <div class="calendar">
+          <div class="calendar-header">
+            <button class="nav-btn" (click)="previousMonth()">❮</button>
+            <span class="month-title">{{ getMonthName(calendarMonth) }} {{ calendarYear }}</span>
+            <button class="nav-btn" (click)="nextMonth()">❯</button>
+          </div>
+          <div class="weekdays">
+            <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
+          </div>
+          <div class="days">
+            @for (day of calendarDays; track $index) {
+              <button 
+                class="day"
+                [class.other-month]="day.otherMonth"
+                [class.today]="day.isToday"
+                [class.has-assignments]="hasAssignments(day.date)"
+                [class.selected]="isSelectedDay(day.date)"
+                [class.domingo]="getDayOfWeek(day.date) === 0"
+                [class.sabado]="getDayOfWeek(day.date) === 6"
+                (click)="selectDay(day)"
+              >
+                <span class="day-number">{{ day.day }}</span>
+                @if (hasAssignments(day.date)) {
+                  <span class="dot">●</span>
                 }
-              </div>
-            </div>
-          }
-        </div>
-        
-        <ng-template #asignacionItem let-tipo="tipo" let-dia="dia">
-          <ng-container *ngIf="getAsignacionForDiaAndTipo(dia.dia_semana, tipo.id) as asignacion">
-            <div class="asignacion-item" [class.empty]="!asignacion">
-            <div class="tipo-info">
-              <span class="icono">{{ tipo.icono || '📋' }}</span>
-              <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
-            </div>
-            @if (asignacion) {
-              <div class="persona-asignada">
-                <span class="nombre">{{ asignacion.user?.nombre || 'Asignado' }}</span>
-                @if (authService.isSuperintendente()) {
-                  <button class="btn-icon" (click)="editAsignacion(asignacion, tipo, dia.dia_semana)">
-                    ✏️
-                  </button>
-                }
-              </div>
-            } @else {
-              <div class="no-asignado">
-                @if (authService.isSuperintendente()) {
-                  <button class="btn btn-outline btn-sm" (click)="openAssignModal(tipo, dia.dia_semana)">
-                    Asignar
-                  </button>
-                } @else {
-                  <span>Sin asignar</span>
-                }
-              </div>
+              </button>
             }
           </div>
-          </ng-container>
-        </ng-template>
+        </div>
+
+        <!-- Leyenda -->
+        <div class="leyenda">
+          <div class="leyenda-item"><span class="dotLeyenda available"></span> Disponible</div>
+          <div class="leyenda-item"><span class="dotLeyenda selected"></span> Seleccionado</div>
+          <div class="leyenda-item"><span class="dotLeyenda has-assignments"></span> Con asignaciones</div>
+          <div class="leyenda-item"><span class="dotLeyenda weekend"></span> Fin de semana</div>
+        </div>
+      </div>
+
+      <!-- Selected Day Panel -->
+      @if (selectedDate) {
+        <div class="day-panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="day-name">{{ getDiaNombre(getDayOfWeek(selectedDate)) }}</span>
+              <span class="full-date">{{ formatFullDate(selectedDate) }}</span>
+            </div>
+            @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+              <button class="btn btn-primary" (click)="openAssignModal(null!, getDayOfWeek(selectedDate))">
+                ➕ Agregar Persona
+              </button>
+            }
+          </div>
+
+          <!-- Categories Grid -->
+          <div class="categories-grid">
+            @for (tipo of getTiposList(); track tipo.id) {
+              @if (getAsignacionForDayAndTipo(selectedDate!, tipo.id); as asignacion) {
+                <div class="assignment-card">
+                  <div class="assignment-type">
+                    <span class="icono">{{ tipo.icono || '📋' }}</span>
+                    <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
+                  </div>
+                  @if (asignacion && asignacion.user) {
+                    <div class="assignment-person">
+                      <span class="person-name">{{ asignacion.user.nombre }}</span>
+                      @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                        <button class="btn-icon" (click)="editAsignacion(asignacion, tipo, getDayOfWeek(selectedDate!))">
+                          ✏️
+                        </button>
+                      }
+                    </div>
+                  } @else {
+                    <div class="no-assignment">
+                      @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                        <button class="btn btn-outline btn-sm" (click)="openAssignModal(tipo, getDayOfWeek(selectedDate!))">
+                          Asignar
+                        </button>
+                      } @else {
+                        <span>Sin asignar</span>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="assignment-card empty">
+                  <div class="assignment-type">
+                    <span class="icono">{{ tipo.icono || '📋' }}</span>
+                    <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
+                  </div>
+                  <div class="no-assignment">
+                    @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                      <button class="btn btn-outline btn-sm" (click)="openAssignModal(tipo, getDayOfWeek(selectedDate!))">
+                        Asignar
+                      </button>
+                    } @else {
+                      <span>Sin asignar</span>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        </div>
+      } @else {
+        <div class="empty-state">
+          <p>Selecciona un día del calendario para ver sus asignaciones</p>
+        </div>
+      }
+
+      <!-- Legacy week view (hidden, can be removed later) -->
+      @if (false && semanaActual) {
+        <div class="semana-info">
+          <h2>{{ semanaActual.nombre }}</h2>
+        </div>
       }
     </div>
 
     <!-- Assign Modal -->
     @if (showAssignModal) {
       <div class="modal-overlay" (click)="closeAssignModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Asignar - {{ editingTipo ? getTipoNombre(editingTipo.nombre) : '' }}</h2>
+            <h2>Gestionar Asignaciones</h2>
             <button class="btn-close" (click)="closeAssignModal()">×</button>
           </div>
           <div class="modal-body">
+            <!-- Assignment Type Selector -->
             <div class="form-group">
-              <label for="persona">Persona *</label>
-              <select id="persona" [(ngModel)]="assignForm.user_id">
-                <option value="">Seleccionar persona...</option>
-                @for (user of users(); track user.id) {
-                  <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+              <label for="tipoAsignacion">Tipo de Asignación *</label>
+              <select id="tipoAsignacion" [(ngModel)]="assignForm.tipo_id" (ngModelChange)="onTipoChange()">
+                <option value="">Seleccionar tipo...</option>
+                @for (tipo of getTiposList(); track tipo.id) {
+                  <option [value]="tipo.id">{{ tipo.icono }} {{ getTipoNombre(tipo.nombre) }}</option>
                 }
               </select>
             </div>
-            <div class="form-group">
-              <label for="observaciones">Observaciones</label>
-              <textarea id="observaciones" [(ngModel)]="assignForm.observaciones" rows="2"></textarea>
-            </div>
+
+            <!-- Show assignments for selected type -->
+            @if (assignForm.tipo_id && getCurrentAssignmentsForTipo().length > 0) {
+              <div class="current-assignments">
+                <h4>Personas Asignadas:</h4>
+                @for (assignment of getCurrentAssignmentsForTipo(); track assignment.id) {
+                  <div class="assignment-item">
+                    <span>{{ assignment.user?.nombre || 'Usuario' }}</span>
+                    <button class="btn-icon btn-danger" (click)="removeAssignment(assignment.id)">🗑️</button>
+                  </div>
+                }
+              </div>
+            }
+
+            <!-- Add new person -->
+            @if (assignForm.tipo_id) {
+              <div class="form-group">
+                <label for="nuevaPersona">Agregar Persona:</label>
+                <div class="add-person-row">
+                  <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
+                    <option value="">Seleccionar persona...</option>
+                    @for (user of getAvailableUsersForTipo(); track user.id) {
+                      <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                    }
+                  </select>
+                  <button 
+                    class="btn btn-primary" 
+                    (click)="saveAsignacion()"
+                    [disabled]="!assignForm.user_id"
+                  >
+                    Agregar
+                  </button>
+                </div>
+              </div>
+            }
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" (click)="closeAssignModal()">Cancelar</button>
-            <button 
-              class="btn btn-primary" 
-              (click)="saveAsignacion()"
-              [disabled]="!assignForm.user_id"
-            >
-              Asignar
+            <button class="btn btn-outline" (click)="closeAssignModal()">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Bulk Assign Modal - NEW DESIGN -->
+    @if (showBulkModal) {
+      <div class="modal-overlay" (click)="closeBulkModal()">
+        <div class="modal-full" (click)="$event.stopPropagation()">
+          <div class="modal-header-simple">
+            <h2>📅 Programar Asignaciones</h2>
+            <button class="btn-close" (click)="closeBulkModal()">×</button>
+          </div>
+          
+          <div class="modal-content">
+            <!-- Calendar Section -->
+            <div class="calendar-section">
+              <h3>Selecciona una fecha</h3>
+              <div class="mini-calendar">
+                <div class="mini-cal-header">
+                  <button class="nav-btn-sm" (click)="previousMonth()">❮</button>
+                  <span>{{ getMonthName(calendarMonth) }} {{ calendarYear }}</span>
+                  <button class="nav-btn-sm" (click)="nextMonth()">❯</button>
+                </div>
+                <div class="mini-weekdays">
+                  <span>D</span><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span>
+                </div>
+                <div class="mini-days">
+                  @for (day of calendarDays; track $index) {
+                    <button 
+                      class="mini-day"
+                      [class.other-month]="day.otherMonth"
+                      [class.selected]="selectedBulkDate === day.date"
+                      (click)="selectBulkDate(day.date)"
+                    >
+                      {{ day.day }}
+                    </button>
+                  }
+                </div>
+              </div>
+              
+              @if (selectedBulkDate) {
+                <div class="selected-date-display">
+                  <span class="date-label">Fecha seleccionada:</span>
+                  <span class="date-value">{{ formatFullDate(selectedBulkDate) }}</span>
+                </div>
+              }
+            </div>
+
+            <!-- Categories Section -->
+            <div class="categories-section">
+              <h3>Categorías y Personal</h3>
+              
+              @for (tipo of getTiposList(); track tipo.id) {
+                <div class="category-card">
+                  <div class="category-header">
+                    <span class="category-icon">{{ tipo.icono }}</span>
+                    <span class="category-name">{{ getTipoNombre(tipo.nombre) }}</span>
+                  </div>
+                  
+                  <div class="category-assignments">
+                    @for (assignment of getBulkAssignments(tipo.id); track $index) {
+                      <div class="assignment-chip">
+                        <span>{{ getUserName(assignment.userId) }}</span>
+                        <button class="remove-btn" (click)="removeBulkAssignment(tipo.id, $index)">×</button>
+                      </div>
+                    }
+                  </div>
+                  
+                  <div class="add-assignment">
+                    <select [(ngModel)]="newAssignmentUserId[tipo.id]" (change)="addBulkAssignmentFromSelect(tipo.id)">
+                      <option value="">+ Agregar persona...</option>
+                      @for (user of getAvailableUsersForTipo(); track user.id) {
+                        <option [value]="user.id">{{ user.nombre }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="modal-footer-simple">
+            <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
+            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
+              💾 Guardar Asignaciones
             </button>
           </div>
         </div>
       </div>
     }
 
-    <!-- Bulk Assign Modal -->
+    <!-- OLD Bulk Assign Modal (commented out for reference)
     @if (showBulkModal) {
       <div class="modal-overlay" (click)="closeBulkModal()">
-        <div class="modal modal-lg" (click)="$event.stopPropagation()">
+        <div class="modal modal-xl" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Programar Semana Completa</h2>
+            <h2>Programar Asignaciones</h2>
             <button class="btn-close" (click)="closeBulkModal()">×</button>
           </div>
           <div class="modal-body">
-            <p class="modal-info">
-              Esta acción reemplazará todas las asignaciones existentes de la semana seleccionada.
-            </p>
-            @for (dia of bulkDias; track dia.dia) {
-              <div class="bulk-dia">
-                <h4>{{ dia.nombre }}</h4>
-                <div class="bulk-asignaciones">
-                  @for (tipo of tipos(); track tipo.id) {
-                    <div class="bulk-item">
-                      <label>{{ tipo.icono }} {{ getTipoNombre(tipo.nombre) }}</label>
-                      <select [(ngModel)]="dia.asignaciones[tipo.id]">
-                        <option value="">Sin asignar</option>
-                        @for (user of users(); track user.id) {
-                          <option [value]="user.id">{{ user.nombre }}</option>
-                        }
-                      </select>
-                    </div>
-                  }
-                </div>
-              </div>
+            <div class="form-group">
+              <label for="bulkSemana">Seleccionar Semana</label>
+              <select id="bulkSemana" [(ngModel)]="selectedSemanaId" (ngModelChange)="onBulkSemanaChange()">
+                <option value="">Seleccionar semana...</option>
+                @for (semana of semanas(); track semana.id) {
+                  <option [value]="semana.id">{{ semana.nombre }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="selectedBulkDay">Seleccionar Día</label>
+              <select id="selectedBulkDay" [(ngModel)]="selectedBulkDay" (ngModelChange)="onBulkDayChange()">
+                @for (dia of bulkDias; track dia.dia) {
+                  <option [value]="dia.dia">{{ dia.nombre }}</option>
+                }
+              </select>
+            </div>
+
+            @if (getTiposList().length === 0) {
+              <div class="loading">Cargando tipos de asignación...</div>
             }
+            <div class="role-sections">
+              @for (tipo of getTiposList(); track tipo.id) {
+                <div class="role-section">
+                  <div class="role-header">
+                    <span class="role-icon">{{ tipo.icono || '📋' }}</span>
+                    <span class="role-name">{{ getTipoNombre(tipo.nombre) }}</span>
+                    <span class="role-count">({{ getBulkAssignments(tipo.id).length }} asignados)</span>
+                  </div>
+                  
+                  <div class="role-assignments">
+                    @for (assignment of getBulkAssignments(tipo.id); track $index) {
+                      <div class="assignment-row">
+                        <select [(ngModel)]="assignment.userId">
+                          <option value="">Seleccionar persona...</option>
+                          @for (user of getAvailableUsers(tipo.id) || []; track user.id) {
+                            <option [value]="user.id">{{ user.nombre }}</option>
+                          }
+                        </select>
+                        <button class="btn-icon btn-danger" (click)="removeBulkAssignment(tipo.id, $index)">🗑️</button>
+                      </div>
+                    }
+                  </div>
+
+                  <button class="btn btn-outline btn-sm" (click)="addBulkAssignment(tipo.id)">
+                    ➕ Agregar Persona
+                  </button>
+                </div>
+              }
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
             <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
-              Guardar Semana
+              Guardar Asignaciones
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Summary Modal -->
+    @if (showSummaryModalFlag) {
+      <div class="modal-overlay" (click)="closeSummaryModal()">
+        <div class="modal modal-xl" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>✅ Asignaciones Guardadas</h2>
+            <button class="btn-close" (click)="closeSummaryModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <p class="summary-intro">Se han guardado las siguientes asignaciones:</p>
+            
+            @for (semanaData of summaryData; track semanaData.semana.id) {
+              <div class="summary-semana">
+                <h3>{{ semanaData.semana.nombre }}</h3>
+                <p class="date-range">
+                  {{ formatDate(semanaData.semana.fecha_inicio) }} - {{ formatDate(semanaData.semana.fecha_fin) }}
+                </p>
+                
+                @for (tipo of getTiposList(); track tipo.id) {
+                  @if (getAssignmentsForTipoAndSemana(semanaData, tipo.id).length > 0) {
+                    <div class="summary-tipo">
+                      <span class="tipo-icon">{{ tipo.icono }}</span>
+                      <span class="tipo-name">{{ getTipoNombre(tipo.nombre) }}</span>
+                      <div class="tipo-personas">
+                        @for (asig of getAssignmentsForTipoAndSemana(semanaData, tipo.id); track asig.id) {
+                          <span class="person-tag">{{ asig.user?.nombre || 'Usuario' }}</span>
+                        }
+                      </div>
+                    </div>
+                  }
+                }
+              </div>
+            }
+            
+            @if (summaryData.length === 0) {
+              <div class="empty-summary">
+                <p>No hay asignaciones guardadas todavía.</p>
+              </div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="exportToPDF()">
+              📄 Exportar PDF
+            </button>
+            <button class="btn btn-primary" (click)="closeSummaryModal()">
+              Aceptar
             </button>
           </div>
         </div>
@@ -179,14 +421,15 @@ import { AuthService } from '../../core/services/auth.service';
     .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
     .page-header h1 { font-size: 1.75rem; font-weight: 700; }
     .page-header p { color: var(--text-secondary); margin-top: 0.25rem; }
+    .header-actions { display: flex; gap: 0.75rem; }
     .filters-bar { margin-bottom: 1.5rem; }
-    .filters-bar select { padding: 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: white; min-width: 250px; }
+    .filters-bar select { padding: 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-primary); min-width: 250px; }
     .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
     .semana-info { margin-bottom: 1.5rem; }
-    .semana-info h2 { margin: 0; font-size: 1.25rem; }
+    .semana-info h2 { margin: 0; font-size: 1.25rem; color: var(--text-primary); }
     .semana-info .date-range { color: var(--text-secondary); font-size: 0.875rem; }
     .dias-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-    .dia-card { background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; }
+    .dia-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; }
     .dia-header { background: var(--primary-color); color: white; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; }
     .dia-header h3 { margin: 0; font-size: 1rem; font-weight: 600; }
     .dia-header .fecha { font-size: 0.75rem; opacity: 0.9; }
@@ -200,19 +443,20 @@ import { AuthService } from '../../core/services/auth.service';
     .persona-asignada .nombre { font-size: 0.875rem; color: var(--primary-color); }
     .no-asignado { font-size: 0.75rem; color: var(--text-secondary); }
     .btn-icon { padding: 0.25rem 0.375rem; background: transparent; border: 1px solid var(--border-color); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.75rem; }
-    .btn-icon:hover { background: white; }
+    .btn-icon:hover { background: var(--surface-color); }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal { background: white; border-radius: var(--radius-lg); width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
+    .modal { background: var(--surface-color); border-radius: var(--radius-lg); width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; }
     .modal.modal-lg { max-width: 700px; }
+    .modal.modal-xl { max-width: 900px; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); }
-    .modal-header h2 { margin: 0; font-size: 1.25rem; }
-    .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
+    .modal-header h2 { margin: 0; font-size: 1.25rem; color: var(--text-primary); }
+    .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; color: var(--text-primary); }
     .modal-body { padding: 1.5rem; }
     .modal-body .modal-info { background: #fef3c7; border: 1px solid #fcd34d; border-radius: var(--radius-sm); padding: 0.75rem; font-size: 0.875rem; margin-bottom: 1rem; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); }
     .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-primary); }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
     .bulk-dia { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
     .bulk-dia:last-child { border-bottom: none; }
@@ -220,6 +464,366 @@ import { AuthService } from '../../core/services/auth.service';
     .bulk-asignaciones { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     .bulk-item label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
     .bulk-item select { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.875rem; }
+    
+    /* Calendar styles */
+    .calendar-nav { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; }
+    .calendar-nav .nav-btn { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.5rem 1rem; cursor: pointer; font-size: 1.25rem; color: var(--text-primary); }
+    .calendar-nav .nav-btn:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+    .calendar-nav .month-title { margin: 0; font-size: 1.5rem; color: var(--text-primary); min-width: 200px; text-align: center; }
+    .calendar-grid { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 2rem; }
+    .calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); background: var(--primary-color); color: white; }
+    .calendar-header span { padding: 0.75rem; text-align: center; font-weight: 600; font-size: 0.875rem; }
+    .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--border-color); }
+    .calendar-day { background: var(--surface-color); padding: 0.75rem 0.5rem; min-height: 60px; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; transition: all 0.2s; }
+    .calendar-day.other-month { background: var(--background-color); color: var(--text-secondary); opacity: 0.5; cursor: default; }
+    .calendar-day:not(.other-month):hover { background: var(--primary-light); }
+    .calendar-day.today { background: #fef3c7; }
+    .calendar-day.today .day-number { color: #b45309; font-weight: 700; }
+    .calendar-day.selected { background: var(--primary-color); color: white; }
+    .calendar-day.selected .day-number { color: white; }
+    .calendar-day .day-number { font-size: 1rem; font-weight: 500; color: var(--text-primary); }
+    .calendar-day .assignment-dot { font-size: 0.5rem; color: var(--primary-color); }
+    .calendar-day.selected .assignment-dot { color: white; }
+    
+    .selected-day-section { margin-top: 2rem; }
+    .selected-day-section .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 1rem; background: var(--surface-color); border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+    .selected-day-section .day-header h2 { margin: 0; font-size: 1.25rem; color: var(--text-primary); }
+    
+    .assignments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
+    .assignment-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .assignment-card.empty { opacity: 0.6; }
+    .assignment-type { display: flex; align-items: center; gap: 0.5rem; }
+    .assignment-type .icono { font-size: 1.5rem; }
+    .assignment-type .nombre { font-weight: 600; color: var(--text-primary); }
+    .assignment-person { display: flex; align-items: center; justify-content: space-between; }
+    .assignment-person .person-name { color: var(--primary-color); font-weight: 500; }
+    
+    .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; }
+    
+    /* Role sections in bulk modal */
+    .role-sections { display: flex; flex-direction: column; gap: 1.5rem; }
+    .role-section { background: var(--background-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; }
+    .role-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
+    .role-icon { font-size: 1.5rem; }
+    .role-name { font-weight: 600; color: var(--text-primary); font-size: 1.125rem; }
+    .role-count { color: var(--text-secondary); font-size: 0.875rem; margin-left: auto; }
+    .role-assignments { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+    .assignment-row { display: flex; gap: 0.5rem; align-items: center; }
+    .assignment-row select { flex: 1; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--surface-color); color: var(--text-primary); }
+    .btn-danger { color: #dc2626; }
+    .btn-danger:hover { background: #fee2e2; }
+    
+    .modal-lg { max-width: 600px; }
+    .current-assignments { margin: 1rem 0; padding: 1rem; background: var(--background-color); border-radius: var(--radius-md); }
+    .current-assignments h4 { margin: 0 0 0.75rem 0; font-size: 0.875rem; color: var(--text-secondary); }
+    .assignment-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: var(--surface-color); border-radius: var(--radius-sm); margin-bottom: 0.5rem; }
+    .assignment-item:last-child { margin-bottom: 0; }
+    .add-person-row { display: flex; gap: 0.5rem; }
+    .add-person-row select { flex: 1; }
+    
+    /* Summary modal styles */
+    .summary-intro { margin-bottom: 1.5rem; color: var(--text-primary); }
+    .summary-semana { margin-bottom: 1.5rem; padding: 1rem; background: var(--background-color); border-radius: var(--radius-md); }
+    .summary-semana h3 { margin: 0 0 0.5rem 0; color: var(--primary-color); font-size: 1.125rem; }
+    .summary-semana .date-range { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem; }
+    .summary-tipo { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0.5rem; background: var(--surface-color); border-radius: var(--radius-sm); }
+    .summary-tipo .tipo-icon { font-size: 1.25rem; }
+    .summary-tipo .tipo-name { font-weight: 600; color: var(--text-primary); min-width: 120px; }
+    .summary-tipo .tipo-personas { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .person-tag { display: inline-block; padding: 0.25rem 0.5rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-sm); font-size: 0.875rem; }
+    .empty-summary { text-align: center; padding: 2rem; color: var(--text-secondary); }
+    .modal-footer { display: flex; justify-content: space-between; gap: 0.75rem; }
+    
+    /* Main Page Calendar Styles */
+    .asignaciones-page { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; }
+    .header-left h1 { font-size: 1.75rem; font-weight: 700; margin: 0; }
+    .header-left p { color: var(--text-secondary); margin-top: 0.25rem; }
+    .btn-lg { padding: 0.75rem 1.5rem; font-size: 1rem; }
+    
+    .calendar-container {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .calendar { margin-bottom: 1rem; }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .nav-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+    .nav-btn:hover { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+    .month-title { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); }
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.25rem;
+      margin-bottom: 0.5rem;
+    }
+    .weekdays span {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      padding: 0.5rem;
+    }
+    .days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.25rem;
+    }
+    .day {
+      aspect-ratio: 1;
+      border: none;
+      background: var(--background-color);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      border-radius: var(--radius-md);
+      transition: all 0.2s;
+    }
+    .day:hover:not(.other-month) { background: var(--primary-light); }
+    .day.other-month { opacity: 0.4; cursor: default; }
+    .day.today { background: #fef3c7; }
+    .day.today .day-number { color: #b45309; font-weight: 700; }
+    .day.selected { background: var(--primary-color); }
+    .day.selected .day-number { color: white; }
+    .day-number { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
+    .day .dot { font-size: 0.5rem; color: var(--primary-color); }
+    .day.selected .dot { color: white; }
+    .day.Domingo, .day.Sábado { background: rgba(245, 158, 11, 0.1); }
+    .day.selected.Domingo, .day.selected.Sábado { background: var(--primary-color); }
+    
+    .leyenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .leyenda-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); }
+    .dotLeyenda { width: 8px; height: 8px; border-radius: 50%; }
+    .dotLeyenda.available { background: var(--background-color); border: 1px solid var(--border-color); }
+    .dotLeyenda.selected { background: var(--primary-color); }
+    .dotLeyenda.has-assignments { background: var(--primary-color); }
+    .dotLeyenda.weekend { background: rgba(245, 158, 11, 0.3); }
+    
+    .day-panel {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+    }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .panel-title { display: flex; flex-direction: column; }
+    .day-name { font-size: 1.25rem; font-weight: 600; color: var(--primary-color); }
+    .full-date { font-size: 0.875rem; color: var(--text-secondary); }
+    
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .assignment-card {
+      background: var(--background-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+    .assignment-card.empty { opacity: 0.6; }
+    .assignment-type { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .assignment-type .icono { font-size: 1.5rem; }
+    .assignment-type .nombre { font-weight: 600; color: var(--text-primary); }
+    .assignment-person { display: flex; align-items: center; justify-content: space-between; }
+    .assignment-person .person-name { color: var(--primary-color); font-weight: 500; }
+    .no-assignment { text-align: center; padding: 0.5rem; }
+    .no-assignment span { color: var(--text-secondary); font-size: 0.875rem; }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-secondary);
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+    }
+    
+    /* New Bulk Modal Styles */
+    .modal-full {
+      background: var(--surface-color);
+      border-radius: var(--radius-lg);
+      width: 95%;
+      max-width: 1000px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header-simple {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--primary-color);
+      color: white;
+    }
+    .modal-header-simple h2 { margin: 0; font-size: 1.25rem; }
+    .modal-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    .calendar-section {
+      width: 320px;
+      padding: 1.5rem;
+      border-right: 1px solid var(--border-color);
+      background: var(--background-color);
+    }
+    .calendar-section h3 { margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-primary); }
+    .mini-calendar {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+    }
+    .mini-cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+    }
+    .mini-cal-header span { font-weight: 600; font-size: 0.875rem; }
+    .nav-btn-sm {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .nav-btn-sm:hover { background: var(--primary-color); color: white; }
+    .mini-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.25rem;
+    }
+    .mini-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+    .mini-day {
+      aspect-ratio: 1;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.75rem;
+      border-radius: var(--radius-sm);
+    }
+    .mini-day:hover { background: var(--primary-light); }
+    .mini-day.other-month { color: var(--text-secondary); opacity: 0.5; }
+    .mini-day.selected { background: var(--primary-color); color: white; }
+    .selected-date-display {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: var(--surface-color);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--primary-color);
+    }
+    .date-label { display: block; font-size: 0.75rem; color: var(--text-secondary); }
+    .date-value { display: block; font-weight: 600; color: var(--primary-color); margin-top: 0.25rem; }
+    
+    .categories-section {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+    .categories-section h3 { margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-primary); }
+    .category-card {
+      background: var(--background-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .category-icon { font-size: 1.25rem; }
+    .category-name { font-weight: 600; color: var(--text-primary); }
+    .category-assignments {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      min-height: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    .assignment-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      background: var(--primary-light);
+      color: var(--primary-color);
+      border-radius: 999px;
+      font-size: 0.875rem;
+    }
+    .remove-btn {
+      background: transparent;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      padding: 0;
+      font-size: 1rem;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .remove-btn:hover { opacity: 1; }
+    .add-assignment select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--surface-color);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+    .modal-footer-simple {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
   `]
 })
 export class AsignacionListComponent implements OnInit {
@@ -239,15 +843,230 @@ export class AsignacionListComponent implements OnInit {
   editingDiaSemana = -1;
   editingAsignacion: Asignacion | null = null;
   
-  assignForm = { user_id: '', observaciones: '' };
+  assignForm = { user_id: '', observaciones: '', tipo_id: '' };
   bulkDias: { dia: number; nombre: string; asignaciones: Record<string, string> }[] = [];
   
+  // New bulk assignment properties
+  selectedBulkDay = 0;
+  selectedBulkDate: string | null = null;
+  bulkAssignments: { [tipoId: string]: { userId: string }[] } = {};
+  newAssignmentUserId: { [tipoId: string]: string } = {};
+  
   private asignacionMap = signal<Map<string, Asignacion>>(new Map());
+  
+  // Calendar properties
+  calendarMonth = new Date().getMonth();
+  calendarYear = new Date().getFullYear();
+  calendarDays: { day: number; date: string; otherMonth: boolean; isToday: boolean }[] = [];
+  selectedDate: string | null = null;
+  allAsignaciones: Asignacion[] = [];
   
   ngOnInit() {
     this.loadSemanas();
     this.loadTipos();
     this.loadUsers();
+    this.generateCalendar();
+    // Load all assignments after loading weeks
+    setTimeout(() => this.loadAllAsignaciones(), 1000);
+  }
+
+  // Calendar methods
+  generateCalendar() {
+    const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
+    const lastDay = new Date(this.calendarYear, this.calendarMonth + 1, 0);
+    const startDay = firstDay.getDay();
+    const totalDays = lastDay.getDate();
+    
+    const today = new Date();
+    const days: { day: number; date: string; otherMonth: boolean; isToday: boolean }[] = [];
+    
+    // Previous month days
+    const prevMonthLastDay = new Date(this.calendarYear, this.calendarMonth, 0).getDate();
+    for (let i = startDay - 1; i >= 0; i--) {
+      const day = prevMonthLastDay - i;
+      const date = new Date(this.calendarYear, this.calendarMonth - 1, day);
+      days.push({
+        day,
+        date: this.formatDateISO(date),
+        otherMonth: true,
+        isToday: false
+      });
+    }
+    
+    // Current month days
+    for (let day = 1; day <= totalDays; day++) {
+      const date = new Date(this.calendarYear, this.calendarMonth, day);
+      const isToday = date.toDateString() === today.toDateString();
+      days.push({
+        day,
+        date: this.formatDateISO(date),
+        otherMonth: false,
+        isToday
+      });
+    }
+    
+    // Next month days
+    const remainingDays = 42 - days.length;
+    for (let day = 1; day <= remainingDays; day++) {
+      const date = new Date(this.calendarYear, this.calendarMonth + 1, day);
+      days.push({
+        day,
+        date: this.formatDateISO(date),
+        otherMonth: true,
+        isToday: false
+      });
+    }
+    
+    this.calendarDays = days;
+  }
+
+  formatDateISO(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  previousMonth() {
+    this.calendarMonth--;
+    if (this.calendarMonth < 0) {
+      this.calendarMonth = 11;
+      this.calendarYear--;
+    }
+    this.generateCalendar();
+  }
+
+  nextMonth() {
+    this.calendarMonth++;
+    if (this.calendarMonth > 11) {
+      this.calendarMonth = 0;
+      this.calendarYear++;
+    }
+    this.generateCalendar();
+  }
+
+  getMonthName(month: number): string {
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return months[month];
+  }
+
+  selectDay(day: { day: number; date: string; otherMonth: boolean; isToday: boolean }) {
+    if (day.otherMonth) return;
+    this.selectedDate = day.date;
+  }
+
+  isSelectedDay(date: string): boolean {
+    return this.selectedDate === date;
+  }
+
+  hasAssignments(date: string): boolean {
+    if (!this.allAsignaciones.length) return false;
+    const dayOfWeek = new Date(date).getDay();
+    return this.allAsignaciones.some(a => a.dia_semana === dayOfWeek);
+  }
+
+  getDayOfWeek(dateStr: string): number {
+    // Parse date as local time to avoid timezone issues
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    return new Date(year, month, day).getDay();
+  }
+  
+  formatFullDate(dateStr: string): string {
+    // Parse date as local time to avoid timezone issues
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    const date = new Date(year, month, day);
+    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  getAsignacionForDayAndTipo(dateStr: string, tipoId: string): Asignacion | null {
+    const dayOfWeek = this.getDayOfWeek(dateStr);
+    const key = `${dayOfWeek}-${tipoId}`;
+    return this.asignacionMap().get(key) || null;
+  }
+
+  // Bulk modal methods
+  selectBulkDate(date: string) {
+    this.selectedBulkDate = date;
+    // Load existing assignments for this date
+    this.loadBulkAssignmentsForDate(date);
+  }
+
+  loadBulkAssignmentsForDate(date: string) {
+    const dayOfWeek = this.getDayOfWeek(date);
+    
+    // Reset assignments
+    const tiposArray = this.tipos() || [];
+    tiposArray.forEach((tipo: TipoAsignacion) => {
+      this.bulkAssignments[tipo.id] = [{ userId: '' }];
+    });
+    
+    // Load existing assignments for this day of week
+    if (this.allAsignaciones.length > 0) {
+      this.allAsignaciones
+        .filter((a: Asignacion) => a.dia_semana === dayOfWeek)
+        .forEach((a: Asignacion) => {
+          if (a.user_id && a.tipo_asignacion_id) {
+            if (!this.bulkAssignments[a.tipo_asignacion_id]) {
+              this.bulkAssignments[a.tipo_asignacion_id] = [];
+            }
+            // Add existing assignments (skip the first empty one)
+            if (this.bulkAssignments[a.tipo_asignacion_id].length === 1 && !this.bulkAssignments[a.tipo_asignacion_id][0].userId) {
+              this.bulkAssignments[a.tipo_asignacion_id][0].userId = a.user_id;
+            } else {
+              this.bulkAssignments[a.tipo_asignacion_id].push({ userId: a.user_id });
+            }
+          }
+        });
+    }
+  }
+
+  getUserName(userId: string): string {
+    const user = this.users().find(u => u.id === userId);
+    return user ? user.nombre : 'Usuario';
+  }
+
+  addBulkAssignmentFromSelect(tipoId: string) {
+    const userId = this.newAssignmentUserId[tipoId];
+    if (userId) {
+      if (!this.bulkAssignments[tipoId]) {
+        this.bulkAssignments[tipoId] = [];
+      }
+      // Find first empty slot
+      const emptySlot = this.bulkAssignments[tipoId].findIndex(a => !a.userId);
+      if (emptySlot >= 0) {
+        this.bulkAssignments[tipoId][emptySlot].userId = userId;
+      } else {
+        this.bulkAssignments[tipoId].push({ userId });
+      }
+      // Reset select
+      this.newAssignmentUserId[tipoId] = '';
+    }
+  }
+
+  // Load all assignments from all weeks
+  loadAllAsignaciones() {
+    // Load assignments for each week
+    this.semanas().forEach(semana => {
+      this.asignacionService.loadAsignacionesBySemana(semana.id).subscribe({
+        next: (data) => {
+          if (data && data.asignaciones) {
+            this.allAsignaciones = [...this.allAsignaciones, ...data.asignaciones];
+            data.asignaciones.forEach(a => {
+              const key = `${a.dia_semana}-${a.tipo_asignacion_id}`;
+              this.asignacionMap().set(key, a);
+            });
+            this.asignacionMap.set(new Map(this.asignacionMap()));
+          }
+        }
+      });
+    });
   }
   
   loadSemanas() {
@@ -303,13 +1122,21 @@ export class AsignacionListComponent implements OnInit {
   }
   
   formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    // Parse date as local time to avoid timezone issues
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    return new Date(year, month, day).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
   
   formatDiaFecha(diaSemana: number, fechaInicio: string): string {
-    const start = new Date(fechaInicio);
-    const fecha = new Date(start);
-    fecha.setDate(start.getDate() + diaSemana);
+    // Parse date as local time to avoid timezone issues
+    const parts = fechaInicio.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    const fecha = new Date(year, month, day + diaSemana);
     return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
   
@@ -317,7 +1144,9 @@ export class AsignacionListComponent implements OnInit {
     this.editingTipo = tipo;
     this.editingDiaSemana = diaSemana;
     this.editingAsignacion = null;
-    this.assignForm = { user_id: '', observaciones: '' };
+    // If tipo is provided, set it in the form; otherwise leave empty for user to select
+    const tipoId = tipo ? tipo.id : '';
+    this.assignForm = { user_id: '', observaciones: '', tipo_id: tipoId };
     this.showAssignModal = true;
   }
   
@@ -325,8 +1154,41 @@ export class AsignacionListComponent implements OnInit {
     this.editingTipo = tipo;
     this.editingDiaSemana = diaSemana;
     this.editingAsignacion = asignacion;
-    this.assignForm = { user_id: asignacion.user_id, observaciones: asignacion.observaciones || '' };
+    this.assignForm = { 
+      user_id: asignacion.user_id, 
+      observaciones: asignacion.observaciones || '',
+      tipo_id: tipo ? tipo.id : ''
+    };
     this.showAssignModal = true;
+  }
+
+  onTipoChange() {
+    // Reset user selection when tipo changes
+    this.assignForm.user_id = '';
+  }
+
+  getCurrentAssignmentsForTipo(): Asignacion[] {
+    if (!this.assignForm.tipo_id || !this.semanaActual || !this.semanaActual.asignaciones) {
+      return [];
+    }
+    return this.semanaActual.asignaciones.filter(
+      (a: Asignacion) => a.tipo_asignacion_id === this.assignForm.tipo_id && a.dia_semana === this.editingDiaSemana
+    );
+  }
+
+  getAvailableUsersForTipo(): any[] {
+    // Return all users that are not already assigned for this tipo and day
+    const assigned = this.getCurrentAssignmentsForTipo();
+    const assignedIds = assigned.map(a => a.user_id);
+    return this.getUsersList().filter(u => !assignedIds.includes(u.id));
+  }
+
+  removeAssignment(assignmentId: string) {
+    this.asignacionService.deleteAsignacion(assignmentId).subscribe({
+      next: () => {
+        this.loadSemana();
+      }
+    });
   }
   
   closeAssignModal() {
@@ -334,14 +1196,15 @@ export class AsignacionListComponent implements OnInit {
     this.editingTipo = null;
     this.editingDiaSemana = -1;
     this.editingAsignacion = null;
+    this.assignForm = { user_id: '', observaciones: '', tipo_id: '' };
   }
   
   saveAsignacion() {
-    if (!this.assignForm.user_id) return;
+    if (!this.assignForm.user_id || !this.assignForm.tipo_id) return;
     
     const asignacion = {
       semana_id: this.selectedSemanaId,
-      tipo_asignacion_id: this.editingTipo!.id,
+      tipo_asignacion_id: this.assignForm.tipo_id,
       user_id: this.assignForm.user_id,
       dia_semana: this.editingDiaSemana,
       observaciones: this.assignForm.observaciones || undefined
@@ -350,40 +1213,410 @@ export class AsignacionListComponent implements OnInit {
     this.asignacionService.createAsignacion(asignacion as any).subscribe({
       next: () => {
         this.loadSemana();
-        this.closeAssignModal();
+        // Reset user selection but keep tipo selected
+        this.assignForm.user_id = '';
       }
     });
   }
   
   openBulkModal() {
-    if (!this.selectedSemanaId) {
-      alert('Selecciona una semana primero');
-      return;
-    }
+    // Don't require week selection - user can select in modal
     this.bulkDias = [0, 1, 2, 3, 4, 5, 6].map(dia => ({ dia, nombre: this.getDiaNombre(dia), asignaciones: {} }));
+    
+    // Initialize bulk assignments for each type with at least one empty slot
+    this.bulkAssignments = {};
+    this.newAssignmentUserId = {};
+    this.selectedBulkDate = null;
+    
+    const tiposArray = this.tipos() || [];
+    tiposArray.forEach((tipo: TipoAsignacion) => {
+      this.bulkAssignments[tipo.id] = [{ userId: '' }];
+      this.newAssignmentUserId[tipo.id] = '';
+    });
+    
+    // Select today's date by default
+    const today = this.formatDateISO(new Date());
+    this.selectBulkDate(today);
+    
     this.showBulkModal = true;
+  }
+  
+  onBulkSemanaChange() {
+    if (this.selectedSemanaId) {
+      this.loadSemana();
+    }
   }
   
   closeBulkModal() {
     this.showBulkModal = false;
   }
   
+  onBulkDayChange() {
+    this.loadBulkAssignmentsForDay(this.selectedBulkDay);
+  }
+  
+  loadBulkAssignmentsForDay(diaSemana: number) {
+    // Reset assignments
+    const tiposArray = this.tipos() || [];
+    tiposArray.forEach((tipo: TipoAsignacion) => {
+      this.bulkAssignments[tipo.id] = [{ userId: '' }];
+    });
+    
+    // Load existing assignments for this day
+    if (this.semanaActual && this.semanaActual.asignaciones) {
+      const asignaciones = this.semanaActual.asignaciones as Asignacion[];
+      asignaciones
+        .filter((a: Asignacion) => a.dia_semana === diaSemana)
+        .forEach((a: Asignacion) => {
+          if (a.user_id && a.tipo_asignacion_id) {
+            if (!this.bulkAssignments[a.tipo_asignacion_id]) {
+              this.bulkAssignments[a.tipo_asignacion_id] = [];
+            }
+            // Add existing assignments (skip the first empty one)
+            if (this.bulkAssignments[a.tipo_asignacion_id].length === 1 && !this.bulkAssignments[a.tipo_asignacion_id][0].userId) {
+              this.bulkAssignments[a.tipo_asignacion_id][0].userId = a.user_id;
+            } else {
+              this.bulkAssignments[a.tipo_asignacion_id].push({ userId: a.user_id });
+            }
+          }
+        });
+    }
+  }
+  
+  getBulkAssignments(tipoId: string): { userId: string }[] {
+    return this.bulkAssignments[tipoId] || [];
+  }
+  
+  addBulkAssignment(tipoId: string) {
+    if (!this.bulkAssignments[tipoId]) {
+      this.bulkAssignments[tipoId] = [];
+    }
+    this.bulkAssignments[tipoId].push({ userId: '' });
+  }
+  
+  removeBulkAssignment(tipoId: string, index: number) {
+    if (this.bulkAssignments[tipoId] && this.bulkAssignments[tipoId].length > 1) {
+      this.bulkAssignments[tipoId].splice(index, 1);
+    } else {
+      // Don't remove the last one, just clear it
+      this.bulkAssignments[tipoId][0].userId = '';
+    }
+  }
+  
+  getAvailableUsers(tipoId: string): any[] {
+    // Return all users (you could filter by role if needed)
+    return this.users();
+  }
+  
   saveBulkAsignaciones() {
+    if (!this.selectedBulkDate) {
+      alert('Por favor selecciona una fecha');
+      return;
+    }
+    
+    const diaSemana = this.getDayOfWeek(this.selectedBulkDate);
     const asignaciones: any[] = [];
-    this.bulkDias.forEach(dia => {
-      this.tipos().forEach(tipo => {
-        const userId = dia.asignaciones[tipo.id];
-        if (userId) {
-          asignaciones.push({ tipo_asignacion_id: tipo.id, user_id: userId, dia_semana: dia.dia });
+    const tiposArray = this.tipos() || [];
+    
+    tiposArray.forEach((tipo: TipoAsignacion) => {
+      const assignments = this.bulkAssignments[tipo.id] || [];
+      assignments.forEach(assignment => {
+        if (assignment.userId) {
+          asignaciones.push({ 
+            tipo_asignacion_id: tipo.id, 
+            user_id: assignment.userId, 
+            dia_semana: diaSemana,
+            fecha: this.selectedBulkDate
+          });
         }
       });
     });
     
-    this.asignacionService.bulkCreateAsignaciones(this.selectedSemanaId, asignaciones).subscribe({
+    if (asignaciones.length === 0) {
+      alert('Debes asignar al menos una persona');
+      return;
+    }
+    
+    // Save each assignment - for date-based we need to find the right week
+    this.saveDateBasedAssignments(asignaciones);
+  }
+  
+  saveDateBasedAssignments(asignaciones: any[]) {
+    // Find which week contains this date
+    const targetDate = new Date(this.selectedBulkDate!);
+    let targetSemana = this.semanas().find(semana => {
+      const inicio = new Date(semana.fecha_inicio);
+      const fin = new Date(semana.fecha_fin);
+      return targetDate >= inicio && targetDate <= fin;
+    });
+    
+    // If no week found, create a simple save using the first available week
+    if (!targetSemana && this.semanas().length > 0) {
+      targetSemana = this.semanas()[0];
+    }
+    
+    if (!targetSemana) {
+      alert('No hay semanas configuradas. Por favor configura las semanas primero.');
+      return;
+    }
+    
+    // Save to the found week
+    this.asignacionService.bulkCreateAsignaciones(targetSemana.id, asignaciones).subscribe({
       next: () => {
-        this.loadSemana();
-        this.closeBulkModal();
+        // Reload and show summary
+        this.loadAllAsignaciones();
+        setTimeout(() => this.loadAllWeeksForSummary(), 500);
+      },
+      error: (err) => {
+        console.error('Error saving assignments:', err);
+        alert('Error al guardar las asignaciones');
       }
     });
+  }
+  
+  // Load all weeks for summary
+  loadAllWeeksForSummary() {
+    let loadedCount = 0;
+    const summaryData: any[] = [];
+    
+    this.semanas().forEach(semana => {
+      this.asignacionService.loadAsignacionesBySemana(semana.id).subscribe({
+        next: (data: any) => {
+          if (data && data.asignaciones && data.asignaciones.length > 0) {
+            summaryData.push({
+              semana: semana,
+              asignaciones: data.asignaciones
+            });
+          }
+          loadedCount++;
+          if (loadedCount === this.semanas().length) {
+            this.showSummaryModal(summaryData);
+          }
+        }
+      });
+    });
+    
+    // If no weeks, still close modal
+    if (this.semanas().length === 0) {
+      this.closeBulkModal();
+    }
+  }
+  
+  showSummaryModal(summaryData: any[]) {
+    this.summaryData = summaryData;
+    this.showBulkModal = false;
+    this.showSummaryModalFlag = true;
+  }
+  
+  closeSummaryModal() {
+    this.showSummaryModalFlag = false;
+    this.summaryData = [];
+    this.loadSemana();
+  }
+  
+  summaryData: any[] = [];
+  showSummaryModalFlag = false;
+
+  // Helper methods to safely get lists
+  getUsersList(): any[] {
+    const u = this.users();
+    return Array.isArray(u) ? u : [];
+  }
+
+  getTiposList(): TipoAsignacion[] {
+    const t = this.tipos();
+    if (Array.isArray(t) && t.length > 0) {
+      return t;
+    }
+    // Fallback default tipos if not loaded yet (including ASEO_SALON)
+    return [
+      { id: '1', nombre: 'ACOMODADOR_SALON', icono: '🪑', descripcion: 'Acomodador' },
+      { id: '2', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
+      { id: '3', nombre: 'MICROFONO', icono: '🎤', descripcion: 'Micrófono' },
+      { id: '4', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
+      { id: '5', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' }
+    ] as TipoAsignacion[];
+  }
+  
+  getAssignmentsForTipoAndSemana(semanaData: any, tipoId: string): any[] {
+    if (!semanaData.asignaciones) return [];
+    return semanaData.asignaciones.filter((a: any) => a.tipo_asignacion_id === tipoId);
+  }
+  
+  exportToPDF() {
+    // Generate print-friendly HTML
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Asignaciones Semanales - Congregación Alameda</title>
+        <style>
+          @page { size: A4; margin: 1.5cm; }
+          body { 
+            font-family: Arial, sans-serif; 
+            font-size: 11pt; 
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 15px;
+          }
+          .header h1 {
+            color: #2563eb;
+            margin: 0 0 5px 0;
+            font-size: 24pt;
+          }
+          .header p {
+            color: #666;
+            margin: 0;
+            font-size: 12pt;
+          }
+          .semana-section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+          }
+          .semana-title {
+            background: #2563eb;
+            color: white;
+            padding: 10px 15px;
+            font-size: 14pt;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+            margin-bottom: 10px;
+          }
+          .semana-dates {
+            color: #666;
+            font-size: 10pt;
+            margin-bottom: 15px;
+            padding-left: 15px;
+          }
+          .tabla-asignaciones {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .tabla-asignaciones th {
+            background: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+          }
+          .tabla-asignaciones td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            vertical-align: top;
+          }
+          .categoria {
+            font-weight: bold;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+          }
+          .personas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+          }
+          .persona-tag {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10pt;
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #999;
+            font-size: 9pt;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+          }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>📅 Asignaciones Semanales</h1>
+          <p>Congregación Alameda - Programa de Servicio</p>
+        </div>
+    `;
+
+    // Generate content for each week
+    const tipos = this.getTiposList();
+    this.summaryData.forEach((semanaData: any) => {
+      html += `
+        <div class="semana-section">
+          <div class="semana-title">${semanaData.semana.nombre}</div>
+          <div class="semana-dates">
+            📅 ${this.formatDate(semanaData.semana.fecha_inicio)} - ${this.formatDate(semanaData.semana.fecha_fin)}
+          </div>
+          <table class="tabla-asignaciones">
+            <thead>
+              <tr>
+                <th style="width: 25%;">Categoría</th>
+                <th style="width: 75%;">Personas Asignadas</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      
+      tipos.forEach((tipo: any) => {
+        const asignaciones = this.getAssignmentsForTipoAndSemana(semanaData, tipo.id);
+        if (asignaciones.length > 0) {
+          const personas = asignaciones.map((a: any) => 
+            `<span class="persona-tag">${a.user?.nombre || 'Usuario'}</span>`
+          ).join('');
+          
+          html += `
+            <tr>
+              <td>
+                <span class="categoria">${tipo.icono} ${this.getTipoNombre(tipo.nombre)}</span>
+              </td>
+              <td>
+                <div class="personas">${personas}</div>
+              </td>
+            </tr>
+          `;
+        }
+      });
+      
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    html += `
+        <div class="footer">
+          <p>Generado el ${new Date().toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })} - Congregación Alameda</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
   }
 }
