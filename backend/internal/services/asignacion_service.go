@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"errors"
+	"log"
 
 	"cong-alameda-backend/internal/models"
 	"cong-alameda-backend/internal/repositories"
@@ -14,6 +16,7 @@ type AsignacionService struct {
 	semanaRepo     *repositories.SemanaRepository
 	diaRepo        *repositories.DiaSemanaRepository
 	userRepo       *repositories.UserRepository
+	grupoRepo      *repositories.GrupoRepository
 }
 
 func NewAsignacionService(
@@ -22,6 +25,7 @@ func NewAsignacionService(
 	semanaRepo *repositories.SemanaRepository,
 	diaRepo *repositories.DiaSemanaRepository,
 	userRepo *repositories.UserRepository,
+	grupoRepo *repositories.GrupoRepository,
 ) *AsignacionService {
 	return &AsignacionService{
 		asignacionRepo: asignacionRepo,
@@ -29,6 +33,7 @@ func NewAsignacionService(
 		semanaRepo:     semanaRepo,
 		diaRepo:        diaRepo,
 		userRepo:       userRepo,
+		grupoRepo:      grupoRepo,
 	}
 }
 
@@ -52,18 +57,21 @@ func (s *AsignacionService) GetSemanaConAsignaciones(ctx context.Context, semana
 	// Get semana
 	semana, err := s.semanaRepo.GetByID(ctx, semanaID)
 	if err != nil {
+		log.Printf("[ERROR] GetByID(semana) failed: %v", err)
 		return nil, err
 	}
 
 	// Get dias
 	dias, err := s.diaRepo.GetBySemanaID(ctx, semanaID)
 	if err != nil {
+		log.Printf("[ERROR] GetBySemanaID(dia) failed: %v", err)
 		return nil, err
 	}
 
 	// Get asignaciones
 	asignaciones, err := s.asignacionRepo.GetBySemana(ctx, semanaID)
 	if err != nil {
+		log.Printf("[ERROR] GetBySemana(asignacion) failed: %v", err)
 		return nil, err
 	}
 
@@ -75,14 +83,23 @@ func (s *AsignacionService) GetSemanaConAsignaciones(ctx context.Context, semana
 }
 
 func (s *AsignacionService) Create(ctx context.Context, asignacion *models.AsignacionSemanal) error {
-	// Validate user exists
-	_, err := s.userRepo.GetByID(ctx, asignacion.UserID)
-	if err != nil {
-		return err
+	// Validate either user OR grupo is provided
+	if asignacion.UserID != nil {
+		_, err := s.userRepo.GetByID(ctx, *asignacion.UserID)
+		if err != nil {
+			return err
+		}
+	} else if asignacion.GrupoID != nil {
+		_, err := s.grupoRepo.GetByID(ctx, *asignacion.GrupoID)
+		if err != nil {
+			return err
+		}
+	} else {
+		return errors.New("debe especificar user_id o grupo_id")
 	}
 
 	// Validate tipo exists
-	_, err = s.tipoAsignRepo.GetByID(ctx, asignacion.TipoAsignacionID)
+	_, err := s.tipoAsignRepo.GetByID(ctx, asignacion.TipoAsignacionID)
 	if err != nil {
 		return err
 	}
@@ -90,14 +107,21 @@ func (s *AsignacionService) Create(ctx context.Context, asignacion *models.Asign
 	return s.asignacionRepo.Create(ctx, asignacion)
 }
 
-func (s *AsignacionService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, observaciones *string) error {
-	// Validate user exists
-	_, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		return err
+func (s *AsignacionService) Update(ctx context.Context, id uuid.UUID, userID *uuid.UUID, grupoID *uuid.UUID, observaciones *string) error {
+	// Validate either user OR grupo is provided
+	if userID != nil {
+		_, err := s.userRepo.GetByID(ctx, *userID)
+		if err != nil {
+			return err
+		}
+	} else if grupoID != nil {
+		_, err := s.grupoRepo.GetByID(ctx, *grupoID)
+		if err != nil {
+			return err
+		}
 	}
 
-	return s.asignacionRepo.Update(ctx, id, userID, observaciones)
+	return s.asignacionRepo.Update(ctx, id, userID, grupoID, observaciones)
 }
 
 func (s *AsignacionService) Delete(ctx context.Context, id uuid.UUID) error {

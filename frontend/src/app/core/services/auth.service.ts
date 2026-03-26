@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { map } from 'rxjs/operators';
 
 export interface User {
   id: string;
@@ -84,6 +85,12 @@ export class AuthService {
   }
 
   getUsers() {
-    return this.http.get<User[]>(`${environment.apiUrl}/users`);
+    return this.http.get<{ data: User[] }>(`${environment.apiUrl}/users`)
+      .pipe(
+        // Handle both formats: { data: User[] } or User[]
+        // map response to extract data if wrapped
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        map((res: any) => res.data || res)
+      );
   }
 }

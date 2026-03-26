@@ -17,14 +17,15 @@ type TipoAsignacion struct {
 
 // AsignacionSemanal represents a weekly internal assignment
 type AsignacionSemanal struct {
-	ID               uuid.UUID `json:"id"`
-	SemanaID         uuid.UUID `json:"semana_id"`
-	TipoAsignacionID uuid.UUID `json:"tipo_asignacion_id"`
-	UserID           uuid.UUID `json:"user_id"`
-	DiaSemana        int       `json:"dia_semana"`
-	Observaciones    *string   `json:"observaciones,omitempty"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	ID               uuid.UUID  `json:"id"`
+	SemanaID         uuid.UUID  `json:"semana_id"`
+	TipoAsignacionID uuid.UUID  `json:"tipo_asignacion_id"`
+	UserID           *uuid.UUID `json:"user_id,omitempty"`
+	GrupoID          *uuid.UUID `json:"grupo_id,omitempty"`
+	DiaSemana        int        `json:"dia_semana"`
+	Observaciones    *string    `json:"observaciones,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 // AsignacionDetail includes related data
@@ -32,6 +33,7 @@ type AsignacionDetail struct {
 	AsignacionSemanal
 	TipoAsignacion *TipoAsignacion `json:"tipo_asignacion,omitempty"`
 	User           *User           `json:"user,omitempty"`
+	Grupo          *Grupo          `json:"grupo,omitempty"`
 	Semana         *SemanaVisita   `json:"semana,omitempty"`
 }
 

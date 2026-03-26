@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AsignacionService, TipoAsignacion, Asignacion } from '../../core/services/asignacion.service';
 import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
+import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
 @Component({
   selector: 'app-asignacion-list',
@@ -271,12 +272,25 @@ import { AuthService } from '../../core/services/auth.service';
                   </div>
                   
                   <div class="add-assignment">
-                    <select [(ngModel)]="newAssignmentUserId[tipo.id]" (change)="addBulkAssignmentFromSelect(tipo.id)">
-                      <option value="">+ Agregar persona...</option>
-                      @for (user of getAvailableUsersForTipo(); track user.id) {
-                        <option [value]="user.id">{{ user.nombre }}</option>
-                      }
-                    </select>
+                    @if (isAseoSalon(tipo.nombre)) {
+                      <select [(ngModel)]="newAssignmentUserId[tipo.id]" (change)="addBulkAssignmentFromSelect(tipo.id)">
+                        <option value="">+ Agregar grupo...</option>
+                        @for (grupo of getGruposList(); track grupo.id) {
+                          <option [value]="'grupo_' + grupo.id">{{ grupo.nombre }}</option>
+                        } @empty {
+                          <option value="">No hay grupos</option>
+                        }
+                      </select>
+                    } @else {
+                      <select [(ngModel)]="newAssignmentUserId[tipo.id]" (change)="addBulkAssignmentFromSelect(tipo.id)">
+                        <option value="">+ Agregar persona...</option>
+                        @for (user of getAllUsers(); track user.id) {
+                          <option [value]="user.id">{{ user.nombre }}</option>
+                        } @empty {
+                          <option value="">No hay usuarios</option>
+                        }
+                      </select>
+                    }
                   </div>
                 </div>
               }
@@ -287,77 +301,6 @@ import { AuthService } from '../../core/services/auth.service';
             <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
             <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
               💾 Guardar Asignaciones
-            </button>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- OLD Bulk Assign Modal (commented out for reference)
-    @if (showBulkModal) {
-      <div class="modal-overlay" (click)="closeBulkModal()">
-        <div class="modal modal-xl" (click)="$event.stopPropagation()">
-          <div class="modal-header">
-            <h2>Programar Asignaciones</h2>
-            <button class="btn-close" (click)="closeBulkModal()">×</button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="bulkSemana">Seleccionar Semana</label>
-              <select id="bulkSemana" [(ngModel)]="selectedSemanaId" (ngModelChange)="onBulkSemanaChange()">
-                <option value="">Seleccionar semana...</option>
-                @for (semana of semanas(); track semana.id) {
-                  <option [value]="semana.id">{{ semana.nombre }}</option>
-                }
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="selectedBulkDay">Seleccionar Día</label>
-              <select id="selectedBulkDay" [(ngModel)]="selectedBulkDay" (ngModelChange)="onBulkDayChange()">
-                @for (dia of bulkDias; track dia.dia) {
-                  <option [value]="dia.dia">{{ dia.nombre }}</option>
-                }
-              </select>
-            </div>
-
-            @if (getTiposList().length === 0) {
-              <div class="loading">Cargando tipos de asignación...</div>
-            }
-            <div class="role-sections">
-              @for (tipo of getTiposList(); track tipo.id) {
-                <div class="role-section">
-                  <div class="role-header">
-                    <span class="role-icon">{{ tipo.icono || '📋' }}</span>
-                    <span class="role-name">{{ getTipoNombre(tipo.nombre) }}</span>
-                    <span class="role-count">({{ getBulkAssignments(tipo.id).length }} asignados)</span>
-                  </div>
-                  
-                  <div class="role-assignments">
-                    @for (assignment of getBulkAssignments(tipo.id); track $index) {
-                      <div class="assignment-row">
-                        <select [(ngModel)]="assignment.userId">
-                          <option value="">Seleccionar persona...</option>
-                          @for (user of getAvailableUsers(tipo.id) || []; track user.id) {
-                            <option [value]="user.id">{{ user.nombre }}</option>
-                          }
-                        </select>
-                        <button class="btn-icon btn-danger" (click)="removeBulkAssignment(tipo.id, $index)">🗑️</button>
-                      </div>
-                    }
-                  </div>
-
-                  <button class="btn btn-outline btn-sm" (click)="addBulkAssignment(tipo.id)">
-                    ➕ Agregar Persona
-                  </button>
-                </div>
-              }
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
-            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
-              Guardar Asignaciones
             </button>
           </div>
         </div>
@@ -830,10 +773,12 @@ export class AsignacionListComponent implements OnInit {
   asignacionService = inject(AsignacionService);
   semanaService = inject(SemanaService);
   authService = inject(AuthService);
+  grupoService = inject(GrupoService);
   
   semanas = signal<Semana[]>([]);
   users = signal<any[]>([]);
   tipos = signal<TipoAsignacion[]>([]);
+  grupos = signal<Grupo[]>([]);
   semanaActual: any = null;
   
   selectedSemanaId = '';
@@ -865,6 +810,7 @@ export class AsignacionListComponent implements OnInit {
     this.loadSemanas();
     this.loadTipos();
     this.loadUsers();
+    this.loadGrupos();
     this.generateCalendar();
     // Load all assignments after loading weeks
     setTimeout(() => this.loadAllAsignaciones(), 1000);
@@ -1028,6 +974,13 @@ export class AsignacionListComponent implements OnInit {
   }
 
   getUserName(userId: string): string {
+    // Check if it's a grupo (userId starts with "grupo_")
+    if (userId.startsWith('grupo_')) {
+      const grupoId = userId.replace('grupo_', '');
+      const grupo = this.grupos().find(g => g.id === grupoId);
+      return grupo ? grupo.nombre : 'Grupo';
+    }
+    // Otherwise it's a regular user
     const user = this.users().find(u => u.id === userId);
     return user ? user.nombre : 'Usuario';
   }
@@ -1080,8 +1033,30 @@ export class AsignacionListComponent implements OnInit {
   }
   
   loadUsers() {
+    console.log('Loading users...');
     this.authService.getUsers().subscribe({
-      next: (res: any) => this.users.set(res)
+      next: (res: any) => {
+        console.log('Users loaded:', res);
+        this.users.set(res);
+      },
+      error: (err) => {
+        console.error('Error loading users:', err);
+      }
+    });
+  }
+  
+  loadGrupos() {
+    console.log('Loading grupos...');
+    this.grupoService.loadGrupos().subscribe({
+      next: (res: any) => {
+        console.log('Grupos loaded:', res);
+        // Extract data from response if it's wrapped
+        const gruposData = res.data || res;
+        this.grupos.set(gruposData);
+      },
+      error: (err) => {
+        console.error('Error loading grupos:', err);
+      }
     });
   }
   
@@ -1183,6 +1158,11 @@ export class AsignacionListComponent implements OnInit {
     return this.getUsersList().filter(u => !assignedIds.includes(u.id));
   }
 
+  getAllUsers(): any[] {
+    // Return all registered users (no filtering)
+    return this.getUsersList();
+  }
+
   removeAssignment(assignmentId: string) {
     this.asignacionService.deleteAsignacion(assignmentId).subscribe({
       next: () => {
@@ -1220,25 +1200,58 @@ export class AsignacionListComponent implements OnInit {
   }
   
   openBulkModal() {
-    // Don't require week selection - user can select in modal
-    this.bulkDias = [0, 1, 2, 3, 4, 5, 6].map(dia => ({ dia, nombre: this.getDiaNombre(dia), asignaciones: {} }));
-    
+    console.log('openBulkModal called!');
     // Initialize bulk assignments for each type with at least one empty slot
+    this.bulkDias = [0, 1, 2, 3, 4, 5, 6].map(dia => ({ dia, nombre: this.getDiaNombre(dia), asignaciones: {} }));
     this.bulkAssignments = {};
     this.newAssignmentUserId = {};
     this.selectedBulkDate = null;
     
     const tiposArray = this.tipos() || [];
+    console.log('tiposArray in modal:', tiposArray);
+    // Use tipo.id (UUID from database) as the key - this is CRITICAL
     tiposArray.forEach((tipo: TipoAsignacion) => {
       this.bulkAssignments[tipo.id] = [{ userId: '' }];
       this.newAssignmentUserId[tipo.id] = '';
+      console.log(`Initialized bulkAssignments[${tipo.id}] for tipo:`, tipo.nombre);
     });
     
-    // Select today's date by default
-    const today = this.formatDateISO(new Date());
-    this.selectBulkDate(today);
-    
-    this.showBulkModal = true;
+    // Always reload users and grupos to ensure we have the latest
+    console.log('Loading users and grupos...');
+    this.authService.getUsers().subscribe({
+      next: (res: any) => {
+        console.log('Users loaded in bulk modal:', res);
+        this.users.set(res);
+        
+        // Also load grupos
+        this.grupoService.loadGrupos().subscribe({
+          next: (gruposRes: any) => {
+            console.log('Grupos loaded in bulk modal:', gruposRes);
+            const gruposData = gruposRes.data || gruposRes;
+            this.grupos.set(gruposData);
+            // Select today's date by default
+            const today = this.formatDateISO(new Date());
+            this.selectBulkDate(today);
+            // Now show the modal AFTER users and grupos are loaded
+            this.showBulkModal = true;
+          },
+          error: (err) => {
+            console.error('Error loading grupos in bulk modal:', err);
+            // Show modal anyway
+            const today = this.formatDateISO(new Date());
+            this.selectBulkDate(today);
+            this.showBulkModal = true;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error loading users in bulk modal:', err);
+        // Show modal anyway, even if users fail to load
+        const today = this.formatDateISO(new Date());
+        this.selectBulkDate(today);
+        this.showBulkModal = true;
+      }
+    });
   }
   
   onBulkSemanaChange() {
@@ -1316,21 +1329,46 @@ export class AsignacionListComponent implements OnInit {
     
     const diaSemana = this.getDayOfWeek(this.selectedBulkDate);
     const asignaciones: any[] = [];
-    const tiposArray = this.tipos() || [];
     
-    tiposArray.forEach((tipo: TipoAsignacion) => {
-      const assignments = this.bulkAssignments[tipo.id] || [];
+    console.log('saveBulkAsignaciones - tipos():', this.tipos());
+    console.log('saveBulkAsignaciones - bulkAssignments:', this.bulkAssignments);
+    
+    // Iterate over bulkAssignments keys instead of tipos
+    const tipoIds = Object.keys(this.bulkAssignments);
+    console.log('tipoIds (should be UUIDs):', tipoIds);
+    console.log('tipos:', this.tipos());
+    
+    tipoIds.forEach(tipoId => {
+      const assignments = this.bulkAssignments[tipoId] || [];
+      // tipoId should now be the UUID from the database
+      console.log('Processing tipoId:', tipoId, 'assignments:', assignments);
+      
       assignments.forEach(assignment => {
         if (assignment.userId) {
-          asignaciones.push({ 
-            tipo_asignacion_id: tipo.id, 
-            user_id: assignment.userId, 
-            dia_semana: diaSemana,
-            fecha: this.selectedBulkDate
-          });
+          // Check if it's a group (starts with "grupo_")
+          if (assignment.userId.startsWith('grupo_')) {
+            asignaciones.push({ 
+              tipo_asignacion_id: tipoId, 
+              grupo_id: assignment.userId.replace('grupo_', ''),
+              user_id: null,
+              dia_semana: diaSemana,
+              fecha: this.selectedBulkDate
+            });
+          } else {
+            // It's a regular user
+            asignaciones.push({ 
+              tipo_asignacion_id: tipoId, 
+              user_id: assignment.userId,
+              grupo_id: null,
+              dia_semana: diaSemana,
+              fecha: this.selectedBulkDate
+            });
+          }
         }
       });
     });
+    
+    console.log('Final asignaciones to save:', asignaciones);
     
     if (asignaciones.length === 0) {
       alert('Debes asignar al menos una persona');
@@ -1423,6 +1461,15 @@ export class AsignacionListComponent implements OnInit {
     return Array.isArray(u) ? u : [];
   }
 
+  getGruposList(): Grupo[] {
+    const g = this.grupos();
+    return Array.isArray(g) ? g : [];
+  }
+
+  isAseoSalon(nombre: string): boolean {
+    return nombre === 'ASEO_SALON';
+  }
+
   getTiposList(): TipoAsignacion[] {
     const t = this.tipos();
     if (Array.isArray(t) && t.length > 0) {
@@ -1430,11 +1477,11 @@ export class AsignacionListComponent implements OnInit {
     }
     // Fallback default tipos if not loaded yet (including ASEO_SALON)
     return [
-      { id: '1', nombre: 'ACOMODADOR_SALON', icono: '🪑', descripcion: 'Acomodador' },
-      { id: '2', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
-      { id: '3', nombre: 'MICROFONO', icono: '🎤', descripcion: 'Micrófono' },
-      { id: '4', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
-      { id: '5', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' }
+      { id: '9bb8d1a0-f9dd-48fa-932a-229090f4e2aa', nombre: 'ACOMODADOR_SALON', icono: '🪑', descripcion: 'Acomodador' },
+      { id: '96014a5f-834e-44fd-92af-73d36850eb88', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
+      { id: 'de3076d0-5896-4ee6-a113-41212893856e', nombre: 'MICROFONO', icono: '🎤', descripcion: 'Micrófono' },
+      { id: '74c7a6e6-a3aa-4bd8-a129-7b1c2a2c1b99', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
+      { id: 'b10c74a7-ba4c-4a71-b639-1248aa404eb4', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' }
     ] as TipoAsignacion[];
   }
   

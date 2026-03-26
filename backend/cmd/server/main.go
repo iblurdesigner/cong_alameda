@@ -95,7 +95,7 @@ func main() {
 	asignacionRepo := repositories.NewAsignacionRepository(db.Pool)
 
 	// Initialize Fase 3 services
-	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo)
+	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo, grupoRepo)
 
 	// Initialize Fase 3 handlers
 	asignacionHandler := handlers.NewAsignacionHandler(asignacionService, userService)
@@ -232,10 +232,10 @@ func main() {
 	asignaciones := protected.Group("/asignaciones")
 	asignaciones.Get("/", asignacionHandler.GetByUser)
 	asignaciones.Get("/semana/:semanaId", asignacionHandler.GetBySemana)
-	asignaciones.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Create)
-	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.BulkCreate)
-	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Update)
-	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Delete)
+	asignaciones.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Create)
+	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.BulkCreate)
+	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Update)
+	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Delete)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

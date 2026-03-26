@@ -249,11 +249,12 @@ func ToUserResponse(u *models.User) UserResponse {
 // ========== Asignacion DTOs ==========
 
 type AsignacionRequest struct {
-	SemanaID         uuid.UUID `json:"semana_id"`
-	TipoAsignacionID uuid.UUID `json:"tipo_asignacion_id"`
-	UserID           uuid.UUID `json:"user_id"`
-	DiaSemana        int       `json:"dia_semana"`
-	Observaciones    *string   `json:"observaciones,omitempty"`
+	SemanaID         uuid.UUID  `json:"semana_id"`
+	TipoAsignacionID uuid.UUID  `json:"tipo_asignacion_id"`
+	UserID           *uuid.UUID `json:"user_id,omitempty"`
+	GrupoID          *uuid.UUID `json:"grupo_id,omitempty"`
+	DiaSemana        int        `json:"dia_semana"`
+	Observaciones    *string    `json:"observaciones,omitempty"`
 }
 
 func AsignacionToModel(req *AsignacionRequest) models.AsignacionSemanal {
@@ -262,6 +263,7 @@ func AsignacionToModel(req *AsignacionRequest) models.AsignacionSemanal {
 		SemanaID:         req.SemanaID,
 		TipoAsignacionID: req.TipoAsignacionID,
 		UserID:           req.UserID,
+		GrupoID:          req.GrupoID,
 		DiaSemana:        req.DiaSemana,
 		Observaciones:    req.Observaciones,
 	}
