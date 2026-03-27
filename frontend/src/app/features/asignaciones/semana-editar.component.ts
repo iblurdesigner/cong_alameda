@@ -31,69 +31,60 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         </div>
       </header>
 
-      <!-- Week Grid - 7 Days -->
-      <div class="week-grid">
-        @for (day of weekDays; track day.diaSemana) {
-          <div class="day-column" [class.weekend]="day.diaSemana === 0 || day.diaSemana === 6">
-            <div class="day-header">
-              <span class="day-name">{{ getDiaNombre(day.diaSemana) }}</span>
-              <span class="day-date">{{ day.fecha }}</span>
-            </div>
-            
-            <div class="day-assignments">
-              @for (tipo of tipos(); track tipo.id) {
-                @if (getAsignacionForDay(day.diaSemana, tipo.id); as asignacion) {
-                  <div class="assignment-card" [class.empty]="!asignacion.user && !asignacion.grupo">
-                    <div class="assignment-type">
-                      <span class="icono">{{ tipo.icono || '📋' }}</span>
-                      <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
-                    </div>
-                    @if (asignacion.user || asignacion.grupo) {
-                      <div class="assignment-person">
-                        <span class="person-name">
-                          {{ asignacion.user?.nombre || asignacion.grupo?.nombre || 'Asignado' }}
-                          @if (asignacion.grupo) {
-                            <span class="grupo-badge">Grupo</span>
-                          }
-                        </span>
-                        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                          <button class="btn-icon" (click)="editAsignacion(asignacion, tipo, day.diaSemana)">
-                            ✏️
-                          </button>
-                        }
-                      </div>
-                    } @else {
-                      <div class="no-assignment">
-                        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                          <button class="btn btn-outline btn-sm" (click)="openAssignModal(tipo, day.diaSemana)">
-                            Asignar
-                          </button>
-                        } @else {
-                          <span>Sin asignar</span>
-                        }
-                      </div>
-                    }
-                  </div>
-                } @else {
-                  <div class="assignment-card empty">
-                    <div class="assignment-type">
-                      <span class="icono">{{ tipo.icono || '📋' }}</span>
-                      <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
-                    </div>
-                    <div class="no-assignment">
+      <!-- Resumen: Lista de Personas con sus Asignaciones -->
+      <div class="resumen-lista">
+        @for (tipo of tipos(); track tipo.id) {
+          @if (getPersonasConAsignaciones(tipo.id); as personas) {
+            @if (personas.length > 0) {
+              <div class="tipo-seccion">
+                <h3 class="tipo-titulo">
+                  <span class="icono">{{ tipo.icono || '📋' }}</span>
+                  {{ getTipoNombre(tipo.nombre) }}
+                </h3>
+                
+                <div class="personas-list">
+                  @for (persona of personas; track persona.diaSemana + '-' + persona.userId + '-' + persona.grupoId) {
+                    <div class="persona-card">
+                      <span class="persona-nombre">{{ persona.nombre }}</span>
+                      <span class="persona-dia">{{ getDiaNombre(persona.diaSemana) }}</span>
+                      @if (persona.esGrupo) {
+                        <span class="grupo-badge">Grupo</span>
+                      }
                       @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                        <button class="btn btn-outline btn-sm" (click)="openAssignModal(tipo, day.diaSemana)">
-                          Asignar
+                        <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
+                          ✏️
                         </button>
-                      } @else {
-                        <span>Sin asignar</span>
                       }
                     </div>
-                  </div>
-                }
-              }
-            </div>
-          </div>
+                  }
+                </div>
+              </div>
+            }
+          }
+        }
+        
+        <!-- Mostrar también los días sin asignar -->
+        @for (tipo of tipos(); track tipo.id) {
+          @if (getDiasSinAsignar(tipo.id); as dias) {
+            @if (dias.length > 0) {
+              <div class="tipo-seccion sin-asignar">
+                <h3 class="tipo-titulo">
+                  <span class="icono">{{ tipo.icono || '📋' }}</span>
+                  {{ getTipoNombre(tipo.nombre) }} - Sin Asignar
+                </h3>
+                <div class="dias-sin-asignar">
+                  @for (dia of dias; track dia) {
+                    <span class="dia-sin-badge">
+                      {{ getDiaNombre(dia) }}
+                      @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                        <button class="btn-add-small" (click)="openAssignModalByTipoAndDia(tipo.id, dia)">+</button>
+                      }
+                    </span>
+                  }
+                </div>
+              </div>
+            }
+          }
         }
       </div>
 
@@ -212,106 +203,108 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       margin-top: 0.25rem;
     }
     
-    /* Week Grid */
-    .week-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0.75rem;
+    /* Resumen Lista - Diseño simple */
+    .resumen-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .day-column {
+    .tipo-seccion {
       background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      overflow: hidden;
+      padding: 1rem;
     }
-    .day-column.weekend {
-      border-color: var(--dot-weekend);
-      border-width: 2px;
+    .tipo-seccion.sin-asignar {
+      border-color: var(--warning-color);
+      background: rgba(245, 158, 11, 0.05);
     }
-    .day-header {
-      background: var(--primary-color);
-      color: white;
-      padding: 0.75rem;
-      text-align: center;
-    }
-    .day-column.weekend .day-header {
-      background: var(--dot-weekend);
-    }
-    .day-name {
-      display: block;
+    .tipo-titulo {
+      font-size: 1rem;
       font-weight: 600;
-      font-size: 0.875rem;
-    }
-    .day-date {
-      display: block;
-      font-size: 0.75rem;
-      opacity: 0.9;
-    }
-    
-    .day-assignments {
-      padding: 0.5rem;
+      color: var(--text-primary);
+      margin: 0 0 0.75rem 0;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       gap: 0.5rem;
-      max-height: 500px;
-      overflow-y: auto;
     }
-    
-    .assignment-card {
+    .tipo-titulo .icono {
+      font-size: 1.25rem;
+    }
+    .personas-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .persona-card {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
       background: var(--background-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
-      padding: 0.5rem;
     }
-    .assignment-card.empty {
-      opacity: 0.6;
-    }
-    .assignment-type {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      margin-bottom: 0.25rem;
-    }
-    .assignment-type .icono {
-      font-size: 1rem;
-    }
-    .assignment-type .nombre {
-      font-size: 0.75rem;
-      font-weight: 600;
+    .persona-nombre {
+      font-weight: 500;
       color: var(--text-primary);
     }
-    .assignment-person {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.25rem;
-    }
-    .assignment-person .person-name {
+    .persona-dia {
       font-size: 0.75rem;
-      color: var(--primary-color);
-      font-weight: 500;
-    }
-    .no-assignment {
-      text-align: center;
-    }
-    .no-assignment span {
-      font-size: 0.625rem;
       color: var(--text-secondary);
+      background: var(--surface-color);
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--radius-sm);
     }
-    .btn-sm {
-      padding: 0.25rem 0.5rem;
-      font-size: 0.625rem;
-    }
-    
     .grupo-badge {
       display: inline-block;
-      margin-left: 0.25rem;
       padding: 0.125rem 0.375rem;
       background: #dcfce7;
       color: #166534;
-      border-radius: 12px;
+      border-radius: 8px;
       font-size: 0.625rem;
       font-weight: 500;
+    }
+    .btn-edit {
+      padding: 0.125rem 0.25rem;
+      font-size: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      cursor: pointer;
+    }
+    .btn-edit:hover {
+      background: var(--primary-light);
+    }
+    .dias-sin-asignar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .dia-sin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.5rem;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid var(--warning-color);
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      color: var(--warning-color);
+    }
+    .btn-add-small {
+      padding: 0 0.25rem;
+      font-size: 0.75rem;
+      background: transparent;
+      border: none;
+      color: var(--warning-color);
+      cursor: pointer;
+    }
+    .btn-add-small:hover {
+      font-weight: bold;
+    }
+    .sin-asignar .tipo-titulo {
+      color: var(--warning-color);
     }
     
     /* Modal */
@@ -558,6 +551,63 @@ export class SemanaEditarComponent implements OnInit {
 
   getAsignacionForDay(diaSemana: number, tipoId: string): Asignacion | null {
     return this.asignaciones().find(a => a.dia_semana === diaSemana && a.tipo_asignacion_id === tipoId) || null;
+  }
+
+  // Obtiene las personas asignadas para un tipo específico
+  getPersonasConAsignaciones(tipoId: string): { nombre: string; diaSemana: number; esGrupo: boolean; userId?: string; grupoId?: string; asignacionId: string }[] {
+    const tipoAsignaciones = this.asignaciones().filter(a => a.tipo_asignacion_id === tipoId);
+    const result: { nombre: string; diaSemana: number; esGrupo: boolean; userId?: string; grupoId?: string; asignacionId: string }[] = [];
+    
+    for (const asignacion of tipoAsignaciones) {
+      if (asignacion.user) {
+        result.push({
+          nombre: asignacion.user.nombre,
+          diaSemana: asignacion.dia_semana,
+          esGrupo: false,
+          userId: asignacion.user_id,
+          asignacionId: asignacion.id
+        });
+      }
+      if (asignacion.grupo) {
+        result.push({
+          nombre: asignacion.grupo.nombre,
+          diaSemana: asignacion.dia_semana,
+          esGrupo: true,
+          grupoId: asignacion.grupo_id,
+          asignacionId: asignacion.id
+        });
+      }
+    }
+    
+    // Ordenar por día de la semana
+    return result.sort((a, b) => a.diaSemana - b.diaSemana);
+  }
+
+  // Obtiene los días sin asignar para un tipo específico
+  getDiasSinAsignar(tipoId: string): number[] {
+    const diasAsignados = this.asignaciones()
+      .filter(a => a.tipo_asignacion_id === tipoId)
+      .map(a => a.dia_semana);
+    
+    const todosDias = [0, 1, 2, 3, 4, 5, 6]; // Lunes a Domingo
+    return todosDias.filter(dia => !diasAsignados.includes(dia));
+  }
+
+  // Abre el modal de asignación para un tipo y día específicos
+  openAssignModalByTipoAndDia(tipoId: string, diaSemana: number) {
+    const tipo = this.tipos().find(t => t.id === tipoId);
+    if (tipo) {
+      this.openAssignModal(tipo, diaSemana);
+    }
+  }
+
+  // Edita una asignación directa por ID
+  editAsignacionDirecta(asignacionId: string, tipoId: string, diaSemana: number) {
+    const asignacion = this.asignaciones().find(a => a.id === asignacionId);
+    const tipo = this.tipos().find(t => t.id === tipoId);
+    if (asignacion && tipo) {
+      this.editAsignacion(asignacion, tipo, diaSemana);
+    }
   }
 
   goBack() {
