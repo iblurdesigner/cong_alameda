@@ -19,6 +19,12 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  
+  // Calendar dot states
+  --dot-available: #94a3b8;
+  --dot-selected: #3b82f6;
+  --dot-assignments: #10b981;
+  --dot-weekend: #f59e0b;
 }
 
 // Dark mode variables
@@ -38,6 +44,12 @@
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  
+  // Calendar dot states - optimized for dark mode
+  --dot-available: #475569;
+  --dot-selected: #60a5fa;
+  --dot-assignments: #34d399;
+  --dot-weekend: #fbbf24;
 }
 
 * {

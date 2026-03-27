@@ -104,14 +104,15 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                   [class.today]="day.isToday"
                   [class.has-assignments]="hasAssignments(day.date)"
                   [class.selected]="isSelectedDay(day.date)"
-                  [class.domingo]="getDayOfWeek(day.date) === 0"
-                  [class.sabado]="getDayOfWeek(day.date) === 6"
+                  [class.weekend]="getDayOfWeek(day.date) === 0 || getDayOfWeek(day.date) === 6"
                   (click)="selectDay(day)"
                 >
-                  <span class="day-number">{{ day.day }}</span>
-                  @if (hasAssignments(day.date)) {
-                    <span class="dot">●</span>
-                  }
+                  <span class="day-number" 
+                        [class.with-assignments]="hasAssignments(day.date)"
+                        [class.selected]="isSelectedDay(day.date)"
+                        [class.weekend]="getDayOfWeek(day.date) === 0 || getDayOfWeek(day.date) === 6">
+                    {{ day.day }}
+                  </span>
                 </button>
               }
             </div>
@@ -119,10 +120,22 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
           <!-- Leyenda -->
           <div class="leyenda">
-            <div class="leyenda-item"><span class="dotLeyenda available"></span> Disponible</div>
-            <div class="leyenda-item"><span class="dotLeyenda selected"></span> Seleccionado</div>
-            <div class="leyenda-item"><span class="dotLeyenda has-assignments"></span> Con asignaciones</div>
-            <div class="leyenda-item"><span class="dotLeyenda weekend"></span> Fin de semana</div>
+            <div class="leyenda-item">
+              <span class="leyenda-badge normal"></span>
+              <span>Disponible</span>
+            </div>
+            <div class="leyenda-item">
+              <span class="leyenda-badge selected"></span>
+              <span>Seleccionado</span>
+            </div>
+            <div class="leyenda-item">
+              <span class="leyenda-badge has-assignments"></span>
+              <span>Con asignaciones</span>
+            </div>
+            <div class="leyenda-item">
+              <span class="leyenda-badge weekend"></span>
+              <span>Fin de semana</span>
+            </div>
           </div>
         </div>
 
@@ -652,12 +665,48 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .day.today { background: #fef3c7; }
     .day.today .day-number { color: #b45309; font-weight: 700; }
     .day.selected { background: var(--primary-color); }
-    .day.selected .day-number { color: white; }
-    .day-number { font-size: 0.875rem; font-weight: 500; color: var(--text-primary); }
-    .day .dot { font-size: 0.5rem; color: var(--primary-color); }
-    .day.selected .dot { color: white; }
-    .day.Domingo, .day.Sábado { background: rgba(245, 158, 11, 0.1); }
-    .day.selected.Domingo, .day.selected.Sábado { background: var(--primary-color); }
+    .day.selected .day-number { color: var(--primary-color); }
+    .day.weekend { background: rgba(245, 158, 11, 0.15); }
+    .day.selected.weekend { background: var(--primary-color); }
+    
+    // Badge/globo alrededor del número
+    .day-number {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+    
+    // Estado: día con asignaciones
+    .day-number.with-assignments {
+      background: var(--dot-assignments);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 0 10px var(--dot-assignments);
+    }
+    
+    // Estado: fin de semana
+    .day-number.weekend:not(.selected) {
+      color: var(--dot-weekend);
+      font-weight: 600;
+    }
+    .day-number.weekend.with-assignments {
+      background: var(--dot-assignments);
+      box-shadow: 0 0 10px var(--dot-assignments);
+    }
+    
+    // Estado: seleccionado
+    .day-number.selected {
+      background: white;
+      color: var(--primary-color);
+      font-weight: 700;
+    }
     
     .leyenda {
       display: flex;
@@ -667,11 +716,11 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       border-top: 1px solid var(--border-color);
     }
     .leyenda-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--text-secondary); }
-    .dotLeyenda { width: 8px; height: 8px; border-radius: 50%; }
-    .dotLeyenda.available { background: var(--background-color); border: 1px solid var(--border-color); }
-    .dotLeyenda.selected { background: var(--primary-color); }
-    .dotLeyenda.has-assignments { background: var(--primary-color); }
-    .dotLeyenda.weekend { background: rgba(245, 158, 11, 0.3); }
+    .leyenda-badge { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; font-weight: 600; }
+    .leyenda-badge.normal { background: var(--surface-color); border: 2px solid var(--border-color); color: var(--text-secondary); }
+    .leyenda-badge.selected { background: var(--primary-color); color: white; }
+    .leyenda-badge.has-assignments { background: var(--dot-assignments); color: white; box-shadow: 0 0 8px var(--dot-assignments); }
+    .leyenda-badge.weekend { background: transparent; border: 2px solid var(--dot-weekend); color: var(--dot-weekend); }
     
     .day-panel {
       background: var(--surface-color);
