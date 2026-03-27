@@ -504,15 +504,23 @@ export class SemanaEditarComponent implements OnInit {
   }
 
   loadUsersAndGrupos() {
-    // Load users
-    this.asignacionService.loadAsignaciones().subscribe(() => {
-      // Get unique users from existing asignaciones
-      const allAsigs = this.asignacionService.asignaciones();
-      const uniqueUsers = new Map();
-      allAsigs.forEach(a => {
-        if (a.user) uniqueUsers.set(a.user.id, a.user);
-      });
-      this.users.set(Array.from(uniqueUsers.values()));
+    // Load ALL users from the users endpoint
+    this.authService.getUsers().subscribe({
+      next: (res: any) => {
+        this.users.set(res.data || res);
+      },
+      error: (err) => {
+        console.error('Error loading users:', err);
+        // Fallback: try loading from existing asignaciones
+        this.asignacionService.loadAsignaciones().subscribe(() => {
+          const allAsigs = this.asignacionService.asignaciones();
+          const uniqueUsers = new Map();
+          allAsigs.forEach(a => {
+            if (a.user) uniqueUsers.set(a.user.id, a.user);
+          });
+          this.users.set(Array.from(uniqueUsers.values()));
+        });
+      }
     });
     
     // Load grupos
@@ -615,8 +623,175 @@ export class SemanaEditarComponent implements OnInit {
   }
 
   exportToPDF() {
-    // TODO: Implement PDF export
-    console.log('Export PDF');
+    const semana = this.semana();
+    if (!semana) return;
+    
+    // Generate print-friendly HTML
+    let html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Asignaciones ${semana.nombre} - Congregación Alameda</title>
+        <style>
+          @page { size: A4; margin: 1cm; }
+          body { 
+            font-family: Arial, sans-serif; 
+            font-size: 11pt; 
+            color: #333;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 15px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+          }
+          .header h1 {
+            color: #2563eb;
+            margin: 0 0 5px 0;
+            font-size: 20pt;
+          }
+          .header p {
+            color: #666;
+            margin: 0;
+            font-size: 11pt;
+          }
+          .tipo-seccion {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+          }
+          .tipo-titulo {
+            background: #2563eb;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12pt;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+            margin-bottom: 10px;
+          }
+          .tabla {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .tabla th {
+            background: #f3f4f6;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+          }
+          .tabla td {
+            border: 1px solid #ddd;
+            padding: 8px;
+          }
+          .persona-tag {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10pt;
+            margin-right: 5px;
+            display: inline-block;
+            margin-bottom: 2px;
+          }
+          .sin-asignar {
+            color: #999;
+            font-style: italic;
+          }
+          .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 9pt;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+          }
+          @media print {
+            body { -webkit-print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>📅 ${semana.nombre}</h1>
+          <p>${this.formatDateRange()}</p>
+        </div>
+    `;
+
+    // Generate content for each type
+    this.tipos().forEach((tipo) => {
+      const personas = this.getPersonasConAsignaciones(tipo.id);
+      const diasSinAsignar = this.getDiasSinAsignar(tipo.id);
+      
+      if (personas.length > 0 || diasSinAsignar.length > 0) {
+        html += `
+          <div class="tipo-seccion">
+            <div class="tipo-titulo">${tipo.icono || '📋'} ${this.getTipoNombre(tipo.nombre)}</div>
+            <table class="tabla">
+              <thead>
+                <tr>
+                  <th style="width: 30%;">Día</th>
+                  <th style="width: 70%;">Persona Asignada</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+        
+        // Show assigned days
+        personas.forEach((persona) => {
+          html += `
+            <tr>
+              <td>${this.getDiaNombre(persona.diaSemana)}</td>
+              <td>
+                <span class="persona-tag">${persona.nombre}</span>
+                ${persona.esGrupo ? '<span class="persona-tag" style="background: #dcfce7; color: #166534;">Grupo</span>' : ''}
+              </td>
+            </tr>
+          `;
+        });
+        
+        // Show unassigned days
+        diasSinAsignar.forEach((dia) => {
+          html += `
+            <tr>
+              <td>${this.getDiaNombre(dia)}</td>
+              <td><span class="sin-asignar">Sin asignar</span></td>
+            </tr>
+          `;
+        });
+        
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+    });
+
+    html += `
+        <div class="footer">
+          <p>Generado el ${new Date().toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })} - Congregación Alameda</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Open print dialog
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.print();
+      };
+    }
   }
 
   openAssignModal(tipo: TipoAsignacion, diaSemana: number) {
