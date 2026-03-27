@@ -83,6 +83,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/asignaciones/asignacion-list.component').then(m => m.AsignacionListComponent),
     canActivate: [authGuard]
   },
+  {
+    path: 'asignaciones/semana/:id',
+    loadComponent: () => import('./features/asignaciones/semana-editar.component').then(m => m.SemanaEditarComponent),
+    canActivate: [authGuard]
+  },
   // ====== Backoffice: Gestión de Usuarios ======
   {
     path: 'usuarios',

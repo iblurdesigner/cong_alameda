@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { AsignacionService, TipoAsignacion, Asignacion } from '../../core/services/asignacion.service';
 import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -926,6 +927,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
   `]
 })
 export class AsignacionListComponent implements OnInit {
+  private router = inject(Router);
   asignacionService = inject(AsignacionService);
   semanaService = inject(SemanaService);
   authService = inject(AuthService);
@@ -1057,7 +1059,38 @@ export class AsignacionListComponent implements OnInit {
 
   selectDay(day: { day: number; date: string; otherMonth: boolean; isToday: boolean }) {
     if (day.otherMonth) return;
+    
+    // Si el día tiene asignaciones, navegar a la pantalla de edición de semana
+    if (this.hasAssignments(day.date)) {
+      // Encontrar la semana que contiene esta fecha
+      const semana = this.findSemanaByDate(day.date);
+      if (semana) {
+        console.log('Navegando a semana:', semana.id, semana.nombre);
+        this.router.navigate(['/asignaciones/semana', semana.id]);
+        return;
+      } else {
+        console.warn('No se encontró semana para la fecha:', day.date);
+      }
+    }
+    
+    // Comportamiento original: mostrar panel lateral
     this.selectedDate = day.date;
+  }
+
+  // Encontrar la semana que contiene una fecha específica
+  findSemanaByDate(dateStr: string): Semana | null {
+    // Usar parsing de fecha local para evitar problemas de timezone
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const dayNum = parseInt(parts[2]);
+    const targetDate = new Date(year, month, dayNum);
+    
+    return this.semanas().find(semana => {
+      const inicio = new Date(semana.fecha_inicio);
+      const fin = new Date(semana.fecha_fin);
+      return targetDate >= inicio && targetDate <= fin;
+    }) || null;
   }
 
   isSelectedDay(date: string): boolean {

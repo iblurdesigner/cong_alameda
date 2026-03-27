@@ -62,6 +62,7 @@ export class AuthService {
   }
 
   logout() {
+    console.log('[AuthService] 🚨 logout() called! Token being cleared!');
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.userSignal.set(null);
