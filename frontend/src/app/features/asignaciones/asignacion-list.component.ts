@@ -1098,9 +1098,24 @@ export class AsignacionListComponent implements OnInit {
   }
 
   hasAssignments(date: string): boolean {
-    if (!this.allAsignaciones.length) return false;
-    const dayOfWeek = new Date(date).getDay();
-    return this.allAsignaciones.some(a => a.dia_semana === dayOfWeek);
+    if (!this.allAsignaciones.length || !this.semanas().length) return false;
+    
+    // Find the week that contains this date
+    const targetDate = new Date(date);
+    const targetSemana = this.semanas().find(semana => {
+      const inicio = new Date(semana.fecha_inicio);
+      const fin = new Date(semana.fecha_fin);
+      return targetDate >= inicio && targetDate <= fin;
+    });
+    
+    if (!targetSemana) return false;
+    
+    const dayOfWeek = targetDate.getDay();
+    
+    // Check if any assignment exists for this specific week AND day of week
+    return this.allAsignaciones.some(a => 
+      (a as any).semana_id === targetSemana.id && a.dia_semana === dayOfWeek
+    );
   }
 
   getDayOfWeek(dateStr: string): number {
