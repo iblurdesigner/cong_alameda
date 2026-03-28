@@ -62,30 +62,6 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             }
           }
         }
-        
-        <!-- Mostrar también los días sin asignar -->
-        @for (tipo of tipos(); track tipo.id) {
-          @if (getDiasSinAsignar(tipo.id); as dias) {
-            @if (dias.length > 0) {
-              <div class="tipo-seccion sin-asignar">
-                <h3 class="tipo-titulo">
-                  <span class="icono">{{ tipo.icono || '📋' }}</span>
-                  {{ getTipoNombre(tipo.nombre) }} - Sin Asignar
-                </h3>
-                <div class="dias-sin-asignar">
-                  @for (dia of dias; track dia) {
-                    <span class="dia-sin-badge">
-                      {{ getDiaNombre(dia) }}
-                      @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                        <button class="btn-add-small" (click)="openAssignModalByTipoAndDia(tipo.id, dia)">+</button>
-                      }
-                    </span>
-                  }
-                </div>
-              </div>
-            }
-          }
-        }
       </div>
 
       <!-- Assign Modal -->
