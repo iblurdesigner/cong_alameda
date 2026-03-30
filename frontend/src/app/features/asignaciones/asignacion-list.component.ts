@@ -20,7 +20,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           <p>Programa el equipo de servicio para cada día de la semana</p>
         </div>
         <div class="header-actions">
-          <button class="btn btn-outline" (click)="exportAllToPDF()">
+          <button class="btn btn-outline" (click)="openPdfExportModal()">
             📄 Exportar PDF
           </button>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
@@ -407,6 +407,50 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         </div>
       </div>
     }
+
+    <!-- PDF Export Modal -->
+    @if (showExportPdfModal()) {
+      <div class="modal-overlay" (click)="closePdfExportModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>📄 Seleccionar Semanas para PDF</h2>
+            <button class="btn-close" (click)="closePdfExportModal()">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="export-modal-actions">
+              <button class="btn btn-outline btn-sm" (click)="selectAllWeeksForExport()">
+                Seleccionar Todas
+              </button>
+              <button class="btn btn-outline btn-sm" (click)="deselectAllWeeksForExport()">
+                Deseleccionar Todas
+              </button>
+            </div>
+            <p class="selection-count">{{ getSelectedWeeksCount() }} semanas seleccionadas</p>
+            <div class="weeks-list">
+              @for (semana of semanas(); track semana.id) {
+                <label class="week-checkbox-item">
+                  <input 
+                    type="checkbox" 
+                    [checked]="isWeekSelected(semana.id)"
+                    (change)="toggleWeekForExport(semana.id)"
+                  >
+                  <span class="week-name">{{ semana.nombre }}</span>
+                  <span class="week-dates">{{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }}</span>
+                </label>
+              }
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closePdfExportModal()">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" (click)="generatePdfWithSelection()">
+              Generar PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-container { max-width: 1200px; margin: 0 auto; }
@@ -456,6 +500,17 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .bulk-asignaciones { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     .bulk-item label { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
     .bulk-item select { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.875rem; }
+    
+    /* PDF Export Modal Styles */
+    .export-modal-actions { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .selection-count { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; }
+    .weeks-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+    .week-checkbox-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer; }
+    .week-checkbox-item:last-child { border-bottom: none; }
+    .week-checkbox-item:hover { background: var(--background-color); }
+    .week-checkbox-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .week-name { font-weight: 500; color: var(--text-primary); flex: 1; }
+    .week-dates { font-size: 0.875rem; color: var(--text-secondary); }
     
     /* Calendar styles */
     .calendar-nav { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; }
@@ -898,6 +953,14 @@ export class AsignacionListComponent implements OnInit {
   allAsignaciones: Asignacion[] = [];
   editingSemanaId: string | null = null;
   
+  // PDF Export Modal properties
+  showExportPdfModal = signal<boolean>(false);
+  selectedWeeksForExport = signal<string[]>([]);
+  
+  getSelectedWeeksCount(): number {
+    return this.selectedWeeksForExport().length;
+  }
+  
   ngOnInit() {
     this.loadSemanas();
     this.loadTipos();
@@ -1184,6 +1247,50 @@ export class AsignacionListComponent implements OnInit {
         }
       });
     });
+  }
+  
+  // PDF Export Modal Methods
+  openPdfExportModal() {
+    this.selectedWeeksForExport.set([]);
+    this.showExportPdfModal.set(true);
+  }
+  
+  closePdfExportModal() {
+    this.showExportPdfModal.set(false);
+  }
+  
+  toggleWeekForExport(semanaId: string) {
+    const current = this.selectedWeeksForExport();
+    if (current.includes(semanaId)) {
+      this.selectedWeeksForExport.set(current.filter(id => id !== semanaId));
+    } else {
+      this.selectedWeeksForExport.set([...current, semanaId]);
+    }
+  }
+  
+  selectAllWeeksForExport() {
+    this.selectedWeeksForExport.set(this.semanas().map(s => s.id));
+  }
+  
+  deselectAllWeeksForExport() {
+    this.selectedWeeksForExport.set([]);
+  }
+  
+  validateSelection(): boolean {
+    return this.selectedWeeksForExport().length > 0;
+  }
+  
+  generatePdfWithSelection() {
+    if (!this.validateSelection()) {
+      alert('Selecciona al menos una semana');
+      return;
+    }
+    this.closePdfExportModal();
+    this.exportAllToPDF(this.selectedWeeksForExport());
+  }
+  
+  isWeekSelected(semanaId: string): boolean {
+    return this.selectedWeeksForExport().includes(semanaId);
   }
   
   loadSemanas() {
@@ -1881,10 +1988,15 @@ export class AsignacionListComponent implements OnInit {
     }
   }
   
-  exportAllToPDF() {
+  exportAllToPDF(selectedSemanaIds?: string[]) {
     // Load all weeks with their assignments and generate PDF
     const semanasData: any[] = [];
-    const semanasList = this.semanas();
+    let semanasList = this.semanas();
+    
+    // Filter weeks if specific weeks were selected
+    if (selectedSemanaIds && selectedSemanaIds.length > 0) {
+      semanasList = semanasList.filter(s => selectedSemanaIds.includes(s.id));
+    }
     
     if (semanasList.length === 0) {
       alert('No hay semanas configuradas');
