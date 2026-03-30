@@ -1362,7 +1362,10 @@ export class AsignacionListComponent implements OnInit {
       'ACOMODADOR_SALON': 'Acomodador',
       'PARQUEADERO': 'Parqueadero',
       'MICROFONO': 'Micrófono',
-      'PLATAFORMA': 'Plataforma'
+      'PLATAFORMA': 'Plataforma',
+      'ASEO_SALON': 'Aseo del Salón',
+      'PRESIDENTE': 'Presidente',
+      'LECTOR_ATALAYA': 'Lector Atalaya'
     };
     return nombres[nombre] || nombre;
   }
@@ -1790,10 +1793,21 @@ export class AsignacionListComponent implements OnInit {
   getTiposList(): TipoAsignacion[] {
     const t = this.tipos();
     if (Array.isArray(t) && t.length > 0) {
-      return t;
+      // Ordenar para mostrar PRESIDENTE y LECTOR_ATALAYA primero
+      return [...t].sort((a, b) => {
+        const order: Record<string, number> = {
+          'PRESIDENTE': 1,
+          'LECTOR_ATALAYA': 2
+        };
+        const orderA = order[a.nombre] ?? 999;
+        const orderB = order[b.nombre] ?? 999;
+        return orderA - orderB;
+      });
     }
-    // Fallback default tipos if not loaded yet (including ASEO_SALON)
+    // Fallback default tipos if not loaded yet
     return [
+      { id: '2ba65bba-c8af-47a3-a6ce-e357c041e345', nombre: 'PRESIDENTE', icono: '🎯', descripcion: 'Presidente' },
+      { id: '161a5d7c-2dd3-46ca-aebf-e319c1295a01', nombre: 'LECTOR_ATALAYA', icono: '📖', descripcion: 'Lector Atalaya' },
       { id: '9bb8d1a0-f9dd-48fa-932a-229090f4e2aa', nombre: 'ACOMODADOR_SALON', icono: '🪑', descripcion: 'Acomodador' },
       { id: '96014a5f-834e-44fd-92af-73d36850eb88', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
       { id: 'de3076d0-5896-4ee6-a113-41212893856e', nombre: 'MICROFONO', icono: '🎤', descripcion: 'Micrófono' },
@@ -2033,103 +2047,113 @@ export class AsignacionListComponent implements OnInit {
       <head>
         <title>Asignaciones Semanales - Congregación Alameda</title>
         <style>
-          @page { size: A4; margin: 1.5cm; }
+          @page { size: A4; margin: 0.5cm; }
+          * { box-sizing: border-box; }
           body { 
             font-family: Arial, sans-serif; 
-            font-size: 11pt; 
+            font-size: 8pt; 
             color: #333;
             max-width: 210mm;
             margin: 0 auto;
-            padding: 20px;
+            padding: 5px;
           }
           .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 8px;
             border-bottom: 2px solid #2563eb;
-            padding-bottom: 15px;
+            padding-bottom: 5px;
           }
           .header h1 {
             color: #2563eb;
-            margin: 0 0 5px 0;
-            font-size: 24pt;
+            margin: 0 0 2px 0;
+            font-size: 14pt;
           }
           .header p {
             color: #666;
             margin: 0;
-            font-size: 12pt;
+            font-size: 9pt;
+          }
+          .weeks-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
           }
           .semana-section {
-            margin-bottom: 25px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
             page-break-inside: avoid;
+            padding: 5px;
           }
           .semana-title {
             background: #2563eb;
             color: white;
-            padding: 10px 15px;
-            font-size: 14pt;
+            padding: 2px 5px;
+            font-size: 8pt;
             font-weight: bold;
-            border-radius: 5px 5px 0 0;
-            margin-bottom: 10px;
+            border-radius: 2px 2px 0 0;
+            margin: -5px -5px 5px -5px;
           }
           .semana-dates {
             color: #666;
-            font-size: 10pt;
-            margin-bottom: 15px;
-            padding-left: 15px;
+            font-size: 7pt;
+            margin-bottom: 4px;
           }
           .tabla-asignaciones {
             width: 100%;
             border-collapse: collapse;
+            font-size: 7pt;
           }
           .tabla-asignaciones th {
             background: #f3f4f6;
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 2px 4px;
             text-align: left;
             font-weight: bold;
+            font-size: 7pt;
           }
           .tabla-asignaciones td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 2px 4px;
             vertical-align: top;
           }
           .categoria {
             font-weight: bold;
             color: #2563eb;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-size: 7pt;
           }
           .personas {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
+            gap: 2px;
           }
           .persona-tag {
             background: #dbeafe;
             color: #1e40af;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 10pt;
+            padding: 1px 4px;
+            border-radius: 6px;
+            font-size: 7pt;
+            white-space: nowrap;
           }
           .grupo-tag {
             background: #dcfce7;
             color: #166534;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 10pt;
+            padding: 1px 4px;
+            border-radius: 6px;
+            font-size: 7pt;
+            white-space: nowrap;
           }
           .footer {
-            margin-top: 30px;
+            margin-top: 8px;
             text-align: center;
             color: #999;
-            font-size: 9pt;
+            font-size: 7pt;
             border-top: 1px solid #ddd;
-            padding-top: 10px;
+            padding-top: 3px;
           }
           .no-assignments {
             color: #999;
             font-style: italic;
+            font-size: 7pt;
           }
           @media print {
             body { -webkit-print-color-adjust: exact; }
@@ -2141,6 +2165,7 @@ export class AsignacionListComponent implements OnInit {
           <h1>📅 Asignaciones Semanales</h1>
           <p>Congregación Alameda - Programa de Servicio</p>
         </div>
+        <div class="weeks-container">
     `;
     
     const tipos = this.getTiposList();
@@ -2221,6 +2246,7 @@ export class AsignacionListComponent implements OnInit {
     });
     
     html += `
+        </div>
         <div class="footer">
           <p>Generado el ${new Date().toLocaleDateString('es-ES', { 
             weekday: 'long', 

@@ -511,7 +511,9 @@ export class SemanaEditarComponent implements OnInit {
       'Microfono': 'Microfono',
       'Presidente': 'Presidente',
       'Lectura': 'Lectura',
-      'Tesoro': 'Tesoro'
+      'Tesoro': 'Tesoro',
+      'LECTOR_ATALAYA': 'Lector Atalaya',
+      'PRESIDENTE': 'Presidente'
     };
     return nombres[nombre] || nombre;
   }
