@@ -20,9 +20,6 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           <p>Programa el equipo de servicio para cada día de la semana</p>
         </div>
         <div class="header-actions">
-          <button class="btn btn-outline" (click)="toggleAllWeeksView()">
-            📋 {{ showAllWeeksView ? 'Volver al Calendario' : 'Ver Todas las Semanas' }}
-          </button>
           <button class="btn btn-outline" (click)="exportAllToPDF()">
             📄 Exportar PDF
           </button>
@@ -34,59 +31,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         </div>
       </header>
 
-      @if (showAllWeeksView) {
-        <!-- All Weeks View - Table Format -->
-        <div class="all-weeks-table-view">
-          <h2>Todas las Asignaciones</h2>
-          <div class="table-container">
-            <table class="assignments-table">
-              <thead>
-                <tr>
-                  <th>Semana</th>
-                  <th>Día</th>
-                  <th>Tipo</th>
-                  <th>Asignado</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (semana of getAllAssignmentsFlat(); track semana.key) {
-                  <tr>
-                    <td>{{ semana.semanaNombre }}</td>
-                    <td>{{ getDiaNombre(semana.diaSemana) }}</td>
-                    <td>
-                      <span class="tipo-icon">{{ semana.tipoIcono }}</span>
-                      {{ semana.tipoNombre }}
-                    </td>
-                    <td>
-                      {{ semana.asignadoNombre }}
-                      @if (semana.esGrupo) {
-                        <span class="grupo-badge">Grupo</span>
-                      }
-                    </td>
-                    <td>
-                      @if (semana.asignacionId) {
-                        <button class="btn-icon" (click)="editAssignmentById(semana)">
-                          ✏️
-                        </button>
-                      } @else {
-                        <button class="btn-icon btn-add" (click)="addAssignmentByTipo(semana)">
-                          ➕
-                        </button>
-                      }
-                    </td>
-                  </tr>
-                } @empty {
-                  <tr>
-                    <td colspan="5" class="empty-message">No hay asignaciones registradas</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        </div>
-      } @else {
-        <!-- Calendar View -->
+      <!-- Calendar View -->
         <div class="calendar-container">
           <div class="calendar">
             <div class="calendar-header">
@@ -215,7 +160,6 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             <p>Selecciona un día del calendario para ver sus asignaciones</p>
           </div>
         }
-      }
 
     <!-- Assign Modal -->
 
@@ -585,17 +529,6 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .person-tag { display: inline-block; padding: 0.25rem 0.5rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-sm); font-size: 0.875rem; }
     .empty-summary { text-align: center; padding: 2rem; color: var(--text-secondary); }
     .modal-footer { display: flex; justify-content: space-between; gap: 0.75rem; }
-    
-    /* All Weeks Table View Styles */
-    .all-weeks-table-view { margin-bottom: 2rem; }
-    .all-weeks-table-view h2 { margin-bottom: 1rem; font-size: 1.5rem; color: var(--text-primary); }
-    .table-container { overflow-x: auto; }
-    .assignments-table { width: 100%; border-collapse: collapse; background: var(--surface-color); border-radius: var(--radius-lg); overflow: hidden; }
-    .assignments-table th { background: var(--primary-color); color: white; padding: 1rem; text-align: left; font-weight: 600; }
-    .assignments-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); }
-    .assignments-table tr:hover { background: var(--background-color); }
-    .assignments-table .empty-message { text-align: center; color: var(--text-secondary); padding: 2rem; }
-    .assignments-table .tipo-icon { margin-right: 0.5rem; }
     .assignment-row-edit .btn-add { color: var(--primary-color); }
     
     /* Main Page Calendar Styles */
@@ -963,7 +896,6 @@ export class AsignacionListComponent implements OnInit {
   calendarDays: { day: number; date: string; otherMonth: boolean; isToday: boolean }[] = [];
   selectedDate: string | null = null;
   allAsignaciones: Asignacion[] = [];
-  showAllWeeksView = false;
   editingSemanaId: string | null = null;
   
   ngOnInit() {
@@ -2198,105 +2130,5 @@ export class AsignacionListComponent implements OnInit {
         printWindow.print();
       };
     }
-  }
-  
-  // All weeks view methods
-  toggleAllWeeksView() {
-    this.showAllWeeksView = !this.showAllWeeksView;
-    if (this.showAllWeeksView && this.allAsignaciones.length === 0) {
-      this.loadAllAsignaciones();
-    }
-  }
-  
-  // Flat list for table view
-  getAllAssignmentsFlat(): any[] {
-    const result: any[] = [];
-    const tipos = this.getTiposList();
-    const semanasList = this.semanas();
-    
-    // Get unique weeks with assignments
-    const semanasConAsignaciones = semanasList.filter(semana => 
-      this.allAsignaciones.some(a => (a as any).semana_id === semana.id)
-    ).sort((a, b) => new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime());
-    
-    for (const semana of semanasConAsignaciones) {
-      for (const dia of [0, 1, 2, 3, 4, 5, 6]) {
-        for (const tipo of tipos) {
-          const asignacion = this.getAssignmentForWeekAndDay(semana.id, dia, tipo.id);
-          const key = `${semana.id}-${dia}-${tipo.id}`;
-          
-          result.push({
-            key: key,
-            semanaId: semana.id,
-            semanaNombre: semana.nombre,
-            diaSemana: dia,
-            tipoId: tipo.id,
-            tipoNombre: this.getTipoNombre(tipo.nombre),
-            tipoIcono: tipo.icono || '📋',
-            asignacionId: asignacion?.id || null,
-            asignadoNombre: asignacion?.user?.nombre || asignacion?.grupo?.nombre || 'Sin asignar',
-            esGrupo: !!asignacion?.grupo,
-            asignacion: asignacion,
-            tipo: tipo
-          });
-        }
-      }
-    }
-    
-    return result;
-  }
-  
-  editAssignmentById(semanaData: any) {
-    this.editAsignacionFromAllWeeks(semanaData.asignacion, semanaData.tipo, semanaData.diaSemana, semanaData.semanaId);
-  }
-  
-  addAssignmentByTipo(semanaData: any) {
-    this.addAssignmentFromAllWeeks(semanaData.tipo, semanaData.diaSemana, semanaData.semanaId);
-  }
-  
-  getSemanasWithAssignments(): Semana[] {
-    // Return all weeks that have at least one assignment, sorted by fecha_inicio ascending
-    const semanasWithAssignments = this.semanas().filter(semana => 
-      this.allAsignaciones.some(a => (a as any).semana_id === semana.id)
-    );
-    return [...semanasWithAssignments].sort((a, b) => 
-      new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime()
-    );
-  }
-  
-  getAssignmentForWeekAndDay(semanaId: string, diaSemana: number, tipoId: string): Asignacion | null {
-    return this.allAsignaciones.find(a => 
-      (a as any).semana_id === semanaId && a.dia_semana === diaSemana && a.tipo_asignacion_id === tipoId
-    ) || null;
-  }
-  
-  editAsignacionFromAllWeeks(asignacion: Asignacion, tipo: TipoAsignacion, diaSemana: number, semanaId: string) {
-    this.editingSemanaId = semanaId;
-    this.selectedSemanaId = semanaId;
-    this.editingDiaSemana = diaSemana;
-    this.editingAsignacion = asignacion;
-    this.assignForm = { 
-      user_id: asignacion.user_id || '', 
-      grupo_id: asignacion.grupo_id || '',
-      observaciones: asignacion.observaciones || '',
-      tipo_id: tipo ? tipo.id : '',
-      isEditing: true
-    };
-    this.showAssignModal = true;
-  }
-  
-  addAssignmentFromAllWeeks(tipo: TipoAsignacion, diaSemana: number, semanaId: string) {
-    this.editingSemanaId = semanaId;
-    this.selectedSemanaId = semanaId;
-    this.editingDiaSemana = diaSemana;
-    this.editingAsignacion = null;
-    this.assignForm = { 
-      user_id: '', 
-      grupo_id: '',
-      observaciones: '',
-      tipo_id: tipo ? tipo.id : '',
-      isEditing: false
-    };
-    this.showAssignModal = true;
   }
 }
