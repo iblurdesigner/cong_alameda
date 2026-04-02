@@ -11,6 +11,7 @@ type SemanaVisita struct {
 	FechaInicio time.Time `json:"fecha_inicio" db:"fecha_inicio"`
 	FechaFin    time.Time `json:"fecha_fin" db:"fecha_fin"`
 	Nombre      *string   `json:"nombre,omitempty" db:"nombre"`
+	Archivado   bool      `json:"archivado" db:"archivado"`
 	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }

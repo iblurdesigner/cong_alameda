@@ -70,8 +70,12 @@ func (s *SemanaService) GetDetail(ctx context.Context, id uuid.UUID) (*models.Se
 	}, nil
 }
 
-func (s *SemanaService) List(ctx context.Context) ([]*models.SemanaVisita, error) {
-	return s.semanaRepo.List(ctx)
+func (s *SemanaService) List(ctx context.Context, includeArchived bool) ([]*models.SemanaVisita, error) {
+	return s.semanaRepo.List(ctx, includeArchived)
+}
+
+func (s *SemanaService) Archive(ctx context.Context, id uuid.UUID, archived bool) error {
+	return s.semanaRepo.Archive(ctx, id, archived)
 }
 
 func (s *SemanaService) Update(ctx context.Context, id uuid.UUID, nombre string) (*models.SemanaVisita, error) {

@@ -19,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
             <p>Grupo #{{ grupo()!.numero }} • {{ grupo()!.territorios?.length || 0 }} territorios</p>
           }
         </div>
-        @if (authService.isSuperintendente() && grupo()) {
+        @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && grupo()) {
           <a [routerLink]="['/territorios']" [queryParams]="{grupo_id: grupo()!.id}" class="btn btn-primary">
             ➕ Agregar Territorio
           </a>
@@ -39,7 +39,7 @@ import { AuthService } from '../../core/services/auth.service';
         @if (!grupo()!.territorios || grupo()!.territorios.length === 0) {
           <div class="empty-state">
             <p>No hay territorios en este grupo</p>
-            @if (authService.isSuperintendente()) {
+            @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
               <a [routerLink]="['/territorios']" [queryParams]="{grupo_id: grupo()!.id}" class="btn btn-primary">
                 Subir Primer Territorio
               </a>
@@ -67,7 +67,7 @@ import { AuthService } from '../../core/services/auth.service';
                   >
                     ⬇️ Descargar
                   </button>
-                  @if (authService.isSuperintendente()) {
+                  @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                     <button 
                       class="btn btn-icon btn-sm btn-danger"
                       (click)="deleteTerritorio(territorio)"

@@ -192,7 +192,7 @@ import { UserService, User } from '../../../core/services/user.service';
   styles: [`
     .page-container { max-width: 1000px; margin: 0 auto; }
     .page-header { margin-bottom: 1.5rem; h1 { font-size: 1.75rem; font-weight: 700; } .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; } }
-    .filters-bar { margin-bottom: 1.5rem; .filter-select { padding: 0.625rem 2rem 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 1rem; min-height: 44px; width: 100%; max-width: 300px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; } }
+    .filters-bar { margin-bottom: 1.5rem; .filter-select { padding: 0.625rem 2rem 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-primary); font-size: 1rem; min-height: 44px; width: 100%; max-width: 300px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; } }
     .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
     .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; .empty-icon { font-size: 3rem; opacity: 0.5; } }
     .visitas-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }

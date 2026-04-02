@@ -8,6 +8,7 @@ export interface Semana {
   fecha_inicio: string;
   fecha_fin: string;
   nombre: string;
+  archivado?: boolean;
   created_at: string;
 }
 
@@ -70,5 +71,9 @@ export class SemanaService {
 
   updateDia(id: string, data: Partial<Dia>) {
     return this.http.put<Dia>(`${environment.apiUrl}/dias/${id}`, data);
+  }
+  
+  archiveSemana(id: string, archivado: boolean) {
+    return this.http.put(`${environment.apiUrl}/semanas/${id}/archivar`, { archivado });
   }
 }

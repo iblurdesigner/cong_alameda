@@ -411,12 +411,35 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     <!-- PDF Export Modal -->
     @if (showExportPdfModal()) {
       <div class="modal-overlay" (click)="closePdfExportModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>📄 Seleccionar Semanas para PDF</h2>
             <button class="btn-close" (click)="closePdfExportModal()">×</button>
           </div>
           <div class="modal-body">
+            <!-- Filtros -->
+            <div class="export-filters">
+              <div class="filter-group">
+                <label for="filterMonth">Filtrar por mes:</label>
+                <select id="filterMonth" [value]="filterMonth()" (change)="setFilterMonth($any($event.target).value)">
+                  <option value="">Todos los meses</option>
+                  @for (month of getAvailableMonths(); track month.value) {
+                    <option [value]="month.value">{{ month.label }}</option>
+                  }
+                </select>
+              </div>
+              <div class="filter-group">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [checked]="showArchivedWeeks()"
+                    (change)="toggleArchivedWeeks()"
+                  >
+                  Mostrar archivadas
+                </label>
+              </div>
+            </div>
+            
             <div class="export-modal-actions">
               <button class="btn btn-outline btn-sm" (click)="selectAllWeeksForExport()">
                 Seleccionar Todas
@@ -424,19 +447,38 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               <button class="btn btn-outline btn-sm" (click)="deselectAllWeeksForExport()">
                 Deseleccionar Todas
               </button>
+              @if (filterMonth() || showArchivedWeeks()) {
+                <button class="btn btn-outline btn-sm" (click)="clearFilter()">
+                  Limpiar filtros
+                </button>
+              }
             </div>
-            <p class="selection-count">{{ getSelectedWeeksCount() }} semanas seleccionadas</p>
+            <p class="selection-count">{{ getSelectedWeeksCount() }} semanas seleccionadas de {{ getFilteredSemanas().length }} visibles</p>
             <div class="weeks-list">
-              @for (semana of semanas(); track semana.id) {
-                <label class="week-checkbox-item">
+              @for (semana of getFilteredSemanas(); track semana.id) {
+                <label class="week-checkbox-item" [class.archived]="">
                   <input 
                     type="checkbox" 
                     [checked]="isWeekSelected(semana.id)"
                     (change)="toggleWeekForExport(semana.id)"
                   >
+                  @if (semana.archivado) {
+                    <span class="archive-badge">📦</span>
+                  }
                   <span class="week-name">{{ semana.nombre }}</span>
                   <span class="week-dates">{{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }}</span>
+                  @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                    <button 
+                      class="btn-icon btn-archive" 
+                      (click)="toggleSemanaArchive(semana); $event.stopPropagation()"
+                      [title]="semana.archivado ? 'Desarchivar' : 'Archivar'"
+                    >
+                    {{ semana.archivado ? '📤' : '📥' }}
+                    </button>
+                  }
                 </label>
+              } @empty {
+                <p class="empty-message">No hay semanas que coincidan con los filtros</p>
               }
             </div>
           </div>
@@ -502,15 +544,25 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .bulk-item select { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.875rem; }
     
     /* PDF Export Modal Styles */
-    .export-modal-actions { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .export-filters { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-group { display: flex; align-items: center; gap: 0.5rem; }
+    .filter-group label { font-size: 0.875rem; color: var(--text-secondary); }
+    .filter-group select { padding: 0.5rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--surface-color); color: var(--text-primary); font-size: 0.875rem; }
+    .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem; }
+    .export-modal-actions { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
     .selection-count { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem; }
     .weeks-list { max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
     .week-checkbox-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer; }
     .week-checkbox-item:last-child { border-bottom: none; }
     .week-checkbox-item:hover { background: var(--background-color); }
+    .week-checkbox-item.archived { background: #f3f4f6; opacity: 0.7; }
     .week-checkbox-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
     .week-name { font-weight: 500; color: var(--text-primary); flex: 1; }
     .week-dates { font-size: 0.875rem; color: var(--text-secondary); }
+    .archive-badge { font-size: 0.875rem; }
+    .btn-archive { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem; opacity: 0.7; }
+    .btn-archive:hover { opacity: 1; }
+    .empty-message { text-align: center; padding: 2rem; color: var(--text-secondary); }
     
     /* Calendar styles */
     .calendar-nav { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-bottom: 1.5rem; }
@@ -692,7 +744,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     
     // Estado: seleccionado
     .day-number.selected {
-      background: white;
+      background: var(--surface-color);
       color: var(--primary-color);
       font-weight: 700;
     }
@@ -956,6 +1008,60 @@ export class AsignacionListComponent implements OnInit {
   // PDF Export Modal properties
   showExportPdfModal = signal<boolean>(false);
   selectedWeeksForExport = signal<string[]>([]);
+  showArchivedWeeks = signal<boolean>(false);
+  filterMonth = signal<string>(''); // Format: YYYY-MM
+  
+  // Get available months from semanas
+  getAvailableMonths(): { value: string; label: string }[] {
+    const monthsSet = new Set<string>();
+    this.semanas().forEach(s => {
+      const date = new Date(s.fecha_inicio);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthsSet.add(monthKey);
+    });
+    const months = Array.from(monthsSet).sort().reverse();
+    return months.map(m => {
+      const [year, month] = m.split('-');
+      const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      return { value: m, label: `${monthNames[parseInt(month) - 1]} ${year}` };
+    });
+  }
+  
+  // Get filtered and sorted semanas for modal
+  getFilteredSemanas(): Semana[] {
+    let result = [...this.semanas()];
+    
+    // Filter by archived status (default hide archived)
+    if (!this.showArchivedWeeks()) {
+      result = result.filter(s => !s.archivado);
+    }
+    
+    // Filter by month
+    if (this.filterMonth()) {
+      result = result.filter(s => {
+        const date = new Date(s.fecha_inicio);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return monthKey === this.filterMonth();
+      });
+    }
+    
+    // Sort by fecha_inicio DESC (most recent first)
+    result.sort((a, b) => new Date(b.fecha_inicio).getTime() - new Date(a.fecha_inicio).getTime());
+    
+    return result;
+  }
+  
+  toggleArchivedWeeks() {
+    this.showArchivedWeeks.set(!this.showArchivedWeeks());
+  }
+  
+  setFilterMonth(month: string) {
+    this.filterMonth.set(month);
+  }
+  
+  clearFilter() {
+    this.filterMonth.set('');
+  }
   
   getSelectedWeeksCount(): number {
     return this.selectedWeeksForExport().length;
@@ -1291,6 +1397,26 @@ export class AsignacionListComponent implements OnInit {
   
   isWeekSelected(semanaId: string): boolean {
     return this.selectedWeeksForExport().includes(semanaId);
+  }
+  
+  toggleSemanaArchive(semana: Semana) {
+    const currentlyArchived = semana.archivado || false;
+    this.semanaService.archiveSemana(semana.id, !currentlyArchived).subscribe({
+      next: () => {
+        // Update local state
+        const semanas = this.semanas().map(s => {
+          if (s.id === semana.id) {
+            return { ...s, archivado: !currentlyArchived } as Semana;
+          }
+          return s;
+        });
+        this.semanas.set(semanas);
+      },
+      error: (err) => {
+        console.error('Error archiving week:', err);
+        alert('Error al archivar la semana');
+      }
+    });
   }
   
   loadSemanas() {

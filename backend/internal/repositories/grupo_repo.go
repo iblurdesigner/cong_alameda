@@ -24,20 +24,20 @@ func NewGrupoRepository(db *pgxpool.Pool) *GrupoRepository {
 
 func (r *GrupoRepository) Create(ctx context.Context, grupo *models.Grupo) error {
 	query := `
-		INSERT INTO grupos (id, nombre, numero, descripcion, activo)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO grupos (id, nombre, numero, descripcion, direccion, contacto, conductor, horario, activo)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING created_at, updated_at
 	`
 	grupo.ID = uuid.New()
 	return r.db.QueryRow(ctx, query,
-		grupo.ID, grupo.Nombre, grupo.Numero, grupo.Descripcion, grupo.Activo,
+		grupo.ID, grupo.Nombre, grupo.Numero, grupo.Descripcion, grupo.Direccion, grupo.Contacto, grupo.Conductor, grupo.Horario, grupo.Activo,
 	).Scan(&grupo.CreatedAt, &grupo.UpdatedAt)
 }
 
 func (r *GrupoRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Grupo, error) {
-	query := `SELECT id, nombre, numero, descripcion, activo, created_at, updated_at FROM grupos WHERE id = $1`
+	query := `SELECT id, nombre, numero, descripcion, direccion, contacto, conductor, horario, activo, created_at, updated_at FROM grupos WHERE id = $1`
 	g := &models.Grupo{}
-	err := r.db.QueryRow(ctx, query, id).Scan(&g.ID, &g.Nombre, &g.Numero, &g.Descripcion, &g.Activo, &g.CreatedAt, &g.UpdatedAt)
+	err := r.db.QueryRow(ctx, query, id).Scan(&g.ID, &g.Nombre, &g.Numero, &g.Descripcion, &g.Direccion, &g.Contacto, &g.Conductor, &g.Horario, &g.Activo, &g.CreatedAt, &g.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrGrupoNotFound
@@ -48,7 +48,7 @@ func (r *GrupoRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Gr
 }
 
 func (r *GrupoRepository) List(ctx context.Context, activo *bool) ([]*models.Grupo, error) {
-	query := `SELECT id, nombre, numero, descripcion, activo, created_at, updated_at FROM grupos WHERE 1=1`
+	query := `SELECT id, nombre, numero, descripcion, direccion, contacto, conductor, horario, activo, created_at, updated_at FROM grupos WHERE 1=1`
 	args := []interface{}{}
 	if activo != nil {
 		query += ` AND activo = $1`
@@ -64,7 +64,7 @@ func (r *GrupoRepository) List(ctx context.Context, activo *bool) ([]*models.Gru
 	var grupos []*models.Grupo
 	for rows.Next() {
 		g := &models.Grupo{}
-		rows.Scan(&g.ID, &g.Nombre, &g.Numero, &g.Descripcion, &g.Activo, &g.CreatedAt, &g.UpdatedAt)
+		rows.Scan(&g.ID, &g.Nombre, &g.Numero, &g.Descripcion, &g.Direccion, &g.Contacto, &g.Conductor, &g.Horario, &g.Activo, &g.CreatedAt, &g.UpdatedAt)
 		grupos = append(grupos, g)
 	}
 	return grupos, nil
@@ -82,10 +82,10 @@ func (r *GrupoRepository) Update(ctx context.Context, id uuid.UUID, updates map[
 		args = append(args, val)
 		argNum++
 	}
-	query := fmt.Sprintf(`UPDATE grupos SET %s WHERE id = $%d RETURNING id, nombre, numero, descripcion, activo, created_at, updated_at`, setClauses, argNum)
+	query := fmt.Sprintf(`UPDATE grupos SET %s WHERE id = $%d RETURNING id, nombre, numero, descripcion, direccion, contacto, conductor, horario, activo, created_at, updated_at`, setClauses, argNum)
 	args = append(args, id)
 	g := &models.Grupo{}
-	err := r.db.QueryRow(ctx, query, args...).Scan(&g.ID, &g.Nombre, &g.Numero, &g.Descripcion, &g.Activo, &g.CreatedAt, &g.UpdatedAt)
+	err := r.db.QueryRow(ctx, query, args...).Scan(&g.ID, &g.Nombre, &g.Numero, &g.Descripcion, &g.Direccion, &g.Contacto, &g.Conductor, &g.Horario, &g.Activo, &g.CreatedAt, &g.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrGrupoNotFound

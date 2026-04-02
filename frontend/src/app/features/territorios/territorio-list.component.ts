@@ -191,7 +191,8 @@ import { AuthService } from '../../core/services/auth.service';
         padding: 0.625rem 2rem 0.625rem 0.875rem;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        background: white;
+        background: var(--surface-color);
+        color: var(--text-primary);
         font-size: 1rem;
         min-height: 44px;
         min-width: 200px;
@@ -285,7 +286,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
     
     .modal {
-      background: white;
+      background: var(--surface-color);
       border-radius: var(--radius-lg);
       width: 100%;
       max-width: 500px;

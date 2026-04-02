@@ -16,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
           <h1>Grupos de Predicación</h1>
           <p class="header-subtitle">5 grupos de predicación con territorios PDF</p>
         </div>
-        @if (authService.isSuperintendente()) {
+        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
             <span class="btn-icon-only">➕</span>
             <span class="btn-text">Nuevo Grupo</span>
@@ -30,7 +30,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="empty-state">
           <div class="empty-icon">👥</div>
           <p>No hay grupos registrados</p>
-          @if (authService.isSuperintendente()) {
+          @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showModal = true">Crear primer grupo</button>
           }
         </div>
@@ -48,6 +48,22 @@ import { AuthService } from '../../core/services/auth.service';
               @if (grupo.descripcion) {
                 <p class="descripcion">{{ grupo.descripcion }}</p>
               }
+              @if (grupo.direccion || grupo.contacto || grupo.conductor || grupo.horario) {
+                <div class="grupo-detalles">
+                  @if (grupo.direccion) {
+                    <p class="detalle">📍 {{ grupo.direccion }}</p>
+                  }
+                  @if (grupo.contacto) {
+                    <p class="detalle">📞 {{ grupo.contacto }}</p>
+                  }
+                  @if (grupo.conductor) {
+                    <p class="detalle">🚗 Conductor: {{ grupo.conductor }}</p>
+                  }
+                  @if (grupo.horario) {
+                    <p class="detalle">🕐 {{ grupo.horario }}</p>
+                  }
+                </div>
+              }
               <div class="grupo-stats">
                 <span class="stat">📁 {{ grupo.territorio_count || 0 }} territorios</span>
               </div>
@@ -55,7 +71,7 @@ import { AuthService } from '../../core/services/auth.service';
                 <a [routerLink]="['/grupos', grupo.id]" class="btn btn-outline btn-sm btn-mobile-full">
                   Ver Detalle
                 </a>
-                @if (authService.isSuperintendente()) {
+                @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                   <button 
                     class="btn btn-icon btn-sm" 
                     (click)="editGrupo(grupo)"
@@ -116,6 +132,42 @@ import { AuthService } from '../../core/services/auth.service';
                 rows="3"
                 placeholder="Descripción opcional del grupo"
               ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="direccion">Dirección</label>
+              <input 
+                type="text" 
+                id="direccion" 
+                [(ngModel)]="formData.direccion" 
+                placeholder="Ej: Calle 123, Barrio"
+              />
+            </div>
+            <div class="form-group">
+              <label for="contacto">Contacto</label>
+              <input 
+                type="text" 
+                id="contacto" 
+                [(ngModel)]="formData.contacto" 
+                placeholder="Ej: Teléfono o email"
+              />
+            </div>
+            <div class="form-group">
+              <label for="conductor">Conductor</label>
+              <input 
+                type="text" 
+                id="conductor" 
+                [(ngModel)]="formData.conductor" 
+                placeholder="Nombre del conductor del grupo"
+              />
+            </div>
+            <div class="form-group">
+              <label for="horario">Horario</label>
+              <input 
+                type="text" 
+                id="horario" 
+                [(ngModel)]="formData.horario" 
+                placeholder="Ej: Sábados 9:00 AM"
+              />
             </div>
           </div>
           <div class="modal-footer">
@@ -232,6 +284,16 @@ import { AuthService } from '../../core/services/auth.service';
         color: var(--text-secondary);
         font-size: 0.875rem;
         margin-bottom: 1rem;
+      }
+      
+      .grupo-detalles {
+        margin: 0.5rem 0;
+        
+        .detalle {
+          color: var(--text-secondary);
+          font-size: 0.8rem;
+          margin: 0.25rem 0;
+        }
       }
     }
     
@@ -483,7 +545,11 @@ export class GrupoListComponent implements OnInit {
   formData = {
     nombre: '',
     numero: 1,
-    descripcion: ''
+    descripcion: '',
+    direccion: '',
+    contacto: '',
+    conductor: '',
+    horario: ''
   };
   
   ngOnInit() {
@@ -499,7 +565,11 @@ export class GrupoListComponent implements OnInit {
     this.formData = {
       nombre: grupo.nombre,
       numero: grupo.numero,
-      descripcion: grupo.descripcion || ''
+      descripcion: grupo.descripcion || '',
+      direccion: grupo.direccion || '',
+      contacto: grupo.contacto || '',
+      conductor: grupo.conductor || '',
+      horario: grupo.horario || ''
     };
     this.showModal = true;
   }
@@ -512,7 +582,15 @@ export class GrupoListComponent implements OnInit {
   closeModal() {
     this.showModal = false;
     this.editingGrupo = null;
-    this.formData = { nombre: '', numero: 1, descripcion: '' };
+    this.formData = { 
+      nombre: '', 
+      numero: 1, 
+      descripcion: '',
+      direccion: '',
+      contacto: '',
+      conductor: '',
+      horario: ''
+    };
   }
   
   saveGrupo() {

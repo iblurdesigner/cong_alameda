@@ -30,9 +30,9 @@ func (r *SemanaRepository) Create(ctx context.Context, s *models.SemanaVisita) e
 }
 
 func (r *SemanaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.SemanaVisita, error) {
-	query := `SELECT id, fecha_inicio, fecha_fin, nombre, created_at, updated_at FROM semanas_visita WHERE id = $1`
+	query := `SELECT id, fecha_inicio, fecha_fin, nombre, archivado, created_at, updated_at FROM semanas_visita WHERE id = $1`
 	s := &models.SemanaVisita{}
-	err := r.db.QueryRow(ctx, query, id).Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.CreatedAt, &s.UpdatedAt)
+	err := r.db.QueryRow(ctx, query, id).Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.Archivado, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrSemanaNotFound
@@ -42,8 +42,12 @@ func (r *SemanaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.S
 	return s, nil
 }
 
-func (r *SemanaRepository) List(ctx context.Context) ([]*models.SemanaVisita, error) {
-	query := `SELECT id, fecha_inicio, fecha_fin, nombre, created_at, updated_at FROM semanas_visita ORDER BY fecha_inicio DESC`
+func (r *SemanaRepository) List(ctx context.Context, includeArchived bool) ([]*models.SemanaVisita, error) {
+	query := `SELECT id, fecha_inicio, fecha_fin, nombre, archivado, created_at, updated_at FROM semanas_visita`
+	if !includeArchived {
+		query += ` WHERE archivado = false`
+	}
+	query += ` ORDER BY fecha_inicio DESC`
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
@@ -53,10 +57,16 @@ func (r *SemanaRepository) List(ctx context.Context) ([]*models.SemanaVisita, er
 	var semanas []*models.SemanaVisita
 	for rows.Next() {
 		s := &models.SemanaVisita{}
-		rows.Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.CreatedAt, &s.UpdatedAt)
+		rows.Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.Archivado, &s.CreatedAt, &s.UpdatedAt)
 		semanas = append(semanas, s)
 	}
 	return semanas, nil
+}
+
+func (r *SemanaRepository) Archive(ctx context.Context, id uuid.UUID, archived bool) error {
+	query := `UPDATE semanas_visita SET archivado = $1, updated_at = NOW() WHERE id = $2`
+	_, err := r.db.Exec(ctx, query, archived, id)
+	return err
 }
 
 func (r *SemanaRepository) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.SemanaVisita, error) {
@@ -71,10 +81,10 @@ func (r *SemanaRepository) Update(ctx context.Context, id uuid.UUID, updates map
 		args = append(args, val)
 		argNum++
 	}
-	query := fmt.Sprintf(`UPDATE semanas_visita SET %s WHERE id = $%d RETURNING id, fecha_inicio, fecha_fin, nombre, created_at, updated_at`, setClauses, argNum)
+	query := fmt.Sprintf(`UPDATE semanas_visita SET %s WHERE id = $%d RETURNING id, fecha_inicio, fecha_fin, nombre, archivado, created_at, updated_at`, setClauses, argNum)
 	args = append(args, id)
 	s := &models.SemanaVisita{}
-	err := r.db.QueryRow(ctx, query, args...).Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.CreatedAt, &s.UpdatedAt)
+	err := r.db.QueryRow(ctx, query, args...).Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.Archivado, &s.CreatedAt, &s.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, ErrSemanaNotFound

@@ -197,9 +197,9 @@ func main() {
 	grupos := protected.Group("/grupos")
 	grupos.Get("/", grupoHandler.List)
 	grupos.Get("/:id", grupoHandler.GetByID)
-	grupos.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), grupoHandler.Create)
-	grupos.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), grupoHandler.Update)
-	grupos.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), grupoHandler.Delete)
+	grupos.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), grupoHandler.Create)
+	grupos.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), grupoHandler.Update)
+	grupos.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), grupoHandler.Delete)
 
 	// Territorio routes
 	territorios := protected.Group("/territorios")
@@ -217,6 +217,7 @@ func main() {
 	semanas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), semanaHandler.Update)
 	semanas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), semanaHandler.Delete)
 	semanas.Get("/:id/dias", semanaHandler.GetDias)
+	semanas.Put("/:id/archivar", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Archive)
 
 	// Dia routes
 	dias := protected.Group("/dias")
