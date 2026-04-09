@@ -70,11 +70,13 @@ export class AuthService {
   }
 
   isSuperintendente(): boolean {
-    return this.currentUser()?.rol === 'SUPERINTENDENTE';
+    const rol = this.currentUser()?.rol;
+    return rol === 'SUPERINTENDENTE' || rol === 'SUPER_ADMIN';
   }
 
   isAnciano(): boolean {
-    return this.currentUser()?.rol === 'ANCIANO';
+    const rol = this.currentUser()?.rol;
+    return rol === 'ANCIANO' || rol === 'SUPER_ADMIN';
   }
 
   isVisitante(): boolean {
