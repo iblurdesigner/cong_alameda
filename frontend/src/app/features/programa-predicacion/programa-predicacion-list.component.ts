@@ -44,10 +44,12 @@ import { AuthService } from '../../core/services/auth.service';
             <h2 class="fecha-title">{{ formatDate(fecha) }}</h2>
             <div class="dias-grid">
               @for (prog of getProgramasByFecha(fecha); track prog.id) {
-                <div class="dia-card" (click)="editPrograma(prog)">
+                <div class="dia-card">
                   <div class="dia-header">
                     <h3>{{ prog.dia_semana_nombre }}</h3>
-                    <span class="horario">{{ prog.hora_inicio }} - {{ prog.hora_fin }}</span>
+                    @if (prog.hora_inicio) {
+                      <span class="horario">{{ prog.hora_inicio }}</span>
+                    }
                   </div>
                   
                   <div class="dia-content">
@@ -77,7 +79,12 @@ import { AuthService } from '../../core/services/auth.service';
                   </div>
                   
                   <div class="dia-actions">
-                    <span class="btn-edit">✏️ Editar</span>
+                    <button class="btn-icon" (click)="viewPrograma(prog)" title="Ver Detalles">
+                      👁️ Ver
+                    </button>
+                    @if (authService.isSuperintendente()) {
+                      <span class="btn-edit" (click)="editPrograma(prog)">✏️ Editar</span>
+                    }
                   </div>
                 </div>
               }
@@ -134,19 +141,12 @@ import { AuthService } from '../../core/services/auth.service';
 
             <div class="form-row">
               <div class="form-group">
-                <label for="hora_inicio">Hora Inicio</label>
+                <label for="hora_inicio">Hora</label>
                 <input 
                   type="time" 
                   id="hora_inicio" 
                   [(ngModel)]="formData.hora_inicio" 
-                />
-              </div>
-              <div class="form-group">
-                <label for="hora_fin">Hora Fin</label>
-                <input 
-                  type="time" 
-                  id="hora_fin" 
-                  [(ngModel)]="formData.hora_fin" 
+                  placeholder="Ej: 09:00"
                 />
               </div>
             </div>
@@ -244,6 +244,127 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </div>
     }
+
+    <!-- Detail Modal -->
+    @if (showDetailModal()) {
+      <div class="modal-overlay" (click)="$event.stopPropagation()">
+        <div class="modal modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>📅 {{ viewingPrograma()?.dia_semana_nombre }}</h2>
+            <button class="btn-close" (click)="closeDetailModal()">×</button>
+          </div>
+          <div class="modal-body">
+            @if (viewingPrograma()) {
+              <div class="detail-grid">
+                <!-- Fecha y Día -->
+                <div class="detail-section">
+                  <h3 class="section-title">📅 Programación</h3>
+                  <div class="detail-row">
+                    <span class="detail-label">Día:</span>
+                    <span class="detail-value">{{ viewingPrograma()?.dia_semana_nombre }}</span>
+                  </div>
+                  @if (viewingPrograma()?.fecha) {
+                    <div class="detail-row">
+                      <span class="detail-label">Fecha:</span>
+                      <span class="detail-value">{{ formatDate(viewingPrograma()?.fecha || '') }}</span>
+                    </div>
+                  }
+                  @if (viewingPrograma()?.hora_inicio) {
+                    <div class="detail-row">
+                      <span class="detail-label">Hora:</span>
+                      <span class="detail-value">{{ viewingPrograma()?.hora_inicio }}</span>
+                    </div>
+                  }
+                </div>
+
+                <!-- Conductor -->
+                <div class="detail-section">
+                  <h3 class="section-title">🎤 Conductor</h3>
+                  <div class="detail-row">
+                    <span class="detail-value large">{{ viewingPrograma()?.conductor || 'Sin asignar' }}</span>
+                  </div>
+                </div>
+
+                <!-- Lugar -->
+                <div class="detail-section">
+                  <h3 class="section-title">📍 Lugar de Predicación</h3>
+                  <div class="detail-row">
+                    <span class="detail-label">Nombre:</span>
+                    <span class="detail-value">{{ viewingPrograma()?.lugar_nombre || 'Sin asignar' }}</span>
+                  </div>
+                  @if (viewingPrograma()?.lugar_direccion) {
+                    <div class="detail-row">
+                      <span class="detail-label">Dirección:</span>
+                      <span class="detail-value">{{ viewingPrograma()?.lugar_direccion }}</span>
+                    </div>
+                  }
+                  @if (viewingPrograma()?.lugar_contacto) {
+                    <div class="detail-row">
+                      <span class="detail-label">Contacto:</span>
+                      <span class="detail-value">{{ viewingPrograma()?.lugar_contacto }}</span>
+                    </div>
+                  }
+                  @if (viewingPrograma()?.lugar_telefono) {
+                    <div class="detail-row">
+                      <span class="detail-label">Teléfono:</span>
+                      <span class="detail-value">{{ viewingPrograma()?.lugar_telefono }}</span>
+                    </div>
+                  }
+                  <!-- Botón Google Maps -->
+                  @if (viewingPrograma()?.lugar_direccion) {
+                    <div class="detail-row action-row">
+                      <a 
+                        [href]="getGoogleMapsUrl(viewingPrograma()?.lugar_direccion || '')" 
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn-maps"
+                        (click)="closeDetailModal()"
+                      >
+                        📍 Ver en Google Maps
+                      </a>
+                      <button 
+                        class="btn-whatsapp" 
+                        (click)="shareByWhatsApp(viewingPrograma()!); closeDetailModal()"
+                      >
+                        📱 Compartir por WhatsApp
+                      </button>
+                    </div>
+                  }
+                </div>
+
+                <!-- Territorios -->
+                @if (viewingPrograma()?.territorios && viewingPrograma()!.territorios!.length > 0) {
+                  <div class="detail-section">
+                    <h3 class="section-title">🗺️ Territorios Asignados</h3>
+                    <div class="territorios-tags">
+                      @for (t of viewingPrograma()?.territorios; track t.id) {
+                        <span class="tag territorio-tag">{{ t.nombre }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Grupo -->
+                @if (viewingPrograma()?.grupo) {
+                  <div class="detail-section">
+                    <h3 class="section-title">👥 Grupo</h3>
+                    <div class="detail-row">
+                      <span class="detail-value large">#{{ viewingPrograma()?.grupo?.numero }} - {{ viewingPrograma()?.grupo?.nombre }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closeDetailModal()">Cerrar</button>
+            @if (authService.isSuperintendente()) {
+              <button class="btn btn-primary" (click)="closeDetailModal(); editPrograma(viewingPrograma()!)">✏️ Editar</button>
+            }
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-container { max-width: 1200px; margin: 0 auto; }
@@ -330,6 +451,110 @@ import { AuthService } from '../../core/services/auth.service';
     }
     
     .btn-edit { font-size: 0.75rem; color: var(--primary-color); }
+    .btn-icon { 
+      background: var(--surface-color); 
+      border: 1px solid var(--primary-color); 
+      color: var(--primary-color);
+      padding: 0.375rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover { background: var(--primary-color); color: white; }
+    }
+    
+    /* Detail Modal styles */
+    .detail-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    
+    .detail-section {
+      background: var(--background-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border-color);
+      
+      &:last-child { border-bottom: none; }
+    }
+    
+    .detail-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+    
+    .action-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .btn-maps, .btn-whatsapp {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .btn-maps {
+      background: #4285f4;
+      color: white;
+      border: none;
+      
+      &:hover { background: #3367d6; }
+    }
+    
+    .btn-whatsapp {
+      background: #25d366;
+      color: white;
+      border: none;
+      
+      &:hover { background: #128c7e; }
+    }
+    
+    .detail-value {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      
+      &.large { font-size: 1.125rem; font-weight: 700; }
+    }
+    
+    .territorios-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    .territorio-tag {
+      background: var(--primary-color);
+      color: white;
+      padding: 0.375rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
     
     /* Modal styles */
     .modal-overlay {
@@ -505,6 +730,8 @@ export class ProgramaPredicacionListComponent implements OnInit {
   loading = signal(true);
   
   showModal = signal(false);
+  showDetailModal = signal(false);
+  viewingPrograma = signal<ProgramaPredicacion | null>(null);
   editingPrograma = signal<ProgramaPredicacion | null>(null);
   
   formData: any = {
@@ -601,6 +828,34 @@ export class ProgramaPredicacionListComponent implements OnInit {
     });
   }
   
+  getGoogleMapsUrl(direccion: string): string {
+    if (!direccion) return '';
+    const encoded = encodeURIComponent(direccion);
+    return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+  }
+  
+  shareByWhatsApp(prog: ProgramaPredicacion) {
+    const dia = prog.dia_semana_nombre || '';
+    const hora = prog.hora_inicio || 'Por confirmar';
+    const lugar = prog.lugar_nombre || '';
+    const direccion = prog.lugar_direccion || '';
+    const contacto = prog.lugar_contacto || '';
+    const telefono = prog.lugar_telefono || '';
+    
+    let mensaje = `📅 *${dia}* - Programa de Predicación\n\n`;
+    mensaje += `⏰ Hora: ${hora}\n`;
+    mensaje += `📍 Lugar: ${lugar}\n`;
+    if (direccion) mensaje += `🏠 Dirección: ${direccion}\n`;
+    if (contacto) mensaje += `👤 Contacto: ${contacto}\n`;
+    if (telefono) mensaje += `📞 Teléfono: ${telefono}\n`;
+    
+    const mapsUrl = this.getGoogleMapsUrl(direccion);
+    if (mapsUrl) mensaje += `\n📍 Ubicación: ${mapsUrl}`;
+    
+    const encoded = encodeURIComponent(mensaje);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  }
+  
   openCreateModal() {
     this.editingPrograma.set(null);
     this.formData = {
@@ -608,8 +863,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
       fecha: '',
       dia_semana: 0,
       conductor: '',
-      hora_inicio: '09:00',
-      hora_fin: '11:00',
+      hora_inicio: '',
       lugar_nombre: 'Salón del Reino',
       lugar_direccion: '',
       lugar_contacto: '',
@@ -618,6 +872,20 @@ export class ProgramaPredicacionListComponent implements OnInit {
       territorio_ids: []
     };
     this.showModal.set(true);
+  }
+  
+  viewPrograma(prog: ProgramaPredicacion) {
+    const territorios = prog.territorios || [];
+    this.viewingPrograma.set({
+      ...prog,
+      territorios: territorios
+    });
+    this.showDetailModal.set(true);
+  }
+  
+  closeDetailModal() {
+    this.showDetailModal.set(false);
+    this.viewingPrograma.set(null);
   }
   
   editPrograma(prog: ProgramaPredicacion) {
@@ -632,7 +900,6 @@ export class ProgramaPredicacionListComponent implements OnInit {
       dia_semana: prog.dia_semana,
       conductor: prog.conductor,
       hora_inicio: prog.hora_inicio,
-      hora_fin: prog.hora_fin,
       lugar_nombre: prog.lugar_nombre,
       lugar_direccion: prog.lugar_direccion,
       lugar_contacto: prog.lugar_contacto,
@@ -655,7 +922,6 @@ export class ProgramaPredicacionListComponent implements OnInit {
       dia_semana: this.formData.dia_semana,
       conductor: this.formData.conductor,
       hora_inicio: this.formData.hora_inicio,
-      hora_fin: this.formData.hora_fin,
       lugar_nombre: this.formData.lugar_nombre,
       lugar_direccion: this.formData.lugar_direccion,
       lugar_contacto: this.formData.lugar_contacto,
