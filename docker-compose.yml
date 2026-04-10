@@ -29,6 +29,8 @@ services:
       - ./backend/.env
     environment:
       DATABASE_URL: postgres://app:password123@db:5432/cong_alameda?sslmode=disable
+    volumes:
+      - ./uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
