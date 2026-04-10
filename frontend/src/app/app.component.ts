@@ -72,9 +72,9 @@ import { ThemeService } from './core/services/theme.service';
               </a>
             </li>
             <li>
-              <a routerLink="/semanas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+              <a routerLink="/dia-predicacion" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <span class="icon">📅</span>
-                Semanas
+                Día Predicación
               </a>
             </li>
             <!-- Fase 3: Asignaciones Internas -->

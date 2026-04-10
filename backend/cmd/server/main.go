@@ -90,6 +90,12 @@ func main() {
 	territorioHandler := handlers.NewTerritorioHandler(territorioService)
 	semanaHandler := handlers.NewSemanaHandler(semanaService)
 
+	// ====== PROGRAMA DE PREDICACIÓN ======
+	// Initialize ProgramaPredicacion repository, service and handler
+	programaPredicacionRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
+	programaPredicacionService := services.NewProgramaPredicacionService(programaPredicacionRepo, grupoRepo, territorioRepo)
+	programaPredicacionHandler := handlers.NewProgramaPredicacionHandler(programaPredicacionService)
+
 	// ====== FASE 3: Asignaciones Internas ======
 	// Initialize Fase 3 repositories
 	tipoAsignRepo := repositories.NewTipoAsignacionRepository(db.Pool)
@@ -254,6 +260,14 @@ func main() {
 	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.BulkCreate)
 	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Update)
 	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Delete)
+
+	// Programa de Predicación routes
+	programas := protected.Group("/programas-predicacion")
+	programas.Get("/", programaPredicacionHandler.List)
+	programas.Get("/:id", programaPredicacionHandler.GetByID)
+	programas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Create)
+	programas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Update)
+	programas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Delete)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

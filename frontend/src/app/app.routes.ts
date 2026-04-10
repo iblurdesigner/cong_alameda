@@ -67,11 +67,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/territorios/territorio-list.component').then(m => m.TerritorioListComponent),
     canActivate: [authGuard]
   },
+  // ====== Día Predicación (antes Semanas) ======
   {
-    path: 'semanas',
-    loadComponent: () => import('./features/semanas/semana-list.component').then(m => m.SemanaListComponent),
+    path: 'dia-predicacion',
+    loadComponent: () => import('./features/programa-predicacion/programa-predicacion-list.component').then(m => m.ProgramaPredicacionListComponent),
     canActivate: [authGuard]
   },
+  // Las siguientes rutas /semanas/:id son usadas por otros módulos (asignaciones)
   {
     path: 'semanas/:id',
     loadComponent: () => import('./features/semanas/semana-detail.component').then(m => m.SemanaDetailComponent),
