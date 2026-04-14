@@ -33,7 +33,7 @@ export class SemanaService {
   private semanasSignal = signal<Semana[]>([]);
   private loadingSignal = signal(false);
 
-  semanas = computed(() => this.semanasSignal());
+  semanas = computed(() => this.semanasSignal() || []);
   loading = computed(() => this.loadingSignal());
 
   constructor(private http: HttpClient) {}
@@ -43,7 +43,7 @@ export class SemanaService {
     return this.http.get<{ data: Semana[] }>(`${environment.apiUrl}/semanas`)
       .pipe(
         tap(response => {
-          this.semanasSignal.set(response.data);
+          this.semanasSignal.set(response?.data || []);
           this.loadingSignal.set(false);
         })
       );

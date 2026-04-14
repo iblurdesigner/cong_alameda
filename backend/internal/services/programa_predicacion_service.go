@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,6 +37,12 @@ func (s *ProgramaPredicacionService) Create(
 	lugarNombre, lugarDireccion, lugarContacto, lugarTelefono string,
 	grupoID *uuid.UUID,
 ) (*models.ProgramaPredicacion, error) {
+	log.Printf("=== Create in Service ===")
+	log.Printf("nombre=%s, fecha=%s, diaSemana=%d, conductor=%s, horaInicio=%s, horaFin=%s",
+		nombre, fecha, diaSemana, conductor, horaInicio, horaFin)
+	log.Printf("lugarNombre=%s, lugarDireccion=%s", lugarNombre, lugarDireccion)
+	log.Printf("grupoID=%v", grupoID)
+
 	// Get default lugar for this day if not provided
 	defaultLugar := models.DefaultLugaresPredicacion[diaSemana]
 	if lugarNombre == "" {

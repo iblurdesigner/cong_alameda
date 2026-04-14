@@ -96,6 +96,12 @@ func main() {
 	programaPredicacionService := services.NewProgramaPredicacionService(programaPredicacionRepo, grupoRepo, territorioRepo)
 	programaPredicacionHandler := handlers.NewProgramaPredicacionHandler(programaPredicacionService)
 
+	// ====== PROGRAMA VISITA ======
+	// Initialize ProgramaVisita repository, service and handler
+	programaVisitaRepo := repositories.NewProgramaVisitaRepository(db.Pool)
+	programaVisitaService := services.NewProgramaVisitaService(programaVisitaRepo, programaPredicacionRepo, grupoRepo, territorioRepo)
+	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaService)
+
 	// ====== FASE 3: Asignaciones Internas ======
 	// Initialize Fase 3 repositories
 	tipoAsignRepo := repositories.NewTipoAsignacionRepository(db.Pool)
@@ -268,6 +274,15 @@ func main() {
 	programas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Create)
 	programas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Update)
 	programas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Delete)
+
+	// Programa de Visita routes
+	visitasGroup := protected.Group("/programas-visita")
+	visitasGroup.Get("/", programaVisitaHandler.List)
+	visitasGroup.Get("/by-fecha", programaVisitaHandler.GetByFecha)
+	visitasGroup.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.Create)
+	visitasGroup.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.Update)
+	visitasGroup.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaVisitaHandler.Delete)
+	visitasGroup.Put("/:id/visited", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.SetVisited)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

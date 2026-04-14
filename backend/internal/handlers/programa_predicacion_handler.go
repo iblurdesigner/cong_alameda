@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"log"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -100,26 +102,59 @@ func (h *ProgramaPredicacionHandler) GetByID(c *fiber.Ctx) error {
 }
 
 func (h *ProgramaPredicacionHandler) Create(c *fiber.Ctx) error {
+	log.Printf("=== Create ProgramaPredicacion called ===")
+
 	var req dto.ProgramaPredicacionRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Printf("ERROR: BodyParser failed: %v", err)
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_request"})
 	}
 
+	// Convert dia_semana from any (string from frontend) to int
+	var diaSemana int
+	switch v := req.DiaSemana.(type) {
+	case float64:
+		diaSemana = int(v)
+	case int:
+		diaSemana = v
+	case string:
+		diaSemanaInt, err := strconv.Atoi(v)
+		if err != nil {
+			diaSemana = 0
+		} else {
+			diaSemana = diaSemanaInt
+		}
+	default:
+		diaSemana = 0
+	}
+	req.DiaSemana = diaSemana
+
+	log.Printf("DEBUG: Create ProgramaPredicacion - req: %+v", req)
+	log.Printf("DEBUG: Nombre='%s', Fecha='%s', DiaSemana=%d", req.Nombre, req.Fecha, diaSemana)
+	log.Printf("DEBUG: Conductor='%s', HoraInicio='%s', HoraFin='%s'", req.Conductor, req.HoraInicio, req.HoraFin)
+
 	// Validate dia_semana (0-6 for Lunes-Domingo) - this is required
-	if req.DiaSemana < 0 || req.DiaSemana > 6 {
-		return c.Status(400).JSON(dto.ErrorResponse{Error: "dia_semana debe ser entre 0 (Lunes) y 6 (Domingo)"})
+	// If not provided or invalid, default to 0 (Lunes)
+	if diaSemana < 0 || diaSemana > 6 {
+		log.Printf("DEBUG: dia_semana invalid (%d), defaulting to 0", diaSemana)
+		diaSemana = 0 // Default to Monday
+		req.DiaSemana = diaSemana
 	}
 
-	// If nombre/fecha not provided, generate default
-	if req.Nombre == "" {
-		req.Nombre = "Día " + models.GetProgramaDiaNombre(req.DiaSemana)
-	}
+	// Validate fecha - required field
 	if req.Fecha == "" {
 		req.Fecha = time.Now().Format("2006-01-02")
+		log.Printf("DEBUG: fecha empty, defaulting to %s", req.Fecha)
 	}
 
-	programa, err := h.service.Create(c.Context(), req.Nombre, req.Fecha, req.DiaSemana, req.Conductor, req.HoraInicio, req.HoraFin, req.LugarNombre, req.LugarDireccion, req.LugarContacto, req.LugarTelefono, req.GrupoID)
+	// If nombre not provided, generate default
+	if req.Nombre == "" {
+		req.Nombre = "Día " + models.GetProgramaDiaNombre(diaSemana)
+	}
+
+	programa, err := h.service.Create(c.Context(), req.Nombre, req.Fecha, diaSemana, req.Conductor, req.HoraInicio, req.HoraFin, req.LugarNombre, req.LugarDireccion, req.LugarContacto, req.LugarTelefono, req.GrupoID)
 	if err != nil {
+		log.Printf("ERROR: service.Create failed: %v", err)
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
 	}
 
@@ -144,9 +179,38 @@ func (h *ProgramaPredicacionHandler) Update(c *fiber.Ctx) error {
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_request"})
 	}
 
+	// Convert dia_semana from any (string from frontend) to int
+	var diaSemana int
+	switch v := req.DiaSemana.(type) {
+	case float64:
+		diaSemana = int(v)
+	case int:
+		diaSemana = v
+	case string:
+		diaSemanaInt, err := strconv.Atoi(v)
+		if err != nil {
+			diaSemana = -1 // Invalid
+		} else {
+			diaSemana = diaSemanaInt
+		}
+	default:
+		diaSemana = -1 // Not provided
+	}
+	req.DiaSemana = diaSemana
+
 	// Build updates map
 	updates := make(map[string]interface{})
 
+	// Handle name, fecha, and dia_semana (only if provided and valid)
+	if req.Nombre != "" {
+		updates["nombre"] = req.Nombre
+	}
+	if req.Fecha != "" {
+		updates["fecha"] = req.Fecha
+	}
+	if diaSemana >= 0 && diaSemana <= 6 {
+		updates["dia_semana"] = diaSemana
+	}
 	if req.Conductor != "" {
 		updates["conductor"] = req.Conductor
 	}

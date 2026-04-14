@@ -6,7 +6,7 @@ import "github.com/google/uuid"
 type ProgramaPredicacionRequest struct {
 	Nombre         string     `json:"nombre"`
 	Fecha          string     `json:"fecha"`
-	DiaSemana      int        `json:"dia_semana"`
+	DiaSemana      any        `json:"dia_semana"` // Can be int or string from frontend
 	Conductor      string     `json:"conductor"`
 	HoraInicio     string     `json:"hora_inicio"`
 	HoraFin        string     `json:"hora_fin"`

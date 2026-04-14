@@ -38,7 +38,7 @@ export interface ProgramaPredicacion {
 export class ProgramaPredicacionService {
   private programasSignal = signal<ProgramaPredicacion[]>([]);
 
-  programas = computed(() => this.programasSignal());
+  programas = computed(() => this.programasSignal() || []);
 
   constructor(private http: HttpClient) {}
 
@@ -46,8 +46,9 @@ export class ProgramaPredicacionService {
     return this.http.get<{ data: ProgramaPredicacion[] }>(`${environment.apiUrl}/programas-predicacion`)
       .pipe(
         tap(response => {
-          // Normalize territorios to always be an array (backend might send null)
-          const normalized = response.data.map(p => ({
+          // Normalize to empty array if null
+          const data = response?.data || [];
+          const normalized = data.map(p => ({
             ...p,
             territorios: p.territorios || []
           }));

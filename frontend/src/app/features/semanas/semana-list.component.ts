@@ -16,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
           <h1>Semanas de Visita</h1>
           <p class="header-subtitle">Programación semanal de territorios por día</p>
         </div>
-        @if (authService.isSuperintendente()) {
+        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
             <span class="btn-icon-only">➕</span>
             <span class="btn-text">Nueva Semana</span>
@@ -30,7 +30,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="empty-state">
           <div class="empty-icon">📅</div>
           <p>No hay semanas de visita registradas</p>
-          @if (authService.isSuperintendente()) {
+          @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showModal = true">
               Crear Primera Semana
             </button>

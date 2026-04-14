@@ -73,6 +73,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/programa-predicacion/programa-predicacion-list.component').then(m => m.ProgramaPredicacionListComponent),
     canActivate: [authGuard]
   },
+  // ====== Predicación Visita ======
+  {
+    path: 'predicacion-visita',
+    loadComponent: () => import('./features/programa-visita/programa-visita-list.component').then(m => m.ProgramaVisitaListComponent),
+    canActivate: [authGuard]
+  },
   // Las siguientes rutas /semanas/:id son usadas por otros módulos (asignaciones)
   {
     path: 'semanas/:id',

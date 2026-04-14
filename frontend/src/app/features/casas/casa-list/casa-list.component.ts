@@ -16,7 +16,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <h1>Casas</h1>
           <p class="header-subtitle">Gestión de casas con motivo "no visitar"</p>
         </div>
-        @if (authService.isSuperintendente()) {
+        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <a routerLink="/casas/new" class="btn btn-primary btn-mobile-full">
             <span class="btn-icon-only">➕</span>
             <span class="btn-text">Nueva Casa</span>
@@ -59,7 +59,7 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="empty-state">
           <div class="empty-icon">🏠</div>
           <p>No hay casas registradas</p>
-          @if (authService.isSuperintendente()) {
+          @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <a routerLink="/casas/new" class="btn btn-primary">Registrar primera casa</a>
           }
         </div>

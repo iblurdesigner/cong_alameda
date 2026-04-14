@@ -18,7 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
           <h1>📅 Día Predicación</h1>
           <p class="header-subtitle">Horario y territorios por día de la semana</p>
         </div>
-        @if (authService.isSuperintendente()) {
+        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
             ➕ Nueva Fecha
           </button>
@@ -31,7 +31,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="empty-state">
           <div class="empty-icon">📅</div>
           <p>No hay programas de prédicación registrados</p>
-          @if (authService.isSuperintendente()) {
+          @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="openCreateModal()">
               Crear Primer Programa
             </button>
@@ -82,7 +82,7 @@ import { AuthService } from '../../core/services/auth.service';
                     <button class="btn-icon" (click)="viewPrograma(prog)" title="Ver Detalles">
                       👁️ Ver
                     </button>
-                    @if (authService.isSuperintendente()) {
+                    @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                       <span class="btn-edit" (click)="editPrograma(prog)">✏️ Editar</span>
                     }
                   </div>
@@ -358,7 +358,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="closeDetailModal()">Cerrar</button>
-            @if (authService.isSuperintendente()) {
+            @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
               <button class="btn btn-primary" (click)="closeDetailModal(); editPrograma(viewingPrograma()!)">✏️ Editar</button>
             }
           </div>
@@ -889,7 +889,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   }
   
   editPrograma(prog: ProgramaPredicacion) {
-    if (!this.authService.isSuperintendente()) return;
+    if (!this.authService.isSuperintendente() && !this.authService.isSuperAdmin()) return;
     
     this.editingPrograma.set(prog);
     // Normalize territorios to always be an array (backend might send null)

@@ -17,7 +17,7 @@ import { AuthService } from '../../core/services/auth.service';
           <h1>Territorios</h1>
           <p class="header-subtitle">Archivos PDF de los territorios de predicación</p>
         </div>
-        @if (authService.isSuperintendente()) {
+        @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showUploadModal = true">
             <span class="btn-icon-only">➕</span>
             <span class="btn-text">Subir Territorio</span>
@@ -42,7 +42,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="empty-state">
           <div class="empty-icon">📁</div>
           <p>No hay territorios registrados</p>
-          @if (authService.isSuperintendente()) {
+          @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showUploadModal = true">
               Subir Primer Territorio
             </button>
@@ -65,7 +65,7 @@ import { AuthService } from '../../core/services/auth.service';
                 >
                   ⬇️ Descargar
                 </button>
-                @if (authService.isSuperintendente()) {
+                @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                   <button 
                     class="btn btn-icon btn-sm btn-danger"
                     (click)="deleteTerritorio(territorio)"

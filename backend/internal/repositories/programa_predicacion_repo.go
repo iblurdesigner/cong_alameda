@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,6 +22,11 @@ func NewProgramaPredicacionRepository(db *pgxpool.Pool) *ProgramaPredicacionRepo
 }
 
 func (r *ProgramaPredicacionRepository) Create(ctx context.Context, p *models.ProgramaPredicacion) error {
+	log.Printf("=== REPO Create called ===")
+	log.Printf("Nombre='%s', Fecha='%s', DiaSemana=%d", p.Nombre, p.Fecha, p.DiaSemana)
+	log.Printf("Conductor='%s', HoraInicio='%s', HoraFin='%s'", p.Conductor, p.HoraInicio, p.HoraFin)
+	log.Printf("LugarNombre='%s', GrupoID=%v", p.LugarNombre, p.GrupoID)
+
 	query := `
 		INSERT INTO programas_predicacion (
 			id, nombre, fecha, dia_semana, conductor, hora_inicio, hora_fin,
@@ -33,6 +39,9 @@ func (r *ProgramaPredicacionRepository) Create(ctx context.Context, p *models.Pr
 		p.LugarNombre, p.LugarDireccion, p.LugarContacto, p.LugarTelefono,
 		p.GrupoID, p.CreatedAt, p.UpdatedAt,
 	)
+	if err != nil {
+		log.Printf("ERROR: Repo Create failed: %v", err)
+	}
 	return err
 }
 

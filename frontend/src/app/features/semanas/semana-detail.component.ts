@@ -21,7 +21,7 @@ import { AuthService } from '../../core/services/auth.service';
             <p>{{ formatDate(semana()!.fecha_inicio) }} - {{ formatDate(semana()!.fecha_fin) }}</p>
           }
         </div>
-        @if (authService.isSuperintendente() && semana()) {
+        @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && semana()) {
           <button 
             class="btn btn-outline btn-sm btn-danger"
             (click)="confirmDelete()"
@@ -77,7 +77,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
               </div>
               
-              @if (authService.isSuperintendente()) {
+              @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                 <div class="dia-actions">
                   <button class="btn btn-outline btn-sm" (click)="editDia(dia)">
                     ✏️ Asignar Territorios

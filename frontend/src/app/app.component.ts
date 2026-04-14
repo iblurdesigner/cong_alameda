@@ -77,6 +77,12 @@ import { ThemeService } from './core/services/theme.service';
                 Día Predicación
               </a>
             </li>
+            <li>
+              <a routerLink="/predicacion-visita" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+                <span class="icon">🚗</span>
+                Predicación Visita
+              </a>
+            </li>
             <!-- Fase 3: Asignaciones Internas -->
             <li class="nav-section">
               <span class="section-label">Asignaciones</span>
