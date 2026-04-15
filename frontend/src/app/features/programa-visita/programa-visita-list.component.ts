@@ -67,12 +67,9 @@ import { AuthService } from '../../core/services/auth.service';
       } @else {
         <div class="visitas-grid">
           @for (visita of visitas(); track visita.id) {
-            <div class="visita-card" [class.visited]="visita.visited">
+            <div class="visita-card">
               <div class="visita-header">
                 <h3>{{ visita.dia_semana_nombre }}</h3>
-                @if (visita.visited) {
-                  <span class="badge-visited">✅ Visitado</span>
-                }
               </div>
               
               <div class="visita-content">
@@ -108,17 +105,11 @@ import { AuthService } from '../../core/services/auth.service';
                     <p>{{ visita.observaciones }}</p>
                   </div>
                 }
+
               </div>
 
               <div class="visita-actions">
 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                  <button 
-                    class="btn-check" 
-                    (click)="toggleVisited(visita)"
-                    [class.active]="visita.visited"
-                  >
-                    {{ visita.visited ? '✅ Marcado' : '⬜ Marcar' }}
-                  </button>
                   <span class="btn-edit" (click)="editVisita(visita)">✏️ Editar</span>
                 }
               </div>
@@ -228,8 +219,6 @@ import { AuthService } from '../../core/services/auth.service';
       border-radius: var(--radius-lg);
       padding: 1rem;
       transition: all 0.2s ease;
-      
-      &.visited { border-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
     }
     
     .visita-header {
@@ -238,7 +227,6 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       margin-bottom: 1rem;
       h3 { margin: 0; font-size: 1.25rem; font-weight: 600; }
-      .badge-visited { background: #22c55e; color: white; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem; }
     }
     
     .visita-content {

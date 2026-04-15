@@ -94,6 +94,7 @@ func (h *ProgramaVisitaHandler) Create(c *fiber.Ctx) error {
 }
 
 func (h *ProgramaVisitaHandler) Update(c *fiber.Ctx) error {
+	log.Printf("=== PUT /programas-visita/:id called ===")
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_id"})
@@ -101,8 +102,11 @@ func (h *ProgramaVisitaHandler) Update(c *fiber.Ctx) error {
 
 	var req dto.ProgramaVisitaRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Printf("ERROR: BodyParser failed: %v", err)
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_request"})
 	}
+
+	log.Printf("DEBUG: Update request: %+v", req)
 
 	updates := make(map[string]interface{})
 
@@ -134,9 +138,12 @@ func (h *ProgramaVisitaHandler) Update(c *fiber.Ctx) error {
 		updates["territorio_ids"] = req.TerritorioIDs
 	}
 
+	log.Printf("DEBUG: Updates map: %+v", updates)
+
 	programa, err := h.service.Update(c.Context(), id, updates)
 	if err != nil {
-		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
+		log.Printf("ERROR: service.Update failed: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "internal_error", "details": err.Error()})
 	}
 
 	resp := h.toResponse(programa)

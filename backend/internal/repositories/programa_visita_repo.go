@@ -126,6 +126,14 @@ func (r *ProgramaVisitaRepository) GetByFecha(ctx context.Context, fecha string)
 }
 
 func (r *ProgramaVisitaRepository) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaVisita, error) {
+	log.Printf("=== REPO Update called ===")
+	log.Printf("Updates: %+v", updates)
+
+	if len(updates) == 0 {
+		log.Printf("WARNING: No fields to update, returning current record")
+		return r.GetByID(ctx, id)
+	}
+
 	query := "UPDATE programas_visita SET "
 	var args []interface{}
 	argNum := 1
@@ -135,11 +143,16 @@ func (r *ProgramaVisitaRepository) Update(ctx context.Context, id uuid.UUID, upd
 		args = append(args, value)
 		argNum++
 	}
-	query += "updated_at = NOW() WHERE id = $%d"
+	// Use the current argNum for the id parameter (e.g., $5)
+	query += fmt.Sprintf("updated_at = NOW() WHERE id = $%d", argNum)
 	args = append(args, id)
+
+	log.Printf("DEBUG: Query: %s", query)
+	log.Printf("DEBUG: Args: %+v", args)
 
 	_, err := r.db.Exec(ctx, query, args...)
 	if err != nil {
+		log.Printf("ERROR: Exec failed: %v", err)
 		return nil, err
 	}
 

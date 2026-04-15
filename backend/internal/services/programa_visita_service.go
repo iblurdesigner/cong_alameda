@@ -163,6 +163,10 @@ func (s *ProgramaVisitaService) GetByFecha(ctx context.Context, fecha string) ([
 }
 
 func (s *ProgramaVisitaService) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaVisitaDetail, error) {
+	log.Printf("=== SERVICE Update called ===")
+	log.Printf("ID: %s", id.String())
+	log.Printf("Updates: %+v", updates)
+
 	// Handle territorios separately
 	if territorios, ok := updates["territorio_ids"]; ok {
 		if ids, ok := territorios.([]string); ok {
@@ -173,6 +177,7 @@ func (s *ProgramaVisitaService) Update(ctx context.Context, id uuid.UUID, update
 				}
 			}
 			if err := s.repo.SetTerritorios(ctx, id, uuids); err != nil {
+				log.Printf("ERROR: SetTerritorios failed: %v", err)
 				return nil, err
 			}
 		}
@@ -181,10 +186,20 @@ func (s *ProgramaVisitaService) Update(ctx context.Context, id uuid.UUID, update
 
 	_, err := s.repo.Update(ctx, id, updates)
 	if err != nil {
+		log.Printf("ERROR: repo.Update failed: %v", err)
 		return nil, err
 	}
 
-	return s.GetByID(ctx, id)
+	log.Printf("DEBUG: Update succeeded, now fetching updated record")
+
+	result, err := s.GetByID(ctx, id)
+	if err != nil {
+		log.Printf("ERROR: GetByID after update failed: %v", err)
+		return nil, err
+	}
+
+	log.Printf("DEBUG: GetByID succeeded, returning result")
+	return result, nil
 }
 
 func (s *ProgramaVisitaService) Delete(ctx context.Context, id uuid.UUID) error {
