@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -59,8 +60,10 @@ func (s *ProgramaVisitaService) Create(ctx context.Context, programaPredicacionI
 }
 
 func (s *ProgramaVisitaService) GetAll(ctx context.Context) ([]*models.ProgramaVisitaDetail, error) {
+	log.Printf("=== ProgramaVisitaService.GetAll called ===")
 	programas, err := s.repo.GetAll(ctx)
 	if err != nil {
+		log.Printf("ERROR: repo.GetAll failed: %v", err)
 		return nil, err
 	}
 

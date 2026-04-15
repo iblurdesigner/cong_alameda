@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -37,8 +38,9 @@ func (r *ProgramaVisitaRepository) Create(ctx context.Context, p *models.Program
 }
 
 func (r *ProgramaVisitaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaVisita, error) {
+	// Cast fecha to text to avoid pgx scan issues with date type
 	query := `
-		SELECT id, programa_predicacion_id, fecha, dia_semana, conductor, hora,
+		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
 			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita
@@ -57,8 +59,10 @@ func (r *ProgramaVisitaRepository) GetByID(ctx context.Context, id uuid.UUID) (*
 }
 
 func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.ProgramaVisita, error) {
+	log.Printf("=== ProgramaVisitaRepo.GetAll called ===")
+	// Cast fecha to text to avoid pgx scan issues with date type
 	query := `
-		SELECT id, programa_predicacion_id, fecha, dia_semana, conductor, hora,
+		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
 			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita
@@ -66,6 +70,7 @@ func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.Progra
 	`
 	rows, err := r.db.Query(ctx, query)
 	if err != nil {
+		log.Printf("ERROR: Query failed: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -79,16 +84,19 @@ func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.Progra
 			&p.GrupoID, &p.Observaciones, &p.Visited, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {
+			log.Printf("ERROR: Scan failed: %v", err)
 			return nil, err
 		}
 		programas = append(programas, p)
 	}
+	log.Printf("=== Repo GetAll returned %d programas ===", len(programas))
 	return programas, nil
 }
 
 func (r *ProgramaVisitaRepository) GetByFecha(ctx context.Context, fecha string) ([]*models.ProgramaVisita, error) {
+	// Cast fecha to text to avoid pgx scan issues with date type
 	query := `
-		SELECT id, programa_predicacion_id, fecha, dia_semana, conductor, hora,
+		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
 			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita

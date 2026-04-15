@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,8 +21,10 @@ func NewProgramaVisitaHandler(service *services.ProgramaVisitaService) *Programa
 }
 
 func (h *ProgramaVisitaHandler) List(c *fiber.Ctx) error {
+	log.Printf("=== GET /programas-visita called ===")
 	programas, err := h.service.GetAll(c.Context())
 	if err != nil {
+		log.Printf("ERROR: service.GetAll failed: %v", err)
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
 	}
 

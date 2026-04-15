@@ -309,6 +309,8 @@ export class ProgramaVisitaListComponent implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    // Cargar programas de prédicación para la plantilla
+    this.programaService.loadProgramas().subscribe();
   }
 
   loadData() {
