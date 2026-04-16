@@ -25,13 +25,15 @@ func (r *ProgramaVisitaRepository) Create(ctx context.Context, p *models.Program
 	query := `
 		INSERT INTO programas_visita (
 			id, programa_predicacion_id, fecha, dia_semana, conductor, hora,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			lugar_nombre, lugar_direccion, lugar_ciudad, lugar_provincia, lugar_codigo_postal, lugar_pais,
+			lugar_contacto, lugar_telefono,
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	`
 	_, err := r.db.Exec(ctx, query,
 		p.ID, p.ProgramaPredicacionID, p.Fecha, p.DiaSemana, p.Conductor, p.Hora,
-		p.LugarNombre, p.LugarDireccion, p.LugarContacto, p.LugarTelefono,
+		p.LugarNombre, p.LugarDireccion, p.LugarCiudad, p.LugarProvincia, p.LugarCodigoPostal, p.LugarPais,
+		p.LugarContacto, p.LugarTelefono,
 		p.GrupoID, p.Observaciones, p.Visited, p.CreatedBy, p.CreatedAt, p.UpdatedAt,
 	)
 	return err
@@ -39,9 +41,11 @@ func (r *ProgramaVisitaRepository) Create(ctx context.Context, p *models.Program
 
 func (r *ProgramaVisitaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaVisita, error) {
 	// Cast fecha to text to avoid pgx scan issues with date type
+	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita
 		WHERE id = $1
@@ -49,7 +53,8 @@ func (r *ProgramaVisitaRepository) GetByID(ctx context.Context, id uuid.UUID) (*
 	p := &models.ProgramaVisita{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&p.ID, &p.ProgramaPredicacionID, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.Hora,
-		&p.LugarNombre, &p.LugarDireccion, &p.LugarContacto, &p.LugarTelefono,
+		&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+		&p.LugarContacto, &p.LugarTelefono,
 		&p.GrupoID, &p.Observaciones, &p.Visited, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
@@ -61,9 +66,11 @@ func (r *ProgramaVisitaRepository) GetByID(ctx context.Context, id uuid.UUID) (*
 func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.ProgramaVisita, error) {
 	log.Printf("=== ProgramaVisitaRepo.GetAll called ===")
 	// Cast fecha to text to avoid pgx scan issues with date type
+	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita
 		ORDER BY fecha DESC, dia_semana ASC
@@ -80,7 +87,8 @@ func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.Progra
 		p := &models.ProgramaVisita{}
 		err := rows.Scan(
 			&p.ID, &p.ProgramaPredicacionID, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.Hora,
-			&p.LugarNombre, &p.LugarDireccion, &p.LugarContacto, &p.LugarTelefono,
+			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+			&p.LugarContacto, &p.LugarTelefono,
 			&p.GrupoID, &p.Observaciones, &p.Visited, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {
@@ -95,9 +103,11 @@ func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.Progra
 
 func (r *ProgramaVisitaRepository) GetByFecha(ctx context.Context, fecha string) ([]*models.ProgramaVisita, error) {
 	// Cast fecha to text to avoid pgx scan issues with date type
+	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita
 		WHERE fecha = $1
@@ -114,7 +124,8 @@ func (r *ProgramaVisitaRepository) GetByFecha(ctx context.Context, fecha string)
 		p := &models.ProgramaVisita{}
 		err := rows.Scan(
 			&p.ID, &p.ProgramaPredicacionID, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.Hora,
-			&p.LugarNombre, &p.LugarDireccion, &p.LugarContacto, &p.LugarTelefono,
+			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+			&p.LugarContacto, &p.LugarTelefono,
 			&p.GrupoID, &p.Observaciones, &p.Visited, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {

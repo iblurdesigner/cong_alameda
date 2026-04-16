@@ -152,7 +152,7 @@ func (h *ProgramaPredicacionHandler) Create(c *fiber.Ctx) error {
 		req.Nombre = "Día " + models.GetProgramaDiaNombre(diaSemana)
 	}
 
-	programa, err := h.service.Create(c.Context(), req.Nombre, req.Fecha, diaSemana, req.Conductor, req.HoraInicio, req.HoraFin, req.LugarNombre, req.LugarDireccion, req.LugarContacto, req.LugarTelefono, req.GrupoID)
+	programa, err := h.service.Create(c.Context(), req.Nombre, req.Fecha, diaSemana, req.Conductor, req.HoraInicio, req.HoraFin, req.LugarNombre, req.LugarDireccion, req.LugarCiudad, req.LugarProvincia, req.LugarCodigoPostal, req.LugarPais, req.LugarContacto, req.LugarTelefono, req.GrupoID)
 	if err != nil {
 		log.Printf("ERROR: service.Create failed: %v", err)
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
@@ -225,6 +225,18 @@ func (h *ProgramaPredicacionHandler) Update(c *fiber.Ctx) error {
 	}
 	if req.LugarDireccion != "" {
 		updates["lugar_direccion"] = req.LugarDireccion
+	}
+	if req.LugarCiudad != "" {
+		updates["lugar_ciudad"] = req.LugarCiudad
+	}
+	if req.LugarProvincia != "" {
+		updates["lugar_provincia"] = req.LugarProvincia
+	}
+	if req.LugarCodigoPostal != "" {
+		updates["lugar_codigo_postal"] = req.LugarCodigoPostal
+	}
+	if req.LugarPais != "" {
+		updates["lugar_pais"] = req.LugarPais
 	}
 	if req.LugarContacto != "" {
 		updates["lugar_contacto"] = req.LugarContacto

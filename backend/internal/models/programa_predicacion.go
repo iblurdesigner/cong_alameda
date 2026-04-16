@@ -16,10 +16,14 @@ type ProgramaPredicacion struct {
 	HoraInicio string    `json:"hora_inicio" db:"hora_inicio"`
 	HoraFin    string    `json:"hora_fin" db:"hora_fin"`
 	// Lugar de prédicación
-	LugarNombre    string `json:"lugar_nombre" db:"lugar_nombre"`
-	LugarDireccion string `json:"lugar_direccion" db:"lugar_direccion"`
-	LugarContacto  string `json:"lugar_contacto" db:"lugar_contacto"`
-	LugarTelefono  string `json:"lugar_telefono" db:"lugar_telefono"`
+	LugarNombre       string `json:"lugar_nombre" db:"lugar_nombre"`
+	LugarDireccion    string `json:"lugar_direccion" db:"lugar_direccion"`
+	LugarCiudad       string `json:"lugar_ciudad" db:"lugar_ciudad"`
+	LugarProvincia    string `json:"lugar_provincia" db:"lugar_provincia"`
+	LugarCodigoPostal string `json:"lugar_codigo_postal" db:"lugar_codigo_postal"`
+	LugarPais         string `json:"lugar_pais" db:"lugar_pais"`
+	LugarContacto     string `json:"lugar_contacto" db:"lugar_contacto"`
+	LugarTelefono     string `json:"lugar_telefono" db:"lugar_telefono"`
 	// Grupo asignado (para información)
 	GrupoID   *uuid.UUID `json:"grupo_id" db:"grupo_id"`
 	CreatedAt time.Time  `json:"created_at" db:"created_at"`

@@ -26,6 +26,10 @@ export interface ProgramaPredicacion {
   hora_fin: string;
   lugar_nombre: string;
   lugar_direccion: string;
+  lugar_ciudad: string;
+  lugar_provincia: string;
+  lugar_codigo_postal: string;
+  lugar_pais: string;
   lugar_contacto: string;
   lugar_telefono: string;
   grupo?: GrupoSimple;

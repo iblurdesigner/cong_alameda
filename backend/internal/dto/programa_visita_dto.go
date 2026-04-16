@@ -11,6 +11,10 @@ type ProgramaVisitaRequest struct {
 	Hora                  string     `json:"hora"`
 	LugarNombre           string     `json:"lugar_nombre"`
 	LugarDireccion        string     `json:"lugar_direccion"`
+	LugarCiudad           string     `json:"lugar_ciudad"`
+	LugarProvincia        string     `json:"lugar_provincia"`
+	LugarCodigoPostal     string     `json:"lugar_codigo_postal"`
+	LugarPais             string     `json:"lugar_pais"`
 	LugarContacto         string     `json:"lugar_contacto"`
 	LugarTelefono         string     `json:"lugar_telefono"`
 	GrupoID               *uuid.UUID `json:"grupo_id"`
@@ -31,6 +35,10 @@ type ProgramaVisitaResponse struct {
 	Hora                  string              `json:"hora"`
 	LugarNombre           string              `json:"lugar_nombre"`
 	LugarDireccion        string              `json:"lugar_direccion"`
+	LugarCiudad           string              `json:"lugar_ciudad"`
+	LugarProvincia        string              `json:"lugar_provincia"`
+	LugarCodigoPostal     string              `json:"lugar_codigo_postal"`
+	LugarPais             string              `json:"lugar_pais"`
 	LugarContacto         string              `json:"lugar_contacto"`
 	LugarTelefono         string              `json:"lugar_telefono"`
 	Grupo                 *GrupoSimple        `json:"grupo,omitempty"`

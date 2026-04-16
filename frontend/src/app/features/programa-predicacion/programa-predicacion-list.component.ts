@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ProgramaPredicacionService, ProgramaPredicacion } from '../../core/services/programa-predicacion.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 import { TerritorioService, Territorio } from '../../core/services/territorio.service';
@@ -308,6 +309,19 @@ import { AuthService } from '../../core/services/auth.service';
                     <div class="detail-row">
                       <span class="detail-label">Teléfono:</span>
                       <span class="detail-value">{{ viewingPrograma()?.lugar_telefono }}</span>
+                    </div>
+                  }
+                  <!-- Mapa embebido -->
+                  @if (viewingPrograma()?.lugar_direccion) {
+                    <div class="map-section">
+                      <iframe
+                        [src]="getGoogleMapsEmbedUrl(viewingPrograma()!)"
+                        width="100%"
+                        height="250"
+                        style="border:0; border-radius: 8px;"
+                        loading="lazy"
+                        allowfullscreen>
+                      </iframe>
                     </div>
                   }
                   <!-- Botón Google Maps -->
@@ -723,6 +737,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   grupoService = inject(GrupoService);
   territorioService = inject(TerritorioService);
   authService = inject(AuthService);
+  private sanitizer = inject(DomSanitizer);
   
   programas = this.programaService.programas;
   grupos = signal<Grupo[]>([]);
@@ -832,6 +847,25 @@ export class ProgramaPredicacionListComponent implements OnInit {
     if (!direccion) return '';
     const encoded = encodeURIComponent(direccion);
     return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+  }
+  
+  getGoogleMapsEmbedUrl(prog: ProgramaPredicacion): SafeResourceUrl {
+    if (!prog?.lugar_direccion) return '';
+    
+    // Build full address from all fields (if available)
+    const parts: string[] = [];
+    if (prog.lugar_direccion) parts.push(prog.lugar_direccion);
+    if ((prog as any).lugar_ciudad) parts.push((prog as any).lugar_ciudad);
+    if ((prog as any).lugar_provincia) parts.push((prog as any).lugar_provincia);
+    if ((prog as any).lugar_codigo_postal) parts.push((prog as any).lugar_codigo_postal);
+    if ((prog as any).lugar_pais) parts.push((prog as any).lugar_pais);
+    
+    const fullAddress = parts.length > 0 ? parts.join(', ') : prog.lugar_direccion;
+    const encoded = encodeURIComponent(fullAddress);
+    
+    // Using Google Maps embed iframe (works without additional API key setup)
+    const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
   
   shareByWhatsApp(prog: ProgramaPredicacion) {

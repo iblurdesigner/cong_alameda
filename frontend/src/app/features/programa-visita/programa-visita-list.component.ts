@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ProgramaVisitaService, ProgramaVisita } from '../../core/services/programa-visita.service';
 import { ProgramaPredicacionService } from '../../core/services/programa-predicacion.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-programa-visita-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -109,6 +109,7 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
 
               <div class="visita-actions">
+                <span class="btn-view" (click)="viewVisita(visita)">👁️ Ver</span>
 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                   <span class="btn-edit" (click)="editVisita(visita)">✏️ Editar</span>
                 }
@@ -164,8 +165,30 @@ import { AuthService } from '../../core/services/auth.service';
               <input type="text" id="lugar_nombre" [(ngModel)]="formData.lugar_nombre" placeholder="Ej: Salón del Reino" />
             </div>
             <div class="form-group">
-              <label for="lugar_direccion">Dirección</label>
-              <input type="text" id="lugar_direccion" [(ngModel)]="formData.lugar_direccion" placeholder="Dirección del lugar" />
+              <label for="lugar_direccion">Dirección *</label>
+              <input type="text" id="lugar_direccion" [(ngModel)]="formData.lugar_direccion" placeholder="Calle y número" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="lugar_ciudad">Ciudad</label>
+                <input type="text" id="lugar_ciudad" [(ngModel)]="formData.lugar_ciudad" placeholder="Ej: Buenos Aires" />
+              </div>
+              <div class="form-group">
+                <label for="lugar_provincia">Provincia</label>
+                <input type="text" id="lugar_provincia" [(ngModel)]="formData.lugar_provincia" placeholder="Ej: CABA" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="lugar_codigo_postal">Código Postal</label>
+                <input type="text" id="lugar_codigo_postal" [(ngModel)]="formData.lugar_codigo_postal" placeholder="Ej: C1428" />
+              </div>
+              <div class="form-group">
+                <label for="lugar_pais">País</label>
+                <input type="text" id="lugar_pais" [(ngModel)]="formData.lugar_pais" placeholder="País" />
+              </div>
             </div>
 
             <div class="form-group">
@@ -180,6 +203,99 @@ import { AuthService } from '../../core/services/auth.service';
             <div class="spacer"></div>
             <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
             <button class="btn btn-primary" (click)="save()" [disabled]="!formData.fecha">Guardar</button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Detail View Modal -->
+    @if (viewing() && viewingVisita()) {
+      <div class="modal-overlay" (click)="$event.stopPropagation()">
+        <div class="modal modal-lg" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Detalle de Visita</h2>
+            <button class="btn-close" (click)="closeViewModal()">×</button>
+          </div>
+          <div class="modal-body">
+            @if (viewingVisita()!.fecha) {
+              <div class="info-row">
+                <span class="label">📅 Fecha:</span>
+                <span class="value">{{ viewingVisita()!.fecha }}</span>
+              </div>
+            }
+            @if (viewingVisita()!.dia_semana_nombre) {
+              <div class="info-row">
+                <span class="label">📆 Día:</span>
+                <span class="value">{{ viewingVisita()!.dia_semana_nombre }}</span>
+              </div>
+            }
+            @if (viewingVisita()!.hora) {
+              <div class="info-row">
+                <span class="label">⏰ Hora:</span>
+                <span class="value">{{ viewingVisita()!.hora }}</span>
+              </div>
+            }
+            <div class="info-row">
+              <span class="label">🎤 Conductor:</span>
+              <span class="value">{{ viewingVisita()!.conductor || 'Sin asignar' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">📍 Lugar:</span>
+              <span class="value">{{ viewingVisita()!.lugar_nombre || 'Sin asignar' }}</span>
+            </div>
+            @if (viewingVisita()!.lugar_direccion) {
+              <div class="info-row">
+                <span class="label">🏠 Dirección:</span>
+                <span class="value">{{ viewingVisita()!.lugar_direccion }}</span>
+              </div>
+              
+              <!-- Map Container interactivo -->
+              <div class="map-section">
+                <iframe
+                  [src]="getGoogleMapsEmbedUrl(viewingVisita()!)"
+                  width="100%"
+                  height="250"
+                  style="border:0; border-radius: 8px;"
+                  loading="lazy"
+                  allowfullscreen
+                  referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+              </div>
+            }
+            @if (viewingVisita()!.lugar_contacto) {
+              <div class="info-row">
+                <span class="label">👤 Contacto:</span>
+                <span class="value">{{ viewingVisita()!.lugar_contacto }}</span>
+              </div>
+            }
+            @if (viewingVisita()!.lugar_telefono) {
+              <div class="info-row">
+                <span class="label">📞 Teléfono:</span>
+                <span class="value">{{ viewingVisita()!.lugar_telefono }}</span>
+              </div>
+            }
+            @if (viewingVisita()!.observaciones) {
+              <div class="info-row observaciones">
+                <span class="label">📝 Observaciones:</span>
+                <p>{{ viewingVisita()!.observaciones }}</p>
+              </div>
+            }
+          </div>
+          <div class="modal-footer">
+            @if (viewingVisita()!.lugar_direccion) {
+              <a [href]="getGoogleMapsUrl(viewingVisita()!.lugar_direccion)" 
+                 target="_blank" 
+                 class="btn btn-outline"
+                 title="Abrir en Google Maps">
+                🔗 Ver en Maps
+              </a>
+            } @else {
+              <button class="btn btn-outline" disabled title="No hay dirección">
+                📍 Sin dirección
+              </button>
+            }
+            <div class="spacer"></div>
+            <button class="btn btn-outline" (click)="closeViewModal()">Cerrar</button>
           </div>
         </div>
       </div>
@@ -250,7 +366,7 @@ import { AuthService } from '../../core/services/auth.service';
       padding: 0.375rem 0.75rem; border-radius: var(--radius-md); font-size: 0.75rem; cursor: pointer;
       &.active { background: #22c55e; border-color: #22c55e; color: white; }
     }
-    .btn-edit { font-size: 0.75rem; color: var(--primary-color); cursor: pointer; }
+    .btn-view, .btn-edit { font-size: 0.75rem; color: var(--primary-color); cursor: pointer; }
 
     .form-row { display: flex; gap: 1rem; }
     .form-group { flex: 1; margin-bottom: 1rem; label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem; } 
@@ -264,6 +380,14 @@ import { AuthService } from '../../core/services/auth.service';
     .btn-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; color: var(--text-secondary); }
     .modal-body { padding: 1.5rem; }
     .modal-footer { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--surface-color); .spacer { flex: 1; } }
+
+    .map-section { margin-top: 1rem; }
+    .map-container { width: 100%; height: 300px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); }
+    .map-preview-btn { position: relative; text-decoration: none; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
+    .map-btn-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 500; white-space: nowrap; transition: background 0.2s; }
+    .map-preview-btn:hover .map-btn-overlay { background: rgba(0,0,0,0.9); }
+    .map-loading, .map-error { width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-secondary); }
+    .map-error { color: #ef4444; }
   `]
 })
 export class ProgramaVisitaListComponent implements OnInit {
@@ -271,14 +395,19 @@ export class ProgramaVisitaListComponent implements OnInit {
   programaService = inject(ProgramaPredicacionService);
   grupoService = inject(GrupoService);
   territorioService = inject(TerritorioService);
-  authService = inject(AuthService);
-
+authService = inject(AuthService);
+  private sanitizer = inject(DomSanitizer);
+ 
   visitas = signal<ProgramaVisita[]>([]);
   loading = signal(true);
   
   showModal = signal(false);
   editing = signal(false);
   editingId = signal<string | null>(null);
+  
+  // Detail modal signals
+  viewing = signal(false);
+  viewingVisita = signal<ProgramaVisita | null>(null);
   
   diaPlantilla = 2; // Miércoles por defecto
   fechaBusqueda = '';
@@ -291,6 +420,10 @@ export class ProgramaVisitaListComponent implements OnInit {
     hora: '',
     lugar_nombre: '',
     lugar_direccion: '',
+    lugar_ciudad: '',
+    lugar_provincia: '',
+    lugar_codigo_postal: '',
+    lugar_pais: 'Argentina',
     observaciones: '',
     visited: false
   };
@@ -336,6 +469,10 @@ export class ProgramaVisitaListComponent implements OnInit {
       hora: progDia.hora_inicio || '',
       lugar_nombre: progDia.lugar_nombre || '',
       lugar_direccion: progDia.lugar_direccion || '',
+      lugar_ciudad: progDia.lugar_ciudad || '',
+      lugar_provincia: progDia.lugar_provincia || '',
+      lugar_codigo_postal: progDia.lugar_codigo_postal || '',
+      lugar_pais: progDia.lugar_pais || 'Argentina',
       observaciones: '',
       visited: false
     };
@@ -401,5 +538,75 @@ export class ProgramaVisitaListComponent implements OnInit {
     this.visitaService.setVisited(visita.id, !visita.visited).subscribe({
       next: () => this.loadData()
     });
+  }
+
+  // View detail modal methods
+  
+  viewVisita(visita: ProgramaVisita) {
+    this.viewingVisita.set(visita);
+    this.viewing.set(true);
+  }
+
+  closeViewModal() {
+    this.viewing.set(false);
+    this.viewingVisita.set(null);
+  }
+
+  getGoogleMapsUrl(direccion: string): string {
+    if (!direccion) return '';
+    const fullAddress = this.buildFullAddress(direccion);
+    const encoded = encodeURIComponent(fullAddress);
+    return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
+  }
+  
+  getStaticMapUrl(direccion: string): string {
+    if (!direccion) return '';
+    const fullAddress = this.buildFullAddress(direccion);
+    const encoded = encodeURIComponent(fullAddress);
+    // Static Maps API (free tier available)
+    return `https://maps.googleapis.com/maps/api/staticmap?center=${encoded}&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C${encoded}&key=AIzaSyAhX2H5b4Cintpgw_UTMXmNUcwNQOESLLg`;
+  }
+  
+  getGoogleMapsEmbedUrl(visita: ProgramaVisita): SafeResourceUrl {
+    if (!visita?.lugar_direccion) return '' as SafeResourceUrl;
+    
+    // Build full address from all fields
+    const parts: string[] = [];
+    if (visita.lugar_direccion) parts.push(visita.lugar_direccion);
+    if (visita.lugar_ciudad) parts.push(visita.lugar_ciudad);
+    if (visita.lugar_provincia) parts.push(visita.lugar_provincia);
+    if (visita.lugar_codigo_postal) parts.push(visita.lugar_codigo_postal);
+    if (visita.lugar_pais) parts.push(visita.lugar_pais);
+    
+    const fullAddress = parts.length > 0 ? parts.join(', ') : visita.lugar_direccion;
+    const encoded = encodeURIComponent(fullAddress);
+    
+    // Using Google Maps embed iframe (works without additional API key setup)
+    const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+  
+  private buildFullAddress(direccion: string): string {
+    const visita = this.viewingVisita();
+    if (!visita) return direccion;
+    
+    const parts: string[] = [];
+    if (visita.lugar_direccion) parts.push(visita.lugar_direccion);
+    if (visita.lugar_ciudad) parts.push(visita.lugar_ciudad);
+    if (visita.lugar_provincia) parts.push(visita.lugar_provincia);
+    if (visita.lugar_codigo_postal) parts.push(visita.lugar_codigo_postal);
+    if (visita.lugar_pais) parts.push(visita.lugar_pais);
+    
+    return parts.length > 0 ? parts.join(', ') : direccion;
+  }
+
+  openGoogleMaps() {
+    const visita = this.viewingVisita();
+    if (!visita?.lugar_direccion) {
+      alert('No hay dirección disponible');
+return;
+    }
+    const url = this.getGoogleMapsUrl(visita.lugar_direccion);
+    window.open(url, '_blank');
   }
 }

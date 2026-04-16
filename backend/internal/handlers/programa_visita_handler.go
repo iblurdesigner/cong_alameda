@@ -80,6 +80,10 @@ func (h *ProgramaVisitaHandler) Create(c *fiber.Ctx) error {
 		req.Hora,
 		req.LugarNombre,
 		req.LugarDireccion,
+		req.LugarCiudad,
+		req.LugarProvincia,
+		req.LugarCodigoPostal,
+		req.LugarPais,
 		req.LugarContacto,
 		req.LugarTelefono,
 		req.GrupoID,
@@ -121,6 +125,18 @@ func (h *ProgramaVisitaHandler) Update(c *fiber.Ctx) error {
 	}
 	if req.LugarDireccion != "" {
 		updates["lugar_direccion"] = req.LugarDireccion
+	}
+	if req.LugarCiudad != "" {
+		updates["lugar_ciudad"] = req.LugarCiudad
+	}
+	if req.LugarProvincia != "" {
+		updates["lugar_provincia"] = req.LugarProvincia
+	}
+	if req.LugarCodigoPostal != "" {
+		updates["lugar_codigo_postal"] = req.LugarCodigoPostal
+	}
+	if req.LugarPais != "" {
+		updates["lugar_pais"] = req.LugarPais
 	}
 	if req.LugarContacto != "" {
 		updates["lugar_contacto"] = req.LugarContacto

@@ -16,6 +16,10 @@ type ProgramaVisita struct {
 	Hora                  string     `json:"hora" db:"hora"`
 	LugarNombre           string     `json:"lugar_nombre" db:"lugar_nombre"`
 	LugarDireccion        string     `json:"lugar_direccion" db:"lugar_direccion"`
+	LugarCiudad           string     `json:"lugar_ciudad" db:"lugar_ciudad"`
+	LugarProvincia        string     `json:"lugar_provincia" db:"lugar_provincia"`
+	LugarCodigoPostal     string     `json:"lugar_codigo_postal" db:"lugar_codigo_postal"`
+	LugarPais             string     `json:"lugar_pais" db:"lugar_pais"`
 	LugarContacto         string     `json:"lugar_contacto" db:"lugar_contacto"`
 	LugarTelefono         string     `json:"lugar_telefono" db:"lugar_telefono"`
 	GrupoID               *uuid.UUID `json:"grupo_id" db:"grupo_id"`

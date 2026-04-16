@@ -34,7 +34,7 @@ func (s *ProgramaPredicacionService) Create(
 	nombre, fecha string,
 	diaSemana int,
 	conductor, horaInicio, horaFin string,
-	lugarNombre, lugarDireccion, lugarContacto, lugarTelefono string,
+	lugarNombre, lugarDireccion, lugarCiudad, lugarProvincia, lugarCodigoPostal, lugarPais, lugarContacto, lugarTelefono string,
 	grupoID *uuid.UUID,
 ) (*models.ProgramaPredicacion, error) {
 	log.Printf("=== Create in Service ===")
@@ -51,6 +51,15 @@ func (s *ProgramaPredicacionService) Create(
 	if lugarDireccion == "" {
 		lugarDireccion = defaultLugar["direccion"]
 	}
+	if lugarCiudad == "" {
+		lugarCiudad = defaultLugar["ciudad"]
+	}
+	if lugarProvincia == "" {
+		lugarProvincia = defaultLugar["provincia"]
+	}
+	if lugarPais == "" {
+		lugarPais = "Argentina"
+	}
 	if lugarContacto == "" {
 		lugarContacto = defaultLugar["contacto"]
 	}
@@ -65,20 +74,24 @@ func (s *ProgramaPredicacionService) Create(
 	}
 
 	p := &models.ProgramaPredicacion{
-		ID:             uuid.New(),
-		Nombre:         nombre,
-		Fecha:          fecha,
-		DiaSemana:      diaSemana,
-		Conductor:      conductor,
-		HoraInicio:     horaInicio,
-		HoraFin:        horaFin,
-		LugarNombre:    lugarNombre,
-		LugarDireccion: lugarDireccion,
-		LugarContacto:  lugarContacto,
-		LugarTelefono:  lugarTelefono,
-		GrupoID:        grupoID,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		ID:                uuid.New(),
+		Nombre:            nombre,
+		Fecha:             fecha,
+		DiaSemana:         diaSemana,
+		Conductor:         conductor,
+		HoraInicio:        horaInicio,
+		HoraFin:           horaFin,
+		LugarNombre:       lugarNombre,
+		LugarDireccion:    lugarDireccion,
+		LugarCiudad:       lugarCiudad,
+		LugarProvincia:    lugarProvincia,
+		LugarCodigoPostal: lugarCodigoPostal,
+		LugarPais:         lugarPais,
+		LugarContacto:     lugarContacto,
+		LugarTelefono:     lugarTelefono,
+		GrupoID:           grupoID,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
 	}
 
 	if err := s.repo.Create(ctx, p); err != nil {

@@ -32,7 +32,7 @@ func NewProgramaVisitaService(
 	}
 }
 
-func (s *ProgramaVisitaService) Create(ctx context.Context, programaPredicacionID *uuid.UUID, fecha string, diaSemana int, conductor, hora, lugarNombre, lugarDireccion, lugarContacto, lugarTelefono string, grupoID *uuid.UUID, observaciones string, createdBy *uuid.UUID) (*models.ProgramaVisita, error) {
+func (s *ProgramaVisitaService) Create(ctx context.Context, programaPredicacionID *uuid.UUID, fecha string, diaSemana int, conductor, hora, lugarNombre, lugarDireccion, lugarCiudad, lugarProvincia, lugarCodigoPostal, lugarPais, lugarContacto, lugarTelefono string, grupoID *uuid.UUID, observaciones string, createdBy *uuid.UUID) (*models.ProgramaVisita, error) {
 	p := &models.ProgramaVisita{
 		ID:                    uuid.New(),
 		ProgramaPredicacionID: programaPredicacionID,
@@ -42,6 +42,10 @@ func (s *ProgramaVisitaService) Create(ctx context.Context, programaPredicacionI
 		Hora:                  hora,
 		LugarNombre:           lugarNombre,
 		LugarDireccion:        lugarDireccion,
+		LugarCiudad:           lugarCiudad,
+		LugarProvincia:        lugarProvincia,
+		LugarCodigoPostal:     lugarCodigoPostal,
+		LugarPais:             lugarPais,
 		LugarContacto:         lugarContacto,
 		LugarTelefono:         lugarTelefono,
 		GrupoID:               grupoID,

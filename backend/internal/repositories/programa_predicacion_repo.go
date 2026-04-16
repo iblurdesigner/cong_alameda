@@ -30,13 +30,15 @@ func (r *ProgramaPredicacionRepository) Create(ctx context.Context, p *models.Pr
 	query := `
 		INSERT INTO programas_predicacion (
 			id, nombre, fecha, dia_semana, conductor, hora_inicio, hora_fin,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			lugar_nombre, lugar_direccion, lugar_ciudad, lugar_provincia, lugar_codigo_postal, lugar_pais,
+			lugar_contacto, lugar_telefono,
 			grupo_id, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	`
 	_, err := r.db.Exec(ctx, query,
 		p.ID, p.Nombre, p.Fecha, p.DiaSemana, p.Conductor, p.HoraInicio, p.HoraFin,
-		p.LugarNombre, p.LugarDireccion, p.LugarContacto, p.LugarTelefono,
+		p.LugarNombre, p.LugarDireccion, p.LugarCiudad, p.LugarProvincia, p.LugarCodigoPostal, p.LugarPais,
+		p.LugarContacto, p.LugarTelefono,
 		p.GrupoID, p.CreatedAt, p.UpdatedAt,
 	)
 	if err != nil {
@@ -47,9 +49,11 @@ func (r *ProgramaPredicacionRepository) Create(ctx context.Context, p *models.Pr
 
 func (r *ProgramaPredicacionRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error) {
 	// Cast fecha to text to avoid pgx scan issues with date type
+	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, nombre, fecha::text, dia_semana, conductor, hora_inicio, hora_fin,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, created_at, updated_at
 		FROM programas_predicacion
 		WHERE id = $1
@@ -57,7 +61,8 @@ func (r *ProgramaPredicacionRepository) GetByID(ctx context.Context, id uuid.UUI
 	p := &models.ProgramaPredicacion{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&p.ID, &p.Nombre, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.HoraInicio, &p.HoraFin,
-		&p.LugarNombre, &p.LugarDireccion, &p.LugarContacto, &p.LugarTelefono,
+		&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+		&p.LugarContacto, &p.LugarTelefono,
 		&p.GrupoID, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
@@ -68,9 +73,11 @@ func (r *ProgramaPredicacionRepository) GetByID(ctx context.Context, id uuid.UUI
 
 func (r *ProgramaPredicacionRepository) GetAll(ctx context.Context) ([]*models.ProgramaPredicacion, error) {
 	// Cast fecha to text to avoid pgx scan issues with date type
+	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, nombre, fecha::text, dia_semana, conductor, hora_inicio, hora_fin,
-			lugar_nombre, lugar_direccion, lugar_contacto, lugar_telefono,
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, created_at, updated_at
 		FROM programas_predicacion
 		ORDER BY fecha DESC, dia_semana ASC
@@ -86,7 +93,8 @@ func (r *ProgramaPredicacionRepository) GetAll(ctx context.Context) ([]*models.P
 		p := &models.ProgramaPredicacion{}
 		err := rows.Scan(
 			&p.ID, &p.Nombre, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.HoraInicio, &p.HoraFin,
-			&p.LugarNombre, &p.LugarDireccion, &p.LugarContacto, &p.LugarTelefono,
+			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+			&p.LugarContacto, &p.LugarTelefono,
 			&p.GrupoID, &p.CreatedAt, &p.UpdatedAt,
 		)
 		if err != nil {
