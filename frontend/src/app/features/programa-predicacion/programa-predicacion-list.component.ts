@@ -758,6 +758,11 @@ export class ProgramaPredicacionListComponent implements OnInit {
     hora_fin: '11:00',
     lugar_nombre: '',
     lugar_direccion: '',
+    lugar_ciudad: '',
+    lugar_provincia: '',
+    lugar_codigo_postal: '',
+    lugar_pais: '',
+    lugar_ubicacion: '',
     lugar_contacto: '',
     lugar_telefono: '',
     grupo_id: '',
@@ -850,9 +855,29 @@ export class ProgramaPredicacionListComponent implements OnInit {
   }
   
   getGoogleMapsEmbedUrl(prog: ProgramaPredicacion): SafeResourceUrl {
-    if (!prog?.lugar_direccion) return '';
+    // Priority: lugar_ubicacion (exact URL or coords) > full address
+    const ubicacion = (prog as any).lugar_ubicacion;
     
-    // Build full address from all fields (if available)
+    if (ubicacion) {
+      // Check if it's coordinates like "-0.218386, -78.506913"
+      if (ubicacion.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(ubicacion.trim())) {
+        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
+        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      }
+      // Check if it's a Google Maps short URL
+      if (ubicacion.includes('goo.gl') || ubicacion.includes('maps.google') || ubicacion.includes('goo.')) {
+        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
+        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      }
+      // Otherwise treat as full address
+      const encoded = encodeURIComponent(ubicacion);
+      const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    
+    // Fallback to address fields
+    if (!prog?.lugar_direccion) return '' as SafeResourceUrl;
+    
     const parts: string[] = [];
     if (prog.lugar_direccion) parts.push(prog.lugar_direccion);
     if ((prog as any).lugar_ciudad) parts.push((prog as any).lugar_ciudad);
@@ -863,7 +888,6 @@ export class ProgramaPredicacionListComponent implements OnInit {
     const fullAddress = parts.length > 0 ? parts.join(', ') : prog.lugar_direccion;
     const encoded = encodeURIComponent(fullAddress);
     
-    // Using Google Maps embed iframe (works without additional API key setup)
     const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
@@ -958,6 +982,11 @@ export class ProgramaPredicacionListComponent implements OnInit {
       hora_inicio: this.formData.hora_inicio,
       lugar_nombre: this.formData.lugar_nombre,
       lugar_direccion: this.formData.lugar_direccion,
+      lugar_ciudad: this.formData.lugar_ciudad,
+      lugar_provincia: this.formData.lugar_provincia,
+      lugar_codigo_postal: this.formData.lugar_codigo_postal,
+      lugar_pais: this.formData.lugar_pais,
+      lugar_ubicacion: this.formData.lugar_ubicacion,
       lugar_contacto: this.formData.lugar_contacto,
       lugar_telefono: this.formData.lugar_telefono,
     };

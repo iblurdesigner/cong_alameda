@@ -30,14 +30,14 @@ func (r *ProgramaPredicacionRepository) Create(ctx context.Context, p *models.Pr
 	query := `
 		INSERT INTO programas_predicacion (
 			id, nombre, fecha, dia_semana, conductor, hora_inicio, hora_fin,
-			lugar_nombre, lugar_direccion, lugar_ciudad, lugar_provincia, lugar_codigo_postal, lugar_pais,
+			lugar_nombre, lugar_direccion, lugar_ciudad, lugar_provincia, lugar_codigo_postal, lugar_pais, lugar_ubicacion,
 			lugar_contacto, lugar_telefono,
 			grupo_id, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
 	`
 	_, err := r.db.Exec(ctx, query,
 		p.ID, p.Nombre, p.Fecha, p.DiaSemana, p.Conductor, p.HoraInicio, p.HoraFin,
-		p.LugarNombre, p.LugarDireccion, p.LugarCiudad, p.LugarProvincia, p.LugarCodigoPostal, p.LugarPais,
+		p.LugarNombre, p.LugarDireccion, p.LugarCiudad, p.LugarProvincia, p.LugarCodigoPostal, p.LugarPais, p.LugarUbicacion,
 		p.LugarContacto, p.LugarTelefono,
 		p.GrupoID, p.CreatedAt, p.UpdatedAt,
 	)
@@ -52,7 +52,7 @@ func (r *ProgramaPredicacionRepository) GetByID(ctx context.Context, id uuid.UUI
 	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, nombre, fecha::text, dia_semana, conductor, hora_inicio, hora_fin,
-			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''), COALESCE(lugar_ubicacion, ''),
 			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, created_at, updated_at
 		FROM programas_predicacion
@@ -61,7 +61,7 @@ func (r *ProgramaPredicacionRepository) GetByID(ctx context.Context, id uuid.UUI
 	p := &models.ProgramaPredicacion{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&p.ID, &p.Nombre, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.HoraInicio, &p.HoraFin,
-		&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+		&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais, &p.LugarUbicacion,
 		&p.LugarContacto, &p.LugarTelefono,
 		&p.GrupoID, &p.CreatedAt, &p.UpdatedAt,
 	)
@@ -76,7 +76,7 @@ func (r *ProgramaPredicacionRepository) GetAll(ctx context.Context) ([]*models.P
 	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, nombre, fecha::text, dia_semana, conductor, hora_inicio, hora_fin,
-			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''), COALESCE(lugar_ubicacion, ''),
 			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, created_at, updated_at
 		FROM programas_predicacion
@@ -93,7 +93,7 @@ func (r *ProgramaPredicacionRepository) GetAll(ctx context.Context) ([]*models.P
 		p := &models.ProgramaPredicacion{}
 		err := rows.Scan(
 			&p.ID, &p.Nombre, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.HoraInicio, &p.HoraFin,
-			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais, &p.LugarUbicacion,
 			&p.LugarContacto, &p.LugarTelefono,
 			&p.GrupoID, &p.CreatedAt, &p.UpdatedAt,
 		)

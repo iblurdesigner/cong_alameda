@@ -17,6 +17,7 @@ export interface ProgramaVisita {
   lugar_provincia: string;
   lugar_codigo_postal: string;
   lugar_pais: string;
+  lugar_ubicacion: string; // URL Google Maps o coordenadas
   lugar_contacto: string;
   lugar_telefono: string;
   grupo?: {

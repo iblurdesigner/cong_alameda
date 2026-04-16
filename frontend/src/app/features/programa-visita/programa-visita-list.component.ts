@@ -423,7 +423,8 @@ authService = inject(AuthService);
     lugar_ciudad: '',
     lugar_provincia: '',
     lugar_codigo_postal: '',
-    lugar_pais: 'Argentina',
+    lugar_pais: '',
+    lugar_ubicacion: '',
     observaciones: '',
     visited: false
   };
@@ -568,9 +569,29 @@ authService = inject(AuthService);
   }
   
   getGoogleMapsEmbedUrl(visita: ProgramaVisita): SafeResourceUrl {
+    // Priority: lugar_ubicacion (exact URL or coords) > full address
+    const ubicacion = visita.lugar_ubicacion;
+    
+    if (ubicacion) {
+      // Check if it's coordinates like "-0.218386, -78.506913"
+      if (ubicacion.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(ubicacion.trim())) {
+        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
+        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      }
+      // Check if it's a Google Maps short URL
+      if (ubicacion.includes('goo.gl') || ubicacion.includes('maps.google') || ubicacion.includes('goo.')) {
+        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
+        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      }
+      // Otherwise treat as full address
+      const encoded = encodeURIComponent(ubicacion);
+      const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    
+    // Fallback to address fields
     if (!visita?.lugar_direccion) return '' as SafeResourceUrl;
     
-    // Build full address from all fields
     const parts: string[] = [];
     if (visita.lugar_direccion) parts.push(visita.lugar_direccion);
     if (visita.lugar_ciudad) parts.push(visita.lugar_ciudad);
@@ -581,7 +602,6 @@ authService = inject(AuthService);
     const fullAddress = parts.length > 0 ? parts.join(', ') : visita.lugar_direccion;
     const encoded = encodeURIComponent(fullAddress);
     
-    // Using Google Maps embed iframe (works without additional API key setup)
     const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }

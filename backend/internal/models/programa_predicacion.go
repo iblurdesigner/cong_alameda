@@ -22,6 +22,7 @@ type ProgramaPredicacion struct {
 	LugarProvincia    string `json:"lugar_provincia" db:"lugar_provincia"`
 	LugarCodigoPostal string `json:"lugar_codigo_postal" db:"lugar_codigo_postal"`
 	LugarPais         string `json:"lugar_pais" db:"lugar_pais"`
+	LugarUbicacion    string `json:"lugar_ubicacion" db:"lugar_ubicacion"` // URL Google Maps o coordenadas
 	LugarContacto     string `json:"lugar_contacto" db:"lugar_contacto"`
 	LugarTelefono     string `json:"lugar_telefono" db:"lugar_telefono"`
 	// Grupo asignado (para información)

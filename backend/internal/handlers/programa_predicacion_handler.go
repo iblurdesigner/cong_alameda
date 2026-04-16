@@ -238,6 +238,9 @@ func (h *ProgramaPredicacionHandler) Update(c *fiber.Ctx) error {
 	if req.LugarPais != "" {
 		updates["lugar_pais"] = req.LugarPais
 	}
+	if req.LugarUbicacion != "" {
+		updates["lugar_ubicacion"] = req.LugarUbicacion
+	}
 	if req.LugarContacto != "" {
 		updates["lugar_contacto"] = req.LugarContacto
 	}
@@ -257,20 +260,25 @@ func (h *ProgramaPredicacionHandler) Update(c *fiber.Ctx) error {
 	}
 
 	resp := dto.ProgramaPredicacionResponse{
-		ID:              programa.ID.String(),
-		Nombre:          programa.Nombre,
-		Fecha:           programa.Fecha,
-		DiaSemana:       programa.DiaSemana,
-		DiaSemanaNombre: models.GetProgramaDiaNombre(programa.DiaSemana),
-		Conductor:       programa.Conductor,
-		HoraInicio:      programa.HoraInicio,
-		HoraFin:         programa.HoraFin,
-		LugarNombre:     programa.LugarNombre,
-		LugarDireccion:  programa.LugarDireccion,
-		LugarContacto:   programa.LugarContacto,
-		LugarTelefono:   programa.LugarTelefono,
-		CreatedAt:       programa.CreatedAt.String(),
-		UpdatedAt:       programa.UpdatedAt.String(),
+		ID:                programa.ID.String(),
+		Nombre:            programa.Nombre,
+		Fecha:             programa.Fecha,
+		DiaSemana:         programa.DiaSemana,
+		DiaSemanaNombre:   models.GetProgramaDiaNombre(programa.DiaSemana),
+		Conductor:         programa.Conductor,
+		HoraInicio:        programa.HoraInicio,
+		HoraFin:           programa.HoraFin,
+		LugarNombre:       programa.LugarNombre,
+		LugarDireccion:    programa.LugarDireccion,
+		LugarCiudad:       programa.LugarCiudad,
+		LugarProvincia:    programa.LugarProvincia,
+		LugarCodigoPostal: programa.LugarCodigoPostal,
+		LugarPais:         programa.LugarPais,
+		LugarUbicacion:    programa.LugarUbicacion,
+		LugarContacto:     programa.LugarContacto,
+		LugarTelefono:     programa.LugarTelefono,
+		CreatedAt:         programa.CreatedAt.String(),
+		UpdatedAt:         programa.UpdatedAt.String(),
 	}
 
 	if programa.Grupo != nil {

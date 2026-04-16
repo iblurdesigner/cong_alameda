@@ -15,6 +15,7 @@ type ProgramaVisitaRequest struct {
 	LugarProvincia        string     `json:"lugar_provincia"`
 	LugarCodigoPostal     string     `json:"lugar_codigo_postal"`
 	LugarPais             string     `json:"lugar_pais"`
+	LugarUbicacion        string     `json:"lugar_ubicacion"` // URL Google Maps o coordenadas
 	LugarContacto         string     `json:"lugar_contacto"`
 	LugarTelefono         string     `json:"lugar_telefono"`
 	GrupoID               *uuid.UUID `json:"grupo_id"`
@@ -39,6 +40,7 @@ type ProgramaVisitaResponse struct {
 	LugarProvincia        string              `json:"lugar_provincia"`
 	LugarCodigoPostal     string              `json:"lugar_codigo_postal"`
 	LugarPais             string              `json:"lugar_pais"`
+	LugarUbicacion        string              `json:"lugar_ubicacion"` // URL Google Maps o coordenadas
 	LugarContacto         string              `json:"lugar_contacto"`
 	LugarTelefono         string              `json:"lugar_telefono"`
 	Grupo                 *GrupoSimple        `json:"grupo,omitempty"`
