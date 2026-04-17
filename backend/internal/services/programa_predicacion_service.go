@@ -158,16 +158,24 @@ func (s *ProgramaPredicacionService) GetByID(ctx context.Context, id uuid.UUID) 
 }
 
 func (s *ProgramaPredicacionService) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaPredicacionDetail, error) {
-	// Handle territorios update separately
+	log.Printf("[Service Update] id=%s updates keys: %v", id, func() []string {
+		keys := make([]string, 0, len(updates))
+		for k := range updates {
+			keys = append(keys, k)
+		}
+		return keys
+	}())
+
+	// Handle territorios update separately (nil = no cambiar, []string{} = limpiar)
 	if territorios, ok := updates["territorio_ids"]; ok {
 		if ids, ok := territorios.([]string); ok {
-			// Convert string IDs to UUID
 			var uuids []uuid.UUID
 			for _, idStr := range ids {
 				if parsed, err := uuid.Parse(idStr); err == nil {
 					uuids = append(uuids, parsed)
 				}
 			}
+			log.Printf("[Service Update] setting territorios: %v", uuids)
 			if err := s.repo.SetTerritorios(ctx, id, uuids); err != nil {
 				return nil, err
 			}
@@ -176,9 +184,12 @@ func (s *ProgramaPredicacionService) Update(ctx context.Context, id uuid.UUID, u
 		delete(updates, "territorio_ids")
 	}
 
-	_, err := s.repo.Update(ctx, id, updates)
-	if err != nil {
-		return nil, err
+	// Si no hay más campos aparte de territorio_ids, saltar el Update
+	if len(updates) > 0 {
+		_, err := s.repo.Update(ctx, id, updates)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return s.GetByID(ctx, id)

@@ -24,28 +24,51 @@ func NewProgramaPredicacionHandler(service *services.ProgramaPredicacionService)
 func (h *ProgramaPredicacionHandler) List(c *fiber.Ctx) error {
 	programas, err := h.service.GetAll(c.Context())
 	if err != nil {
+		log.Printf("ERROR: List ProgramaPredicacion: %v", err)
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
 	}
 
-	// Convert to response format (simplified - no relations for now)
 	var response []dto.ProgramaPredicacionResponse
 	for _, p := range programas {
 		resp := dto.ProgramaPredicacionResponse{
-			ID:              p.ID.String(),
-			Nombre:          p.Nombre,
-			Fecha:           p.Fecha,
-			DiaSemana:       p.DiaSemana,
-			DiaSemanaNombre: models.GetProgramaDiaNombre(p.DiaSemana),
-			Conductor:       p.Conductor,
-			HoraInicio:      p.HoraInicio,
-			HoraFin:         p.HoraFin,
-			LugarNombre:     p.LugarNombre,
-			LugarDireccion:  p.LugarDireccion,
-			LugarContacto:   p.LugarContacto,
-			LugarTelefono:   p.LugarTelefono,
-			CreatedAt:       p.CreatedAt.String(),
-			UpdatedAt:       p.UpdatedAt.String(),
+			ID:                p.ID.String(),
+			Nombre:            p.Nombre,
+			Fecha:             p.Fecha,
+			DiaSemana:         p.DiaSemana,
+			DiaSemanaNombre:   models.GetProgramaDiaNombre(p.DiaSemana),
+			Conductor:         p.Conductor,
+			HoraInicio:        p.HoraInicio,
+			HoraFin:           p.HoraFin,
+			LugarNombre:       p.LugarNombre,
+			LugarDireccion:    p.LugarDireccion,
+			LugarCiudad:       p.LugarCiudad,
+			LugarProvincia:    p.LugarProvincia,
+			LugarCodigoPostal: p.LugarCodigoPostal,
+			LugarPais:         p.LugarPais,
+			LugarUbicacion:    p.LugarUbicacion, // ← SIEMPRE incluir
+			LugarContacto:     p.LugarContacto,
+			LugarTelefono:     p.LugarTelefono,
+			CreatedAt:         p.CreatedAt.String(),
+			UpdatedAt:         p.UpdatedAt.String(),
 		}
+		// Incluir Grupo si existe
+		if p.Grupo != nil {
+			resp.Grupo = &dto.GrupoSimple{
+				ID:     p.Grupo.ID.String(),
+				Numero: p.Grupo.Numero,
+				Nombre: p.Grupo.Nombre,
+			}
+		}
+		// Incluir Territorios si existen
+		for _, t := range p.Territorios {
+			resp.Territorios = append(resp.Territorios, &dto.TerritorioSimple{
+				ID:      t.ID.String(),
+				Nombre:  t.Nombre,
+				GrupoID: t.GrupoID.String(),
+			})
+		}
+		log.Printf("[List] prog=%s ubicacion='%s' grupo=%v territorios=%d",
+			p.ID, p.LugarUbicacion, p.Grupo != nil, len(p.Territorios))
 		response = append(response, resp)
 	}
 
@@ -238,21 +261,20 @@ func (h *ProgramaPredicacionHandler) Update(c *fiber.Ctx) error {
 	if req.LugarPais != "" {
 		updates["lugar_pais"] = req.LugarPais
 	}
-	if req.LugarUbicacion != "" {
-		updates["lugar_ubicacion"] = req.LugarUbicacion
-	}
+	// lugar_ubicacion: siempre actualizar (puede quedar vacío para limpiar)
+	updates["lugar_ubicacion"] = req.LugarUbicacion
 	if req.LugarContacto != "" {
 		updates["lugar_contacto"] = req.LugarContacto
 	}
 	if req.LugarTelefono != "" {
 		updates["lugar_telefono"] = req.LugarTelefono
 	}
-	if req.GrupoID != nil {
-		updates["grupo_id"] = req.GrupoID
-	}
-	if len(req.TerritorioIDs) > 0 {
-		updates["territorio_ids"] = req.TerritorioIDs
-	}
+	// grupo_id: siempre incluir — nil = quitar grupo
+	updates["grupo_id"] = req.GrupoID
+	// territorio_ids: siempre incluir — array vacío = limpiar territorios
+	updates["territorio_ids"] = req.TerritorioIDs
+	log.Printf("[Update] id=%s grupo_id=%v territorios=%v ubicacion='%s'",
+		id, req.GrupoID, req.TerritorioIDs, req.LugarUbicacion)
 
 	programa, err := h.service.Update(c.Context(), id, updates)
 	if err != nil {

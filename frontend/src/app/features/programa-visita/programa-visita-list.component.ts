@@ -192,6 +192,12 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
 
             <div class="form-group">
+              <label for="lugar_ubicacion">Coordenadas (opcional)</label>
+              <input type="text" id="lugar_ubicacion" [(ngModel)]="formData.lugar_ubicacion" placeholder="Ej: -0.218386, -78.506913" />
+              <small class="help-text">Latitud,Longitud - ej: -0.218386,-78.506913</small>
+            </div>
+
+            <div class="form-group">
               <label for="observaciones">Observaciones</label>
               <textarea id="observaciones" [(ngModel)]="formData.observaciones" rows="3" placeholder="Notas de la visita..."></textarea>
             </div>
@@ -249,18 +255,26 @@ import { AuthService } from '../../core/services/auth.service';
                 <span class="value">{{ viewingVisita()!.lugar_direccion }}</span>
               </div>
               
-              <!-- Map Container interactivo -->
-              <div class="map-section">
-                <iframe
-                  [src]="getGoogleMapsEmbedUrl(viewingVisita()!)"
-                  width="100%"
-                  height="250"
-                  style="border:0; border-radius: 8px;"
-                  loading="lazy"
-                  allowfullscreen
-                  referrerpolicy="no-referrer-when-downgrade">
-                </iframe>
-              </div>
+              <!-- Map Container -->
+              @if (getGoogleMapsEmbedUrl(viewingVisita()!)) {
+                <div class="map-section">
+                  <iframe
+                    [src]="getGoogleMapsEmbedUrl(viewingVisita()!)"
+                    width="100%"
+                    height="250"
+                    style="border:0; border-radius: 8px;"
+                    loading="lazy"
+                    allowfullscreen
+                    referrerpolicy="no-referrer-when-downgrade">
+                  </iframe>
+                </div>
+              } @else if (viewingVisita()!.lugar_ubicacion) {
+                <div class="map-section" style="display: flex; align-items: center; justify-content: center; height: 250px; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                  <a [href]="viewingVisita()!.lugar_ubicacion" target="_blank" class="btn btn-outline">
+                    📍 Ver Ubicación Exacta
+                  </a>
+                </div>
+              }
             }
             @if (viewingVisita()!.lugar_contacto) {
               <div class="info-row">
@@ -282,7 +296,14 @@ import { AuthService } from '../../core/services/auth.service';
             }
           </div>
           <div class="modal-footer">
-            @if (viewingVisita()!.lugar_direccion) {
+            @if (viewingVisita()!.lugar_ubicacion) {
+              <a [href]="viewingVisita()!.lugar_ubicacion" 
+                 target="_blank" 
+                 class="btn btn-outline"
+                 title="Abrir ubicación exacta">
+                📍 Coordenadas
+              </a>
+            } @else if (viewingVisita()!.lugar_direccion) {
               <a [href]="getGoogleMapsUrl(viewingVisita()!.lugar_direccion)" 
                  target="_blank" 
                  class="btn btn-outline"
@@ -371,6 +392,7 @@ import { AuthService } from '../../core/services/auth.service';
     .form-row { display: flex; gap: 1rem; }
     .form-group { flex: 1; margin-bottom: 1rem; label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.875rem; } 
       input, select, textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.875rem; background: var(--background-color); color: var(--text-primary); }
+      .help-text { display: block; margin-top: 0.25rem; font-size: 0.75rem; color: var(--text-secondary); font-style: italic; }
     }
     .section-title { font-size: 1rem; color: var(--text-primary); margin: 1.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
 
@@ -560,6 +582,18 @@ authService = inject(AuthService);
     return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
   }
   
+  hasExactLocation(visita: ProgramaVisita): boolean {
+    return !!visita.lugar_ubicacion;
+  }
+  
+  getExactLocationUrl(visita: ProgramaVisita): string {
+    const coords = visita.lugar_ubicacion;
+    if (coords) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(coords)}&z=17`;
+    }
+    return '';
+  }
+  
   getStaticMapUrl(direccion: string): string {
     if (!direccion) return '';
     const fullAddress = this.buildFullAddress(direccion);
@@ -569,23 +603,12 @@ authService = inject(AuthService);
   }
   
   getGoogleMapsEmbedUrl(visita: ProgramaVisita): SafeResourceUrl {
-    // Priority: lugar_ubicacion (exact URL or coords) > full address
-    const ubicacion = visita.lugar_ubicacion;
+    // Priority: coordenadas > address
+    const coords = visita.lugar_ubicacion;
     
-    if (ubicacion) {
-      // Check if it's coordinates like "-0.218386, -78.506913"
-      if (ubicacion.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(ubicacion.trim())) {
-        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
-        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-      }
-      // Check if it's a Google Maps short URL
-      if (ubicacion.includes('goo.gl') || ubicacion.includes('maps.google') || ubicacion.includes('goo.')) {
-        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
-        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-      }
-      // Otherwise treat as full address
-      const encoded = encodeURIComponent(ubicacion);
-      const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+    // If coordinates, use them directly
+    if (coords && coords.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(coords.trim())) {
+      const url = `https://www.google.com/maps?q=${encodeURIComponent(coords)}&output=embed&z=16`;
       return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
     
@@ -602,7 +625,7 @@ authService = inject(AuthService);
     const fullAddress = parts.length > 0 ? parts.join(', ') : visita.lugar_direccion;
     const encoded = encodeURIComponent(fullAddress);
     
-    const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+    const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=16`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
   

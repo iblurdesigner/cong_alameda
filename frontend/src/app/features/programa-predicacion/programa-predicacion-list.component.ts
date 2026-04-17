@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ProgramaPredicacionService, ProgramaPredicacion } from '../../core/services/programa-predicacion.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
@@ -11,7 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
 @Component({
   selector: 'app-programa-predicacion-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -174,6 +173,17 @@ import { AuthService } from '../../core/services/auth.service';
               />
             </div>
 
+            <div class="form-group">
+              <label for="lugar_ubicacion">Coordenadas (opcional)</label>
+              <input 
+                type="text" 
+                id="lugar_ubicacion" 
+                [(ngModel)]="formData.lugar_ubicacion" 
+                placeholder="Ej: -0.218386, -78.506913"
+              />
+              <small class="help-text">Latitud,Longitud - ej: -0.218386,-78.506913</small>
+            </div>
+
             <div class="form-row">
               <div class="form-group">
                 <label for="lugar_contacto">Contacto</label>
@@ -312,30 +322,48 @@ import { AuthService } from '../../core/services/auth.service';
                     </div>
                   }
                   <!-- Mapa embebido -->
-                  @if (viewingPrograma()?.lugar_direccion) {
+                  @if (viewingPrograma()?.lugar_direccion || hasExactLocation(viewingPrograma())) {
                     <div class="map-section">
-                      <iframe
-                        [src]="getGoogleMapsEmbedUrl(viewingPrograma()!)"
-                        width="100%"
-                        height="250"
-                        style="border:0; border-radius: 8px;"
-                        loading="lazy"
-                        allowfullscreen>
-                      </iframe>
+                      @if (getGoogleMapsEmbedUrl(viewingPrograma()!)) {
+                        <iframe
+                          [src]="getGoogleMapsEmbedUrl(viewingPrograma()!)"
+                          width="100%"
+                          height="250"
+                          style="border:0; border-radius: 8px;"
+                          loading="lazy"
+                          allowfullscreen>
+                        </iframe>
+                      } @else {
+                        <div class="map-placeholder">
+                          <a [href]="getExactLocationUrl(viewingPrograma()!)" target="_blank" class="btn-maps">
+                            📍 Ver Coordenadas
+                          </a>
+                        </div>
+                      }
                     </div>
                   }
                   <!-- Botón Google Maps -->
                   @if (viewingPrograma()?.lugar_direccion) {
                     <div class="detail-row action-row">
-                      <a 
-                        [href]="getGoogleMapsUrl(viewingPrograma()?.lugar_direccion || '')" 
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="btn-maps"
-                        (click)="closeDetailModal()"
-                      >
-                        📍 Ver en Google Maps
-                      </a>
+                      @if (hasExactLocation(viewingPrograma())) {
+                        <a 
+                          [href]="getExactLocationUrl(viewingPrograma()!)" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="btn-maps"
+                        >
+                          📍 Ver Coordenadas
+                        </a>
+                      } @else {
+                        <a 
+                          [href]="getGoogleMapsUrl(viewingPrograma()?.lugar_direccion || '')" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="btn-maps"
+                        >
+                          📍 Ver en Google Maps
+                        </a>
+                      }
                       <button 
                         class="btn-whatsapp" 
                         (click)="shareByWhatsApp(viewingPrograma()!); closeDetailModal()"
@@ -489,6 +517,16 @@ import { AuthService } from '../../core/services/auth.service';
       background: var(--background-color);
       border-radius: var(--radius-md);
       padding: 1rem;
+    }
+    
+    .map-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 250px;
+      background: var(--background-color);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
     }
     
     .detail-row {
@@ -673,6 +711,14 @@ import { AuthService } from '../../core/services/auth.service';
       select {
         cursor: pointer;
       }
+      
+      .help-text {
+        display: block;
+        margin-top: 0.25rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-style: italic;
+      }
     }
     
     .section-title {
@@ -854,24 +900,26 @@ export class ProgramaPredicacionListComponent implements OnInit {
     return `https://www.google.com/maps/search/?api=1&query=${encoded}`;
   }
   
+  hasExactLocation(prog: ProgramaPredicacion | null): boolean {
+    if (!prog) return false;
+    return !!(prog as any).lugar_ubicacion;
+  }
+  
+  getExactLocationUrl(prog: ProgramaPredicacion): string {
+    const coords = (prog as any).lugar_ubicacion;
+    if (coords) {
+      return `https://www.google.com/maps?q=${encodeURIComponent(coords)}&z=17`;
+    }
+    return '';
+  }
+  
   getGoogleMapsEmbedUrl(prog: ProgramaPredicacion): SafeResourceUrl {
-    // Priority: lugar_ubicacion (exact URL or coords) > full address
-    const ubicacion = (prog as any).lugar_ubicacion;
+    // Priority: coordenadas > address
+    const coords = (prog as any).lugar_ubicacion;
     
-    if (ubicacion) {
-      // Check if it's coordinates like "-0.218386, -78.506913"
-      if (ubicacion.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(ubicacion.trim())) {
-        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
-        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-      }
-      // Check if it's a Google Maps short URL
-      if (ubicacion.includes('goo.gl') || ubicacion.includes('maps.google') || ubicacion.includes('goo.')) {
-        const url = `https://www.google.com/maps?q=${encodeURIComponent(ubicacion)}&output=embed&z=15`;
-        return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-      }
-      // Otherwise treat as full address
-      const encoded = encodeURIComponent(ubicacion);
-      const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+    // If coordinates, use them directly
+    if (coords && coords.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(coords.trim())) {
+      const url = `https://www.google.com/maps?q=${encodeURIComponent(coords)}&output=embed&z=16`;
       return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
     
@@ -888,7 +936,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
     const fullAddress = parts.length > 0 ? parts.join(', ') : prog.lugar_direccion;
     const encoded = encodeURIComponent(fullAddress);
     
-    const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=15`;
+    const url = `https://www.google.com/maps?q=${encoded}&output=embed&z=16`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
   
@@ -960,11 +1008,13 @@ export class ProgramaPredicacionListComponent implements OnInit {
       hora_inicio: prog.hora_inicio,
       lugar_nombre: prog.lugar_nombre,
       lugar_direccion: prog.lugar_direccion,
+      lugar_ubicacion: prog.lugar_ubicacion || '',
       lugar_contacto: prog.lugar_contacto,
       lugar_telefono: prog.lugar_telefono,
       grupo_id: prog.grupo?.id || '',
-      territorio_ids: territorios.map(t => t.id)
+      territorio_ids: territorios.map((t: any) => t.id)
     };
+    console.log('[editPrograma] formData:', JSON.stringify(this.formData));
     this.showModal.set(true);
   }
   
@@ -986,33 +1036,36 @@ export class ProgramaPredicacionListComponent implements OnInit {
       lugar_provincia: this.formData.lugar_provincia,
       lugar_codigo_postal: this.formData.lugar_codigo_postal,
       lugar_pais: this.formData.lugar_pais,
-      lugar_ubicacion: this.formData.lugar_ubicacion,
+      lugar_ubicacion: this.formData.lugar_ubicacion || '',
       lugar_contacto: this.formData.lugar_contacto,
       lugar_telefono: this.formData.lugar_telefono,
+      // Siempre incluir grupo_id (string vacío = sin asignar)
+      grupo_id: this.formData.grupo_id || null,
+      // Siempre incluir territorio_ids (array vacío = limpiar territorios)
+      territorio_ids: this.formData.territorio_ids || [],
     };
-    
-    if (this.formData.grupo_id) {
-      data.grupo_id = this.formData.grupo_id;
-    }
-    if (this.formData.territorio_ids && this.formData.territorio_ids.length > 0) {
-      data.territorio_ids = this.formData.territorio_ids;
-    }
+
+    console.log('[savePrograma] payload:', JSON.stringify(data));
     
     const editing = this.editingPrograma();
-    
+
     if (editing) {
       this.programaService.updatePrograma(editing.id, data).subscribe({
-        next: () => {
+        next: (res) => {
+          console.log('[updatePrograma] response:', JSON.stringify(res));
           this.loadData();
           this.closeModal();
-        }
+        },
+        error: (err) => console.error('[updatePrograma] error:', err)
       });
     } else {
       this.programaService.createPrograma(data).subscribe({
-        next: () => {
+        next: (res) => {
+          console.log('[createPrograma] response:', JSON.stringify(res));
           this.loadData();
           this.closeModal();
-        }
+        },
+        error: (err) => console.error('[createPrograma] error:', err)
       });
     }
   }
