@@ -58,10 +58,14 @@ func (h *ProgramaVisitaHandler) GetByFecha(c *fiber.Ctx) error {
 }
 
 func (h *ProgramaVisitaHandler) Create(c *fiber.Ctx) error {
+	log.Printf("=== POST /programas-visita called ===")
 	var req dto.ProgramaVisitaRequest
 	if err := c.BodyParser(&req); err != nil {
+		log.Printf("ERROR: BodyParser failed: %v", err)
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_request"})
 	}
+
+	log.Printf("DEBUG: Create request: %+v", req)
 
 	if req.Fecha == "" {
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "fecha es requerida"})
@@ -84,6 +88,7 @@ func (h *ProgramaVisitaHandler) Create(c *fiber.Ctx) error {
 		req.LugarProvincia,
 		req.LugarCodigoPostal,
 		req.LugarPais,
+		req.LugarUbicacion,
 		req.LugarContacto,
 		req.LugarTelefono,
 		req.GrupoID,
@@ -91,9 +96,11 @@ func (h *ProgramaVisitaHandler) Create(c *fiber.Ctx) error {
 		nil, // createdBy - puede agregarse del token
 	)
 	if err != nil {
-		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
+		log.Printf("ERROR: service.Create failed: %v", err)
+		return c.Status(500).JSON(fiber.Map{"error": "internal_error", "details": err.Error()})
 	}
 
+	log.Printf("DEBUG: Create succeeded, returning programa")
 	return c.Status(201).JSON(programa)
 }
 

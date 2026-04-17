@@ -28,7 +28,7 @@ func (r *ProgramaVisitaRepository) Create(ctx context.Context, p *models.Program
 			lugar_nombre, lugar_direccion, lugar_ciudad, lugar_provincia, lugar_codigo_postal, lugar_pais, lugar_ubicacion,
 			lugar_contacto, lugar_telefono,
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 	`
 	_, err := r.db.Exec(ctx, query,
 		p.ID, p.ProgramaPredicacionID, p.Fecha, p.DiaSemana, p.Conductor, p.Hora,
@@ -69,7 +69,7 @@ func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.Progra
 	// Use COALESCE to handle NULLs
 	query := `
 		SELECT id, programa_predicacion_id, fecha::text, dia_semana, conductor, hora,
-			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''),
+			COALESCE(lugar_nombre, ''), COALESCE(lugar_direccion, ''), COALESCE(lugar_ciudad, ''), COALESCE(lugar_provincia, ''), COALESCE(lugar_codigo_postal, ''), COALESCE(lugar_pais, ''), COALESCE(lugar_ubicacion, ''),
 			COALESCE(lugar_contacto, ''), COALESCE(lugar_telefono, ''),
 			grupo_id, observaciones, visited, created_by, created_at, updated_at
 		FROM programas_visita
@@ -87,7 +87,7 @@ func (r *ProgramaVisitaRepository) GetAll(ctx context.Context) ([]*models.Progra
 		p := &models.ProgramaVisita{}
 		err := rows.Scan(
 			&p.ID, &p.ProgramaPredicacionID, &p.Fecha, &p.DiaSemana, &p.Conductor, &p.Hora,
-			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais,
+			&p.LugarNombre, &p.LugarDireccion, &p.LugarCiudad, &p.LugarProvincia, &p.LugarCodigoPostal, &p.LugarPais, &p.LugarUbicacion,
 			&p.LugarContacto, &p.LugarTelefono,
 			&p.GrupoID, &p.Observaciones, &p.Visited, &p.CreatedBy, &p.CreatedAt, &p.UpdatedAt,
 		)

@@ -256,8 +256,8 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
               
               <!-- Map Container -->
-              @if (getGoogleMapsEmbedUrl(viewingVisita()!)) {
-                <div class="map-section">
+              <div class="map-section">
+                @if (getGoogleMapsEmbedUrl(viewingVisita()!)) {
                   <iframe
                     [src]="getGoogleMapsEmbedUrl(viewingVisita()!)"
                     width="100%"
@@ -267,14 +267,14 @@ import { AuthService } from '../../core/services/auth.service';
                     allowfullscreen
                     referrerpolicy="no-referrer-when-downgrade">
                   </iframe>
-                </div>
-              } @else if (viewingVisita()!.lugar_ubicacion) {
-                <div class="map-section" style="display: flex; align-items: center; justify-content: center; height: 250px; background: var(--background-color); border-radius: 8px; border: 1px solid var(--border-color);">
-                  <a [href]="viewingVisita()!.lugar_ubicacion" target="_blank" class="btn btn-outline">
-                    📍 Ver Ubicación Exacta
-                  </a>
-                </div>
-              }
+                } @else if (hasExactLocation(viewingVisita()!)) {
+                  <div class="map-placeholder">
+                    <a [href]="getExactLocationUrl(viewingVisita()!)" target="_blank" class="btn-maps">
+                      📍 Ver Coordenadas
+                    </a>
+                  </div>
+                }
+              </div>
             }
             @if (viewingVisita()!.lugar_contacto) {
               <div class="info-row">
@@ -296,12 +296,12 @@ import { AuthService } from '../../core/services/auth.service';
             }
           </div>
           <div class="modal-footer">
-            @if (viewingVisita()!.lugar_ubicacion) {
-              <a [href]="viewingVisita()!.lugar_ubicacion" 
+            @if (hasExactLocation(viewingVisita()!)) {
+              <a [href]="getExactLocationUrl(viewingVisita()!)" 
                  target="_blank" 
                  class="btn btn-outline"
                  title="Abrir ubicación exacta">
-                📍 Coordenadas
+                📍 Ver Coordenadas
               </a>
             } @else if (viewingVisita()!.lugar_direccion) {
               <a [href]="getGoogleMapsUrl(viewingVisita()!.lugar_direccion)" 
@@ -404,6 +404,32 @@ import { AuthService } from '../../core/services/auth.service';
     .modal-footer { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--surface-color); .spacer { flex: 1; } }
 
     .map-section { margin-top: 1rem; }
+    .map-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 250px;
+      background: var(--background-color);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+    .btn-maps {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #4285f4;
+      color: white;
+      border: none;
+      &:hover { background: #3367d6; }
+    }
     .map-container { width: 100%; height: 300px; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-color); }
     .map-preview-btn { position: relative; text-decoration: none; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
     .map-btn-overlay { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.75); color: white; padding: 8px 16px; border-radius: 20px; font-weight: 500; white-space: nowrap; transition: background 0.2s; }
@@ -496,6 +522,7 @@ authService = inject(AuthService);
       lugar_provincia: progDia.lugar_provincia || '',
       lugar_codigo_postal: progDia.lugar_codigo_postal || '',
       lugar_pais: progDia.lugar_pais || 'Argentina',
+      lugar_ubicacion: (progDia as any).lugar_ubicacion || '',
       observaciones: '',
       visited: false
     };
@@ -514,6 +541,11 @@ authService = inject(AuthService);
       hora: '',
       lugar_nombre: 'Salón del Reino',
       lugar_direccion: '',
+      lugar_ciudad: '',
+      lugar_provincia: '',
+      lugar_codigo_postal: '',
+      lugar_pais: '',
+      lugar_ubicacion: '',
       observaciones: '',
       visited: false
     };
