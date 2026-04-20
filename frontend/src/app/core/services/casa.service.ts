@@ -16,6 +16,8 @@ export interface Casa {
   fecha_registro: string;
   persona_registra: string;
   estado: 'NO_VISITAR' | 'EN_ESPERA_VISITA' | 'RECONTACTADA' | 'ACTIVA';
+  latitud?: number;
+  longitud?: number;
   visitas?: Visita[];
 }
 

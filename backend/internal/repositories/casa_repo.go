@@ -25,8 +25,8 @@ func NewCasaRepository(db *pgxpool.Pool) *CasaRepository {
 
 func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 	query := `
-		INSERT INTO casas (id, calle_principal, numeracion, calle_secundaria, sector, referencia, motivo_no_volver, fecha_registro, persona_registra, estado)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO casas (id, calle_principal, numeracion, calle_secundaria, sector, referencia, motivo_no_volver, fecha_registro, persona_registra, estado, latitud, longitud)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING created_at, updated_at
 	`
 
@@ -44,6 +44,8 @@ func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 		casa.FechaRegistro,
 		casa.PersonaRegistra,
 		estadoStr,
+		casa.Latitud,
+		casa.Longitud,
 	).Scan(&casa.CreatedAt, &casa.UpdatedAt)
 
 	if err != nil {
@@ -56,7 +58,7 @@ func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 func (r *CasaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Casa, error) {
 	query := `
 		SELECT id, calle_principal, numeracion, calle_secundaria, sector, referencia, 
-		       motivo_no_volver, fecha_registro, persona_registra, estado, created_at, updated_at
+		       motivo_no_volver, fecha_registro, persona_registra, estado, latitud, longitud, created_at, updated_at
 		FROM casas
 		WHERE id = $1
 	`
@@ -73,6 +75,8 @@ func (r *CasaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Cas
 		&casa.FechaRegistro,
 		&casa.PersonaRegistra,
 		&casa.Estado,
+		&casa.Latitud,
+		&casa.Longitud,
 		&casa.CreatedAt,
 		&casa.UpdatedAt,
 	)
@@ -177,8 +181,8 @@ func (r *CasaRepository) Update(ctx context.Context, id uuid.UUID, casa *models.
 	query := `
 		UPDATE casas 
 		SET calle_principal = $1, numeracion = $2, calle_secundaria = $3, sector = $4, 
-		    referencia = $5, motivo_no_volver = $6, estado = $7
-		WHERE id = $8
+		    referencia = $5, motivo_no_volver = $6, estado = $7, latitud = $8, longitud = $9
+		WHERE id = $10
 		RETURNING created_at, updated_at
 	`
 
@@ -190,6 +194,8 @@ func (r *CasaRepository) Update(ctx context.Context, id uuid.UUID, casa *models.
 		casa.Referencia,
 		casa.MotivoNoVolver,
 		estadoStr,
+		casa.Latitud,
+		casa.Longitud,
 		id,
 	).Scan(&casa.CreatedAt, &casa.UpdatedAt)
 

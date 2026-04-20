@@ -59,23 +59,27 @@ type UpdateProfileRequest struct {
 // ========== Casa DTOs ==========
 
 type CreateCasaRequest struct {
-	CallePrincipal  string  `json:"calle_principal"`
-	Numeracion      string  `json:"numeracion"`
-	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
-	Sector          string  `json:"sector"`
-	Referencia      *string `json:"referencia,omitempty"`
-	MotivoNoVolver  *string `json:"motivo_no_volver,omitempty"`
-	PersonaRegistra string  `json:"persona_registra"`
+	CallePrincipal  string   `json:"calle_principal"`
+	Numeracion      string   `json:"numeracion"`
+	CalleSecundaria *string  `json:"calle_secundaria,omitempty"`
+	Sector          string   `json:"sector"`
+	Referencia      *string  `json:"referencia,omitempty"`
+	MotivoNoVolver  *string  `json:"motivo_no_volver,omitempty"`
+	PersonaRegistra string   `json:"persona_registra"`
+	Latitud        *float64 `json:"latitud,omitempty"`
+	Longitud       *float64 `json:"longitud,omitempty"`
 }
 
 type UpdateCasaRequest struct {
-	CallePrincipal  *string `json:"calle_principal,omitempty"`
-	Numeracion      *string `json:"numeracion,omitempty"`
-	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
-	Sector          *string `json:"sector,omitempty"`
-	Referencia      *string `json:"referencia,omitempty"`
-	MotivoNoVolver  *string `json:"motivo_no_volver,omitempty"`
-	Estado          *string `json:"estado,omitempty"`
+	CallePrincipal  *string  `json:"calle_principal,omitempty"`
+	Numeracion      *string  `json:"numeracion,omitempty"`
+	CalleSecundaria *string  `json:"calle_secundaria,omitempty"`
+	Sector          *string  `json:"sector,omitempty"`
+	Referencia      *string  `json:"referencia,omitempty"`
+	MotivoNoVolver  *string  `json:"motivo_no_volver,omitempty"`
+	Estado          *string  `json:"estado,omitempty"`
+	Latitud        *float64 `json:"latitud,omitempty"`
+	Longitud       *float64 `json:"longitud,omitempty"`
 }
 
 type CasaResponse struct {
@@ -89,6 +93,8 @@ type CasaResponse struct {
 	FechaRegistro   string    `json:"fecha_registro"`
 	PersonaRegistra string    `json:"persona_registra"`
 	Estado          string    `json:"estado"`
+	Latitud        *float64  `json:"latitud,omitempty"`
+	Longitud       *float64  `json:"longitud,omitempty"`
 }
 
 type CasaListResponse struct {
@@ -129,11 +135,13 @@ type UpdateVisitaRequest struct {
 }
 
 type CasaInfo struct {
-	CallePrincipal  string  `json:"calle_principal"`
-	Numeracion      string  `json:"numeracion"`
-	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
-	Sector          string  `json:"sector"`
-	Referencia      *string `json:"referencia,omitempty"`
+	CallePrincipal  string   `json:"calle_principal"`
+	Numeracion      string   `json:"numeracion"`
+	CalleSecundaria *string  `json:"calle_secundaria,omitempty"`
+	Sector          string   `json:"sector"`
+	Referencia      *string  `json:"referencia,omitempty"`
+	Latitud        *float64 `json:"latitud,omitempty"`
+	Longitud       *float64 `json:"longitud,omitempty"`
 }
 
 type VisitaResponse struct {

@@ -155,6 +155,8 @@ func (h *CasaHandler) Create(c *fiber.Ctx) error {
 		CalleSecundaria: req.CalleSecundaria,
 		Sector:          req.Sector,
 		Referencia:      req.Referencia,
+		Latitud:        req.Latitud,
+		Longitud:       req.Longitud,
 	}
 	if req.MotivoNoVolver != nil {
 		casa.MotivoNoVolver = *req.MotivoNoVolver
@@ -230,6 +232,12 @@ func (h *CasaHandler) Update(c *fiber.Ctx) error {
 	}
 	if req.Estado != nil {
 		casa.Estado = models.CasaEstado(*req.Estado)
+	}
+	if req.Latitud != nil {
+		casa.Latitud = req.Latitud
+	}
+	if req.Longitud != nil {
+		casa.Longitud = req.Longitud
 	}
 
 	result, err := h.casaService.Update(c.Context(), id, casa)

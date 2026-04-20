@@ -17,6 +17,8 @@ type Casa struct {
 	FechaRegistro   time.Time  `json:"fecha_registro" db:"fecha_registro"`
 	PersonaRegistra string     `json:"persona_registra" db:"persona_registra"`
 	Estado          CasaEstado `json:"estado" db:"estado"`
+	Latitud        *float64   `json:"latitud,omitempty" db:"latitud"`
+	Longitud       *float64   `json:"longitud,omitempty" db:"longitud"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }

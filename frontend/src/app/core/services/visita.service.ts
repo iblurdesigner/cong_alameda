@@ -9,6 +9,8 @@ export interface CasaInfo {
   calle_secundaria?: string;
   sector: string;
   referencia?: string;
+  latitud?: number;
+  longitud?: number;
 }
 
 export interface Visita {

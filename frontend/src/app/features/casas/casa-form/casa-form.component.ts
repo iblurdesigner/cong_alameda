@@ -52,12 +52,26 @@ import { AuthService } from '../../../core/services/auth.service';
             </div>
           </div>
           
-          <div class="form-group">
-            <label for="referencia">Referencia</label>
-            <input type="text" id="referencia" [(ngModel)]="formData.referencia" 
-                   name="referencia" placeholder="Casa azul, portón verde..." />
+<div class="form-group">
+              <label for="referencia">Referencia</label>
+              <input type="text" id="referencia" [(ngModel)]="formData.referencia" 
+                     name="referencia" placeholder="Casa azul, portón verde..." />
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="latitud">Latitud</label>
+                <input type="number" id="latitud" [(ngModel)]="formData.latitud" 
+                       name="latitud" step="0.000001" placeholder="-33.4..." />
+              </div>
+              
+              <div class="form-group flex-1">
+                <label for="longitud">Longitud</label>
+                <input type="number" id="longitud" [(ngModel)]="formData.longitud" 
+                       name="longitud" step="0.000001" placeholder="-70.6..." />
+              </div>
+            </div>
           </div>
-        </div>
         
         <div class="form-section">
           <h3>Información del Registro</h3>
@@ -95,7 +109,7 @@ import { AuthService } from '../../../core/services/auth.service';
     h1 { font-size: 1.5rem; font-weight: 700; }
     .form-card { padding: 2rem; }
     .form-section { margin-bottom: 2rem; h3 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-secondary); } }
-    .form-row { display: flex; gap: 1rem; .flex-1 { flex: 1; } .flex-2 { flex: 2; } }
+    .form-row { display: flex; gap: 1rem; flex-wrap: wrap; .flex-1 { flex: 1; min-width: 150px; } .flex-2 { flex: 2; } }
     .form-group { margin-bottom: 1rem; width: 100%; }
     label { display: block; font-weight: 500; margin-bottom: 0.5rem; font-size: 0.875rem; }
     input, textarea, select { width: 100%; padding: 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.875rem; }

@@ -1,7 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { VisitaService, Visita } from '../../../core/services/visita.service';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { VisitaService, Visita, CasaInfo } from '../../../core/services/visita.service';
 import { UserService, User } from '../../../core/services/user.service';
 
 @Component({
@@ -54,6 +55,24 @@ import { UserService, User } from '../../../core/services/user.service';
                 </div>
                 @if (visita.casa.referencia) {
                   <p class="visita-ref">📝 {{ visita.casa.referencia }}</p>
+                }
+                
+                <!-- Mapa embebido si hay coordenadas -->
+                @if (hasExactLocation(visita.casa)) {
+                  <div class="visita-map">
+                    <iframe 
+                      [src]="getGoogleMapsEmbedUrl(visita.casa)"
+                      width="100%" 
+                      height="120" 
+                      style="border:0; border-radius: 8px;" 
+                      allowfullscreen 
+                      loading="lazy"
+                      referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                    <a [href]="getExactLocationUrl(visita.casa)" target="_blank" class="btn-maps">
+                      📍 Ver en Google Maps
+                    </a>
+                  </div>
                 }
               }
               
@@ -203,6 +222,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .sector-badge { display: inline-block; background: var(--primary-light); color: var(--primary-color); padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; margin-left: 0.5rem; }
     .sector-badge-lg { background: var(--primary-light); color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
     .visita-ref { font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0; font-style: italic; }
+    .visita-map { margin-top: 0.5rem; .btn-maps { display: block; text-align: center; padding: 0.375rem 0.75rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 500; margin-top: 0.375rem; text-decoration: none; &:hover { background: var(--primary-color); color: white; } } }
     .visita-realizada, .visita-obs, .visita-resp { font-size: 0.875rem; color: var(--text-secondary); margin: 0.25rem 0; }
     .btn-ver { margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; width: 100%; &:hover { background: var(--primary-dark); } }
     .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; min-height: 28px; display: inline-flex; align-items: center; }
@@ -232,6 +252,7 @@ import { UserService, User } from '../../../core/services/user.service';
 export class VisitaListComponent implements OnInit {
   visitaService = inject(VisitaService);
   userService = inject(UserService);
+  private sanitizer = inject(DomSanitizer);
   
   visitas = signal<Visita[]>([]);
   users = signal<User[]>([]);
@@ -355,5 +376,27 @@ export class VisitaListComponent implements OnInit {
   getEstadoLabel(estado: string): string {
     const labels: Record<string, string> = { PROGRAMADA: 'Programada', REALIZADA: 'Realizada', CANCELADA: 'Cancelada' };
     return labels[estado] || estado;
+  }
+  
+  // === Mapa methods ===
+  hasExactLocation(casa: CasaInfo | undefined): boolean {
+    if (!casa) return false;
+    return !!(casa.latitud && casa.longitud);
+  }
+  
+  getExactLocationUrl(casa: CasaInfo): string {
+    if (casa.latitud && casa.longitud) {
+      return `https://www.google.com/maps?q=${casa.latitud},${casa.longitud}&z=17`;
+    }
+    return '';
+  }
+  
+  getGoogleMapsEmbedUrl(casa: CasaInfo): SafeResourceUrl {
+    if (casa.latitud && casa.longitud) {
+      const coords = `${casa.latitud},${casa.longitud}`;
+      const url = `https://www.google.com/maps?q=${encodeURIComponent(coords)}&output=embed&z=16`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+    return '' as SafeResourceUrl;
   }
 }

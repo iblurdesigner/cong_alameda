@@ -296,16 +296,19 @@ import { AuthService } from '../../core/services/auth.service';
             }
           </div>
           <div class="modal-footer">
+            <button class="btn btn-outline" (click)="shareByWhatsApp()">
+              📤 Compartir
+            </button>
             @if (hasExactLocation(viewingVisita()!)) {
-              <a [href]="getExactLocationUrl(viewingVisita()!)" 
-                 target="_blank" 
+              <a [href]="getExactLocationUrl(viewingVisita()!)"
+                 target="_blank"
                  class="btn btn-outline"
                  title="Abrir ubicación exacta">
                 📍 Ver Coordenadas
               </a>
             } @else if (viewingVisita()!.lugar_direccion) {
-              <a [href]="getGoogleMapsUrl(viewingVisita()!.lugar_direccion)" 
-                 target="_blank" 
+              <a [href]="getGoogleMapsUrl(viewingVisita()!.lugar_direccion)"
+                 target="_blank"
                  class="btn btn-outline"
                  title="Abrir en Google Maps">
                 🔗 Ver en Maps
@@ -675,13 +678,61 @@ authService = inject(AuthService);
     return parts.length > 0 ? parts.join(', ') : direccion;
   }
 
-  openGoogleMaps() {
+openGoogleMaps() {
     const visita = this.viewingVisita();
     if (!visita?.lugar_direccion) {
       alert('No hay dirección disponible');
-return;
+      return;
     }
     const url = this.getGoogleMapsUrl(visita.lugar_direccion);
+    window.open(url, '_blank');
+  }
+
+  // WhatsApp share methods
+
+  getWhatsAppMessage(): string {
+    const visita = this.viewingVisita();
+    if (!visita) return '';
+
+    let message = '📅 Información de Visita\n\n';
+
+    if (visita.dia_semana_nombre) {
+      message += `📆 Día: ${visita.dia_semana_nombre}\n`;
+    }
+    if (visita.fecha) {
+      message += `📅 Fecha: ${visita.fecha}\n`;
+    }
+    if (visita.hora) {
+      message += `⏰ Hora: ${visita.hora}\n`;
+    }
+    if (visita.conductor) {
+      message += `🎤 Conductor: ${visita.conductor}\n`;
+    }
+    if (visita.lugar_nombre) {
+      message += `📍 Lugar: ${visita.lugar_nombre}\n`;
+    }
+    if (visita.lugar_direccion) {
+      const direccion = this.buildFullAddress(visita.lugar_direccion);
+      message += `🏠 Dirección: ${direccion}\n`;
+    }
+
+    return message;
+  }
+
+  getWhatsAppUrl(): string {
+    const message = this.getWhatsAppMessage();
+    if (!message) return '';
+
+    const encoded = encodeURIComponent(message);
+    return `https://wa.me/?text=${encoded}`;
+  }
+
+  shareByWhatsApp() {
+    const url = this.getWhatsAppUrl();
+    if (!url) {
+      alert('No hay información para compartir');
+      return;
+    }
     window.open(url, '_blank');
   }
 }
