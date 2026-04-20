@@ -194,6 +194,7 @@ func main() {
 	casas.Get("/:id", casaHandler.GetByID)
 	casas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Create)
 	casas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Update)
+	casas.Post("/:id/foto", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.UploadFoto)
 	casas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Delete)
 
 	// Visita routes

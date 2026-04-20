@@ -65,9 +65,10 @@ type CreateCasaRequest struct {
 	Sector          string   `json:"sector"`
 	Referencia      *string  `json:"referencia,omitempty"`
 	MotivoNoVolver  *string  `json:"motivo_no_volver,omitempty"`
-	PersonaRegistra string   `json:"persona_registra"`
+PersonaRegistra string   `json:"persona_registra"`
 	Latitud        *float64 `json:"latitud,omitempty"`
 	Longitud       *float64 `json:"longitud,omitempty"`
+	FotoURL       *string  `json:"foto_url,omitempty"`
 }
 
 type UpdateCasaRequest struct {
@@ -80,6 +81,7 @@ type UpdateCasaRequest struct {
 	Estado          *string  `json:"estado,omitempty"`
 	Latitud        *float64 `json:"latitud,omitempty"`
 	Longitud       *float64 `json:"longitud,omitempty"`
+	FotoURL       *string  `json:"foto_url,omitempty"`
 }
 
 type CasaResponse struct {
@@ -95,6 +97,7 @@ type CasaResponse struct {
 	Estado          string    `json:"estado"`
 	Latitud        *float64  `json:"latitud,omitempty"`
 	Longitud       *float64  `json:"longitud,omitempty"`
+	FotoURL       *string   `json:"foto_url,omitempty"`
 }
 
 type CasaListResponse struct {
@@ -142,6 +145,7 @@ type CasaInfo struct {
 	Referencia      *string  `json:"referencia,omitempty"`
 	Latitud        *float64 `json:"latitud,omitempty"`
 	Longitud       *float64 `json:"longitud,omitempty"`
+	FotoURL       *string  `json:"foto_url,omitempty"`
 }
 
 type VisitaResponse struct {
@@ -237,6 +241,9 @@ func ToCasaResponse(c *models.Casa) CasaResponse {
 		FechaRegistro:   c.FechaRegistro.Format("2006-01-02T15:04:05Z07:00"),
 		PersonaRegistra: c.PersonaRegistra,
 		Estado:          string(c.Estado),
+		Latitud:        c.Latitud,
+		Longitud:       c.Longitud,
+		FotoURL:        c.FotoURL,
 	}
 }
 

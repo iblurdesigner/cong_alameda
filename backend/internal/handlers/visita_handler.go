@@ -67,6 +67,7 @@ func (h *VisitaHandler) List(c *fiber.Ctx) error {
 				Referencia:      casa.Referencia,
 				Latitud:        casa.Latitud,
 				Longitud:       casa.Longitud,
+				FotoURL:       casa.FotoURL,
 			}
 		}
 		// Fetch visitor names
@@ -322,6 +323,7 @@ func (h *VisitaHandler) Update(c *fiber.Ctx) error {
 			Referencia:      casa.Referencia,
 			Latitud:        casa.Latitud,
 			Longitud:       casa.Longitud,
+			FotoURL:       casa.FotoURL,
 		}
 	}
 

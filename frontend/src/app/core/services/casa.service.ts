@@ -18,6 +18,7 @@ export interface Casa {
   estado: 'NO_VISITAR' | 'EN_ESPERA_VISITA' | 'RECONTACTADA' | 'ACTIVA';
   latitud?: number;
   longitud?: number;
+  foto_url?: string;
   visitas?: Visita[];
 }
 
@@ -79,6 +80,12 @@ export class CasaService {
 
   deleteCasa(id: string) {
     return this.http.delete(`${environment.apiUrl}/casas/${id}`);
+  }
+
+  uploadFoto(casaId: string, file: File) {
+    const formData = new FormData();
+    formData.append('foto', file);
+    return this.http.post<Casa>(`${environment.apiUrl}/casas/${casaId}/foto`, formData);
   }
 
   getSectores() {

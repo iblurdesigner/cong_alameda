@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -311,4 +313,74 @@ func parseInt(s string, defaultVal int) int {
 		return defaultVal
 	}
 	return val
+}
+
+// UploadFoto handles photo upload for a casa
+// POST /api/casas/:id/foto
+func (h *CasaHandler) UploadFoto(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_id",
+			Message: "ID de casa inválido",
+		})
+	}
+
+	file, err := c.FormFile("foto")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "no_file",
+			Message: "No se proporcionó archivo",
+		})
+	}
+
+	// Validate file type
+	ext := ""
+	switch file.Header.Get("Content-Type") {
+	case "image/jpeg", "image/jpg":
+		ext = ".jpg"
+	case "image/png":
+		ext = ".png"
+	case "image/webp":
+		ext = ".webp"
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_type",
+			Message: "Solo se permiten imágenes JPEG, PNG o WebP",
+		})
+	}
+
+	// Create upload directory
+	uploadDir := "./uploads/casas"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   " mkdir_error",
+			Message: "Error al crear directorio",
+		})
+	}
+
+	// Generate filename
+	filename := fmt.Sprintf("%s%s", id.String(), ext)
+	filepath := fmt.Sprintf("%s/%s", uploadDir, filename)
+
+	// Save file
+	if err := c.SaveFile(file, filepath); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "save_error",
+			Message: "Error al guardar archivo",
+		})
+	}
+
+	// Update casa with foto_url
+	fotoURL := fmt.Sprintf("/uploads/casas/%s", filename)
+	casa, err := h.casaService.UpdateFotoURL(c.Context(), id, fotoURL)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "update_error",
+			Message: "Error al actualizar la casa",
+		})
+	}
+
+	return c.JSON(dto.ToCasaResponse(casa))
 }

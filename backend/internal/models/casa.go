@@ -19,6 +19,7 @@ type Casa struct {
 	Estado          CasaEstado `json:"estado" db:"estado"`
 	Latitud        *float64   `json:"latitud,omitempty" db:"latitud"`
 	Longitud       *float64   `json:"longitud,omitempty" db:"longitud"`
+	FotoURL       *string    `json:"foto_url,omitempty" db:"foto_url"`
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
 }

@@ -11,6 +11,7 @@ export interface CasaInfo {
   referencia?: string;
   latitud?: number;
   longitud?: number;
+  foto_url?: string;
 }
 
 export interface Visita {

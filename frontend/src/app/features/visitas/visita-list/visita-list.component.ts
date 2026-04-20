@@ -53,6 +53,10 @@ import { UserService, User } from '../../../core/services/user.service';
                   }
                   <span class="sector-badge">{{ visita.casa.sector }}</span>
                 </div>
+                <!-- Foto de la casa si existe -->
+                @if (visita.casa.foto_url) {
+                  <img [src]="visita.casa.foto_url" alt="Foto casa" class="casa-thumbnail" />
+                }
                 @if (visita.casa.referencia) {
                   <p class="visita-ref">📝 {{ visita.casa.referencia }}</p>
                 }
@@ -223,6 +227,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .sector-badge-lg { background: var(--primary-light); color: var(--primary-color); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
     .visita-ref { font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0; font-style: italic; }
     .visita-map { margin-top: 0.5rem; .btn-maps { display: block; text-align: center; padding: 0.375rem 0.75rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 500; margin-top: 0.375rem; text-decoration: none; &:hover { background: var(--primary-color); color: white; } } }
+    .casa-thumbnail { width: 100%; max-height: 150px; object-fit: cover; border-radius: var(--radius-md); margin-top: 0.5rem; }
     .visita-realizada, .visita-obs, .visita-resp { font-size: 0.875rem; color: var(--text-secondary); margin: 0.25rem 0; }
     .btn-ver { margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; width: 100%; &:hover { background: var(--primary-dark); } }
     .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; min-height: 28px; display: inline-flex; align-items: center; }

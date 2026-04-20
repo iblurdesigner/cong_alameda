@@ -58,6 +58,19 @@ import { AuthService } from '../../../core/services/auth.service';
                      name="referencia" placeholder="Casa azul, portón verde..." />
             </div>
             
+            <!-- Foto de la casa -->
+            <div class="form-group">
+              <label for="foto">Foto de la Casa</label>
+              <input type="file" id="foto" (change)="onFileSelected($event)" 
+                     accept="image/*" capture="environment" class="file-input" />
+              @if (previewUrl()) {
+                <div class="preview-container">
+                  <img [src]="previewUrl()" alt="Preview" class="preview-image" />
+                  <button type="button" class="btn-remove-photo" (click)="removePhoto()">✕ Quitar</button>
+                </div>
+              }
+            </div>
+            
             <div class="form-row">
               <div class="form-group flex-1">
                 <label for="latitud">Latitud</label>
@@ -116,6 +129,10 @@ import { AuthService } from '../../../core/services/auth.service';
     textarea { resize: vertical; }
     .form-actions { display: flex; justify-content: flex-end; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); }
     .error-message { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); padding: 0.75rem; border-radius: var(--radius-md); margin-bottom: 1rem; }
+    .file-input { padding: 0.5rem; background: var(--surface-color); }
+    .preview-container { margin-top: 0.5rem; position: relative; display: inline-block; }
+    .preview-image { max-width: 200px; max-height: 200px; border-radius: var(--radius-md); object-fit: cover; }
+    .btn-remove-photo { position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; &:hover { background: #dc2626; } }
   `]
 })
 export class CasaFormComponent implements OnInit {
@@ -127,9 +144,11 @@ export class CasaFormComponent implements OnInit {
   isEdit = signal(false);
   loading = signal(false);
   error = signal<string | null>(null);
+  previewUrl = signal<string | null>(null);
   
   formData: Partial<Casa> = {};
   private casaId: string | null = null;
+  private selectedFile: File | null = null;
   
   ngOnInit() {
     this.formData.persona_registra = this.authService.currentUser()?.nombre || '';
@@ -140,6 +159,10 @@ export class CasaFormComponent implements OnInit {
       this.casaService.getCasa(this.casaId).subscribe({
         next: (casa) => {
           this.formData = { ...casa };
+          // Si tiene foto, mostrarla
+          if (casa.foto_url) {
+            this.previewUrl.set(casa.foto_url);
+          }
         },
         error: () => {
           this.router.navigate(['/casas']);
@@ -163,13 +186,45 @@ export class CasaFormComponent implements OnInit {
       : this.casaService.createCasa(this.formData);
     
     operation.subscribe({
-      next: () => {
-        this.router.navigate(['/casas']);
+      next: (casa) => {
+        // Si hay foto seleccionada, subirla
+        if (this.selectedFile && casa.id) {
+          this.casaService.uploadFoto(casa.id, this.selectedFile).subscribe({
+            next: () => {
+              this.router.navigate(['/casas']);
+            },
+            error: () => {
+              this.loading.set(false);
+              // La casa ya se guardó, pero la foto falló
+              this.router.navigate(['/casas']);
+            }
+          });
+        } else {
+          this.router.navigate(['/casas']);
+        }
       },
       error: (err) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Error al guardar');
       }
     });
+  }
+  
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedFile = input.files[0];
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.previewUrl.set(reader.result as string);
+      };
+      reader.readAsDataURL(this.selectedFile);
+    }
+  }
+  
+  removePhoto() {
+    this.selectedFile = null;
+    this.previewUrl.set(null);
   }
 }

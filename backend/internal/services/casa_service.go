@@ -148,6 +148,10 @@ func (s *CasaService) UpdateEstado(ctx context.Context, id uuid.UUID, estado mod
 	return s.casaRepo.UpdateEstado(ctx, id, estado)
 }
 
+func (s *CasaService) UpdateFotoURL(ctx context.Context, id uuid.UUID, fotoURL string) (*models.Casa, error) {
+	return s.casaRepo.UpdateFotoURL(ctx, id, fotoURL)
+}
+
 func (s *CasaService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.casaRepo.Delete(ctx, id)
 }
