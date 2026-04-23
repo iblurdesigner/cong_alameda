@@ -56,6 +56,10 @@ import { UserService, User } from '../../../core/services/user.service';
                 <!-- Foto de la casa si existe -->
                 @if (visita.casa.foto_url) {
                   <img [src]="visita.casa.foto_url" alt="Foto casa" class="casa-thumbnail" />
+                } @else {
+                  <div class="casa-no-foto">
+                    <span>📷 Sin foto</span>
+                  </div>
                 }
                 @if (visita.casa.referencia) {
                   <p class="visita-ref">📝 {{ visita.casa.referencia }}</p>
@@ -115,6 +119,17 @@ import { UserService, User } from '../../../core/services/user.service';
             @if (selectedVisit()!.casa) {
               <div class="detail-section">
                 <h3>🏠 Información de la Casa</h3>
+                <!-- Foto de la casa -->
+                <div class="detail-foto-container">
+                  @if (selectedVisit()!.casa!.foto_url) {
+                    <img [src]="selectedVisit()!.casa!.foto_url" alt="Foto casa" class="detail-foto" />
+                  } @else {
+                    <div class="detail-foto-placeholder">
+                      <span class="placeholder-icon">🏠</span>
+                      <span class="placeholder-text">Sin foto</span>
+                    </div>
+                  }
+                </div>
                 <div class="detail-row">
                   <span class="detail-label">Dirección:</span>
                   <span class="detail-value">
@@ -132,6 +147,22 @@ import { UserService, User } from '../../../core/services/user.service';
                   <div class="detail-row">
                     <span class="detail-label">Referencia:</span>
                     <span class="detail-value">{{ selectedVisit()!.casa!.referencia }}</span>
+                  </div>
+                }
+                @if (hasExactLocation(selectedVisit()!.casa)) {
+                  <div class="detail-map">
+                    <iframe 
+                      [src]="getGoogleMapsEmbedUrl(selectedVisit()!.casa!)"
+                      width="100%" 
+                      height="150" 
+                      style="border:0; border-radius: 8px;" 
+                      allowfullscreen 
+                      loading="lazy"
+                      referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                    <a [href]="getExactLocationUrl(selectedVisit()!.casa!)" target="_blank" class="btn-maps">
+                      📍 Ver en Google Maps
+                    </a>
                   </div>
                 }
               </div>
@@ -228,6 +259,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .visita-ref { font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0; font-style: italic; }
     .visita-map { margin-top: 0.5rem; .btn-maps { display: block; text-align: center; padding: 0.375rem 0.75rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 500; margin-top: 0.375rem; text-decoration: none; &:hover { background: var(--primary-color); color: white; } } }
     .casa-thumbnail { width: 100%; max-height: 150px; object-fit: cover; border-radius: var(--radius-md); margin-top: 0.5rem; }
+    .casa-no-foto { width: 100%; height: 80px; background: var(--border-color); border-radius: var(--radius-md); margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--text-secondary); }
     .visita-realizada, .visita-obs, .visita-resp { font-size: 0.875rem; color: var(--text-secondary); margin: 0.25rem 0; }
     .btn-ver { margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; width: 100%; &:hover { background: var(--primary-dark); } }
     .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; min-height: 28px; display: inline-flex; align-items: center; }
@@ -244,6 +276,10 @@ import { UserService, User } from '../../../core/services/user.service';
     .detail-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
     .detail-label { font-size: 0.875rem; color: var(--text-secondary); }
     .detail-value { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
+    .detail-foto { width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 0.75rem; }
+    .detail-foto-container { margin-bottom: 0.75rem; }
+    .detail-foto-placeholder { width: 100%; height: 150px; background: var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); .placeholder-icon { font-size: 2rem; opacity: 0.5; } .placeholder-text { font-size: 0.875rem; } }
+    .detail-map { margin-top: 0.75rem; .btn-maps { display: block; text-align: center; padding: 0.375rem 0.75rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 500; margin-top: 0.375rem; text-decoration: none; &:hover { background: var(--primary-color); color: white; } } }
     .form-group { margin-bottom: 1rem; label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-primary); } }
     .form-select, .form-input, .form-textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.875rem; background: var(--surface-color); color: var(--text-primary); min-height: 44px; }
     .form-textarea { resize: vertical; min-height: 80px; }

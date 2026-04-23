@@ -12,6 +12,7 @@ type Config struct {
 	Port        string
 	Env         string
 	FrontendURL string
+	UploadDir   string
 	// Email configuration
 	SMTPEnabled  bool
 	SMTPHost     string
@@ -30,6 +31,7 @@ func Load() *Config {
 		Port:        getEnv("PORT", "8080"),
 		Env:         getEnv("ENV", "development"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:4200"),
+		UploadDir:   getEnv("UPLOADS_DIR", "./uploads"),
 		// Email configuration
 		SMTPHost:     getEnv("SMTP_HOST", "smtp.gmail.com"),
 		SMTPPort:     getEnv("SMTP_PORT", "587"),

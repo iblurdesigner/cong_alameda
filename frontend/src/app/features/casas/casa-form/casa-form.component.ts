@@ -11,6 +11,26 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="page-container">
+      @if (successMessage()) {
+        <div class="modal-overlay" (click)="goToList()">
+          <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-icon modal-icon-success">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M20 6L9 17l-5-5"/>
+              </svg>
+            </div>
+            <h3 class="modal-title">¡Éxito!</h3>
+            <p class="modal-message">{{ successMessage() }}</p>
+            <button class="btn btn-primary" (click)="goToList()">
+              Volver a la lista
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      }
+
       <header class="page-header">
         <a routerLink="/casas" class="back-link">← Volver</a>
         <h1>{{ isEdit() ? 'Editar Casa' : 'Registrar Nueva Casa' }}</h1>
@@ -133,6 +153,16 @@ import { AuthService } from '../../../core/services/auth.service';
     .preview-container { margin-top: 0.5rem; position: relative; display: inline-block; }
     .preview-image { max-width: 200px; max-height: 200px; border-radius: var(--radius-md); object-fit: cover; }
     .btn-remove-photo { position: absolute; top: -8px; right: -8px; background: var(--danger-color); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 12px; &:hover { background: #dc2626; } }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-box { background: white; border-radius: 16px; padding: 2.5rem; text-align: center; max-width: 420px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); animation: scaleIn 0.2s ease; }
+    .modal-icon { width: 72px; height: 72px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; }
+    .modal-icon-success { background: linear-gradient(135deg, #dcfce7 0%, #86efac 100%); color: #16a34a; }
+    .modal-title { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; }
+    .modal-message { color: #6b7280; margin-bottom: 1.75rem; line-height: 1.6; font-size: 1.0625rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.875rem 1.75rem; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s ease; border: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--primary-color) 0%, #2563eb 100%); color: white; box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39); &:hover { transform: translateY(-2px); box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.23); } }
   `]
 })
 export class CasaFormComponent implements OnInit {
@@ -145,6 +175,7 @@ export class CasaFormComponent implements OnInit {
   loading = signal(false);
   error = signal<string | null>(null);
   previewUrl = signal<string | null>(null);
+  successMessage = signal<string | null>(null);
   
   formData: Partial<Casa> = {};
   private casaId: string | null = null;
@@ -191,16 +222,18 @@ export class CasaFormComponent implements OnInit {
         if (this.selectedFile && casa.id) {
           this.casaService.uploadFoto(casa.id, this.selectedFile).subscribe({
             next: () => {
-              this.router.navigate(['/casas']);
+              this.loading.set(false);
+              this.successMessage.set('Casa guardada con foto exitosamente!');
             },
             error: () => {
               this.loading.set(false);
               // La casa ya se guardó, pero la foto falló
-              this.router.navigate(['/casas']);
+              this.successMessage.set('Casa guardada (foto no subida)');
             }
           });
         } else {
-          this.router.navigate(['/casas']);
+          this.loading.set(false);
+          this.successMessage.set('Casa guardada exitosamente!');
         }
       },
       error: (err) => {
@@ -226,5 +259,9 @@ export class CasaFormComponent implements OnInit {
   removePhoto() {
     this.selectedFile = null;
     this.previewUrl.set(null);
+  }
+
+  goToList() {
+    this.router.navigate(['/casas']);
   }
 }

@@ -167,6 +167,12 @@ func main() {
 		})
 	})
 
+	// Static files for uploaded images
+	// Configure UPLOADS_DIR in .env (default: ./uploads)
+	app.Static("/uploads", cfg.UploadDir)
+	log.Printf("Serving uploads from: %s", cfg.UploadDir)
+
+
 	// Public routes (no authentication required)
 	public := app.Group("/public")
 
@@ -194,7 +200,7 @@ func main() {
 	casas.Get("/:id", casaHandler.GetByID)
 	casas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Create)
 	casas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Update)
-	casas.Post("/:id/foto", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.UploadFoto)
+	casas.Post("/:id/foto", casaHandler.UploadFoto)
 	casas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Delete)
 
 	// Visita routes

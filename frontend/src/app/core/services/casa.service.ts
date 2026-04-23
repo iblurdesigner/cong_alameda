@@ -30,9 +30,9 @@ export interface CasaListResponse {
 
 @Injectable({ providedIn: 'root' })
 export class CasaService {
-  private casasSignal = signal<Casa[]>([]);
+  casasSignal = signal<Casa[]>([]);
   private loadingSignal = signal(false);
-  private totalSignal = signal(0);
+  totalSignal = signal(0);
   private currentPageSignal = signal(1);
 
   casas = computed(() => this.casasSignal());

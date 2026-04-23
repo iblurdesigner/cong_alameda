@@ -24,7 +24,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /app
 
 # Create uploads directory
-RUN mkdir -p /app/uploads/territorios
+RUN mkdir -p /app/uploads/territorios /app/uploads/casas
 
 # Copy binary from builder
 COPY --from=builder /app/main .

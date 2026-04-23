@@ -11,6 +11,25 @@ import { AuthService } from '../../../core/services/auth.service';
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <div class="page-container">
+      <!-- Modal de Confirmación -->
+      @if (confirmDelete()) {
+        <div class="modal-overlay" (click)="cancelDelete()">
+          <div class="modal-box" (click)="$event.stopPropagation()">
+            <div class="modal-icon modal-icon-danger">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+              </svg>
+            </div>
+            <h3 class="modal-title">Eliminar Casa</h3>
+            <p class="modal-message">¿Está seguro de eliminar esta casa? Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+              <button class="btn btn-secondary" (click)="cancelDelete()">Cancelar</button>
+              <button class="btn btn-danger" (click)="confirmDeleteAction()">Eliminar</button>
+            </div>
+          </div>
+        </div>
+      }
+
       <header class="page-header">
         <div class="header-content">
           <h1>Casas</h1>
@@ -123,8 +142,11 @@ import { AuthService } from '../../../core/services/auth.service';
                     </span>
                   </td>
                   <td>{{ formatDate(casa.fecha_registro) }}</td>
-                  <td>
+                  <td style="display: flex; gap: 0.5rem;">
                     <a [routerLink]="['/casas', casa.id]" class="btn-icon">👁️</a>
+                    @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                      <button (click)="deleteCasa(casa.id)" class="btn-icon btn-danger" title="Eliminar">🗑️</button>
+                    }
                   </td>
                 </tr>
               }
@@ -326,6 +348,111 @@ import { AuthService } from '../../../core/services/auth.service';
       &:hover { background: var(--background-color); }
     }
     
+    .btn-danger {
+      background: transparent;
+      border: 1px solid var(--danger-color);
+      color: var(--danger-color);
+      &:hover { background: var(--danger-color); color: white; }
+    }
+    
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.2s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    
+    .modal-box {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      animation: scaleIn 0.2s ease;
+    }
+    
+    .modal-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      
+      &.modal-icon-danger {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+      
+      &.modal-icon-success {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+    }
+    
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+    
+    .modal-message {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9375rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      &:hover { background: #e5e7eb; }
+    }
+    
+    .btn-danger-solid {
+      background: #dc2626;
+      color: white;
+      &:hover { background: #b91c1c; }
+    }
+    
     .pagination {
       display: flex;
       justify-content: space-between;
@@ -394,6 +521,7 @@ export class CasaListComponent implements OnInit {
   estadoFilter = '';
   sectorFilter = '';
   sectores = signal<string[]>([]);
+  confirmDelete = signal<string | null>(null);
   
   private searchTimeout: any;
   
@@ -450,5 +578,34 @@ export class CasaListComponent implements OnInit {
       'ACTIVA': 'Activa'
     };
     return labels[estado] || estado;
+  }
+
+  deleteCasa(id: string) {
+    this.confirmDelete.set(id);
+  }
+  
+  cancelDelete() {
+    this.confirmDelete.set(null);
+  }
+  
+  confirmDeleteAction() {
+    const id = this.confirmDelete();
+    if (!id) return;
+    
+    // Quitar inmediatamente de la lista (optimistic update)
+    const currentCasas = this.casaService.casas();
+    this.casaService.casasSignal.set(currentCasas.filter(c => c.id !== id));
+    this.casaService.totalSignal.set(this.casaService.total() - 1);
+    
+    // Cerrar modal
+    this.confirmDelete.set(null);
+    
+    // Enviar delete al backend (silencioso)
+    this.casaService.deleteCasa(id).subscribe({
+      error: () => {
+        // Si falla, recargar todo
+        this.loadCasas();
+      }
+    });
   }
 }
