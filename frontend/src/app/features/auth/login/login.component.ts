@@ -22,6 +22,12 @@ import { AuthService } from '../../../core/services/auth.service';
               {{ error() }}
             </div>
           }
+
+          <div class="forgot-password">
+            <button type="button" class="btn-link" (click)="goToRecovery()">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
           
           <div class="form-group">
             <label for="email">Correo Electrónico</label>
@@ -125,7 +131,25 @@ import { AuthService } from '../../../core/services/auth.service';
       font-size: 0.875rem;
       text-align: center;
     }
-    
+
+    .forgot-password {
+      text-align: center;
+      margin-bottom: 1rem;
+
+      .btn-link {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: underline;
+
+        &:hover {
+          color: var(--primary-hover);
+        }
+      }
+    }
+
     .demo-credentials {
       margin-top: 1.5rem;
       padding-top: 1.5rem;
@@ -157,6 +181,10 @@ export class LoginComponent {
   loading = signal(false);
   error = signal<string | null>(null);
   
+  goToRecovery() {
+    this.router.navigate(['/recovery']);
+  }
+
   onSubmit() {
     if (!this.email || !this.password) {
       this.error.set('Por favor complete todos los campos');

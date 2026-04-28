@@ -29,10 +29,11 @@ type EmailConfig struct {
 type NotificationType string
 
 const (
-	NotificationUserRegistered NotificationType = "user_registered"
-	NotificationNewAssignment  NotificationType = "new_assignment"
-	NotificationVisitScheduled NotificationType = "visit_scheduled"
-	NotificationVisitReminder  NotificationType = "visit_reminder"
+	NotificationUserRegistered   NotificationType = "user_registered"
+	NotificationNewAssignment    NotificationType = "new_assignment"
+	NotificationVisitScheduled   NotificationType = "visit_scheduled"
+	NotificationVisitReminder    NotificationType = "visit_reminder"
+	NotificationPasswordReset    NotificationType = "password_reset"
 )
 
 // Email templates
@@ -93,19 +94,34 @@ Recuerda realizar la visita y registrar los resultados en la aplicación.
 Saludos,
 Congregación Alameda`,
 		},
-		NotificationVisitReminder: {
+NotificationVisitReminder: {
 			Subject: "Recordatorio de Visita",
-			Body: `Hola {{.Nombre}},
+			Body: `Hola,
 
-Tienes una visita programada para mañana:
+			Tienes una visita programada para mañana:
 
-- Casa: {{.Direccion}}
-- Fecha: {{.Fecha}}
+			- Casa: {{.Direccion}}
+			- Fecha: {{.Fecha}}
 
-No olvides realizar la visita y registrar los resultados.
+			No olvides realizar la visita y registrar los resultados.
 
-Saludos,
-Congregación Alameda`,
+			Saludos,
+			Congregación Alameda`,
+		},
+		NotificationPasswordReset: {
+			Subject: "Recuperación de Contraseña - Congregación Alameda",
+			Body: `Hola,
+
+			Recibimos una solicitud para restablecer tu contraseña.
+
+			Haz click en el siguiente enlace para crear una nueva contraseña:
+
+			{{.ResetLink}}
+
+			Este enlace es válido por 15 minutos. Si no solicitaste este cambio, puedes ignorar este email.
+
+			Saludos,
+			Congregación Alameda`,
 		},
 	}
 
@@ -234,4 +250,17 @@ func (s *NotificationService) sendEmail(to, subject, body string) error {
 
 	log.Printf("[NOTIFICATION] Email sent successfully to %s", to)
 	return nil
+}
+
+// SendPasswordResetNotification sends password reset email
+func (s *NotificationService) SendPasswordResetNotification(email, resetLink string) error {
+	if !s.emailConfig.Enabled {
+		log.Println("[NOTIFICATION] Email disabled, skipping password reset notification")
+		return nil
+	}
+
+	template := emailTemplates[NotificationPasswordReset]
+	body := strings.ReplaceAll(template.Body, "{{.ResetLink}}", resetLink)
+
+	return s.sendEmail(email, template.Subject, body)
 }

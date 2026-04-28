@@ -17,6 +17,15 @@ type LoginResponse struct {
 	User  *UserResponse `json:"user"`
 }
 
+type RecoverRequest struct {
+	Email string `json:"email"`
+}
+
+type RecoverPasswordRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}
+
 // ========== User DTOs ==========
 
 type UserResponse struct {

@@ -55,6 +55,14 @@ export class AuthService {
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, { email, password });
   }
 
+  requestRecovery(email: string) {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/recover-request`, { email });
+  }
+
+  resetPassword(token: string, password: string) {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/recover-password`, { token, password });
+  }
+
   setAuth(token: string, user: User) {
     localStorage.setItem(this.TOKEN_KEY, token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));

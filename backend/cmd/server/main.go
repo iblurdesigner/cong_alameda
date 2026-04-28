@@ -67,7 +67,7 @@ func main() {
 	services.InitNotificationService(emailConfig)
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(userService)
+	authHandler := handlers.NewAuthHandler(userService, jwtManager)
 	casaHandler := handlers.NewCasaHandler(casaService, userService)
 	visitaHandler := handlers.NewVisitaHandler(visitaService, casaService, userService)
 	notifHandler := handlers.NewNotificacionHandler(notifService, userService, casaService)
@@ -185,6 +185,8 @@ func main() {
 	// Auth routes (public)
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
+	auth.Post("/recover-request", authHandler.RecoverRequest)
+	auth.Post("/recover-password", authHandler.RecoverPassword)
 
 	// Protected routes
 	protected := api.Group("", authMiddleware.Authenticate())
