@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,14 +14,16 @@ import (
 )
 
 type AsignacionHandler struct {
-	asignacionService *services.AsignacionService
-	userService       *services.UserService
+	asignacionService    *services.AsignacionService
+	userService          *services.UserService
+	notificacionService  *services.NotificacionService
 }
 
-func NewAsignacionHandler(asignacionService *services.AsignacionService, userService *services.UserService) *AsignacionHandler {
+func NewAsignacionHandler(asignacionService *services.AsignacionService, userService *services.UserService, notificacionService *services.NotificacionService) *AsignacionHandler {
 	return &AsignacionHandler{
-		asignacionService: asignacionService,
-		userService:       userService,
+		asignacionService:    asignacionService,
+		userService:          userService,
+		notificacionService:  notificacionService,
 	}
 }
 
@@ -160,6 +163,18 @@ func (h *AsignacionHandler) Create(c *fiber.Ctx) error {
 			if err := services.GetNotificationService().SendNewAssignmentNotification(user, tipo.Nombre, fecha, obs); err != nil {
 				log.Printf("[NOTIFICATION] Failed to send assignment notification: %v", err)
 			}
+
+			// Create in-app notification for assignment
+			mensaje := fmt.Sprintf("Nueva asignación: %s para la semana del %s", tipo.Nombre, semana.FechaInicio.Format("02/01/2006"))
+			if err := h.notificacionService.CreateAsignacionNotification(
+				c.Context(),
+				models.NotifTipoAsignacionCreada,
+				[]uuid.UUID{*userUUID},
+				mensaje,
+				semanaID, // Use semanaID as reference since we don't have the full asignacion ID yet
+			); err != nil {
+				log.Printf("[NOTIFICATION] Failed to create in-app notification: %v", err)
+			}
 		}()
 	}
 
@@ -281,6 +296,39 @@ func (h *AsignacionHandler) Update(c *fiber.Ctx) error {
 			return c.Status(404).JSON(dto.ErrorResponse{Error: "not_found"})
 		}
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
+	}
+
+	// Send in-app notification for assignment update
+	if userUUID != nil {
+		go func() {
+			// Get user info
+			user, err := h.userService.GetByID(c.Context(), *userUUID)
+			if err != nil || user == nil {
+				log.Printf("[NOTIFICATION] Could not get user for assignment update notification: %v", err)
+				return
+			}
+
+			// Get tipo asignacion name
+			tipos, err := h.asignacionService.GetTiposAsignacion(c.Context())
+			if err != nil {
+				log.Printf("[NOTIFICATION] Could not get tipos asignacion: %v", err)
+				return
+			}
+
+			// Find the tipo for this assignment (we need to get it from the assignment detail)
+			// For now, use a generic message
+			mensaje := fmt.Sprintf("Tu asignación ha sido actualizada")
+			if err := h.notificacionService.CreateAsignacionNotification(
+				c.Context(),
+				models.NotifTipoAsignacionActualizada,
+				[]uuid.UUID{*userUUID},
+				mensaje,
+				id,
+			); err != nil {
+				log.Printf("[NOTIFICATION] Failed to create update notification: %v", err)
+			}
+			_ = tipos // silence unused warning
+		}()
 	}
 
 	return c.JSON(fiber.Map{"message": "Asignación actualizada"})

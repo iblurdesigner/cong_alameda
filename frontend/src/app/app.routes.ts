@@ -48,7 +48,7 @@ export const routes: Routes = [
   },
   {
     path: 'notificaciones',
-    loadComponent: () => import('./features/notifications/notification-list/notification-list.component').then(m => m.NotificationListComponent),
+    loadComponent: () => import('./features/notifications/notification-dashboard/notification-dashboard.component').then(m => m.NotificationDashboardComponent),
     canActivate: [authGuard]
   },
   // ====== FASE 2: Grupos, Territorios, Semanas ======

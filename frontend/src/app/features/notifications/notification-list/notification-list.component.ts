@@ -21,7 +21,10 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
       </header>
       
       @if (notificationService.loading()) {
-        <div class="loading">Cargando...</div>
+        <div class="loader-container">
+          <div class="loader"></div>
+          <p>Cargando notificaciones...</p>
+        </div>
       } @else if (notificationService.notificaciones().length === 0) {
         <div class="empty-state">
           <div class="empty-icon">🔔</div>
@@ -31,14 +34,20 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
         <div class="notifications-list">
           @for (notif of notificationService.notificaciones(); track notif.id) {
             <div class="notif-card" [class.unread]="!notif.leida" (click)="markRead(notif)">
-              <div class="notif-icon">{{ getIcon(notif.tipo) }}</div>
+              <div class="notif-icon-wrapper" [attr.data-tipo]="notif.tipo">
+                <span class="notif-icon">{{ getIcon(notif.tipo) }}</span>
+              </div>
               <div class="notif-content">
-                <span class="notif-tipo">{{ getTipoLabel(notif.tipo) }}</span>
+                <div class="notif-header">
+                  <span class="notif-tipo">{{ getTipoLabel(notif.tipo) }}</span>
+                  <span class="notif-fecha">{{ formatDate(notif.created_at) }}</span>
+                </div>
                 <p class="notif-mensaje">{{ notif.mensaje }}</p>
-                <span class="notif-fecha">{{ formatDate(notif.created_at) }}</span>
               </div>
               @if (!notif.leida) {
-                <div class="unread-dot"></div>
+                <div class="unread-indicator">
+                  <span class="unread-label">Nueva</span>
+                </div>
               }
             </div>
           }
@@ -68,48 +77,85 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
     }
     
     .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
+    .loader-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 3rem; }
+    .loader { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; .empty-icon { font-size: 3rem; opacity: 0.5; } }
     
-    .notifications-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .notifications-list { display: flex; flex-direction: column; gap: 1rem; }
     
     .notif-card {
       display: flex;
       align-items: flex-start;
       gap: 1rem;
-      padding: 1rem;
+      padding: 1.25rem;
       background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       cursor: pointer;
-      transition: all 0.15s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      position: relative;
+      overflow: hidden;
       
       &:hover {
         border-color: var(--primary-color);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         transform: translateY(-2px);
       }
       
-      &.unread { border-left: 3px solid var(--primary-color); }
+      &.unread { 
+        border-left: 4px solid var(--primary-color);
+        background: linear-gradient(90deg, #f8f3ff 0%, var(--surface-color) 30%);
+      }
     }
     
-    .notif-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .notif-icon-wrapper {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.5rem;
+      
+      &[data-tipo="CASA_REGISTRADA"] { background: #e8f5e9; }
+      &[data-tipo="VISITA_PROGRAMADA"] { background: #e3f2fd; }
+      &[data-tipo="VISITA_COMPLETADA"] { background: #f1f8e9; }
+      &[data-tipo="PERSONA_REQUIERE_VISITA"] { background: #fff3e0; }
+    }
+    
+    .notif-icon { font-size: 1.5rem; }
     
     .notif-content {
       flex: 1;
       min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+      
+      .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
       
       .notif-tipo {
         font-size: 0.75rem;
         font-weight: 600;
         text-transform: uppercase;
-        color: var(--text-secondary);
+        color: var(--primary-color);
+        letter-spacing: 0.5px;
       }
       
       .notif-mensaje {
-        margin: 0.25rem 0;
-        font-size: 0.875rem;
-        word-break: break-word;
+        margin: 0;
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        color: var(--text-primary);
       }
       
       .notif-fecha {
@@ -118,13 +164,22 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
       }
     }
     
-    .unread-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--primary-color);
-      border-radius: 50%;
-      flex-shrink: 0;
-      margin-top: 0.5rem;
+    .unread-indicator {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      
+      .unread-label {
+        display: inline-block;
+        padding: 0.25rem 0.625rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: white;
+        background: var(--primary-color);
+        border-radius: var(--radius-sm);
+        letter-spacing: 0.5px;
+      }
     }
 
     @media (max-width: 768px) {
@@ -144,7 +199,7 @@ export class NotificationListComponent implements OnInit {
   notificationService = inject(NotificationService);
   
   ngOnInit() {
-    this.notificationService.loadNotifications();
+    this.notificationService.loadNotifications().subscribe();
   }
   
   markRead(notif: Notificacion) {

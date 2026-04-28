@@ -46,3 +46,73 @@ func (s *NotificacionService) MarkAllAsRead(ctx context.Context, userID uuid.UUI
 func (s *NotificacionService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.notifRepo.Delete(ctx, id)
 }
+
+// CreateAsignacionNotification creates a notification linked to an assignment
+func (s *NotificacionService) CreateAsignacionNotification(ctx context.Context, tipo models.NotificacionTipo, destinatarios []uuid.UUID, mensaje string, asignacionID uuid.UUID) error {
+	notif := &models.Notificacion{
+		Tipo:          tipo,
+		Destinatarios: destinatarios,
+		Mensaje:       mensaje,
+		Leida:         false,
+		ReferenciaID:  &asignacionID,
+		ReferenciaTipo: func() *models.ReferenciaTipo {
+			rt := models.RefTipoAsignacion
+			return &rt
+		}(),
+	}
+
+	return s.notifRepo.CreateConReferencia(ctx, notif)
+}
+
+// CreateVisitaNotification creates a notification linked to a visit
+func (s *NotificacionService) CreateVisitaNotification(ctx context.Context, tipo models.NotificacionTipo, destinatarios []uuid.UUID, mensaje string, visitaID uuid.UUID) error {
+	notif := &models.Notificacion{
+		Tipo:          tipo,
+		Destinatarios: destinatarios,
+		Mensaje:       mensaje,
+		Leida:         false,
+		ReferenciaID:  &visitaID,
+		ReferenciaTipo: func() *models.ReferenciaTipo {
+			rt := models.RefTipoVisita
+			return &rt
+		}(),
+	}
+
+	return s.notifRepo.CreateConReferencia(ctx, notif)
+}
+
+// CleanupOldNotifications deletes notifications older than specified days
+// Returns the count of deleted notifications
+func (s *NotificacionService) CleanupOldNotifications(ctx context.Context, dias int) (int, error) {
+	if dias <= 0 {
+		dias = 30 // default 30 days
+	}
+	return s.notifRepo.DeleteOlderThan(ctx, dias)
+}
+
+// GetVisitasProximasRekindle returns visits scheduled in 'dias' days for reminder notifications
+func (s *NotificacionService) GetVisitasProximasRekindle(ctx context.Context, dias int) ([]*models.Visita, error) {
+	return s.notifRepo.GetVisitasProximasNotificar(ctx, dias)
+}
+
+// GetAsignacionesProximas returns assignments from the week starting in 'dias' days
+func (s *NotificacionService) GetAsignacionesProximas(ctx context.Context, dias int) ([]*models.AsignacionDetail, error) {
+	return s.notifRepo.GetAsignacionesProximas(ctx, dias)
+}
+
+// GetSingleton returns a singleton instance for handlers that need it
+func (s *NotificacionService) GetSingleton() *NotificacionService {
+	return s
+}
+
+var globalNotificacionService *NotificacionService
+
+// InitGlobalNotificacionService initializes the global singleton
+func InitGlobalNotificacionService(svc *NotificacionService) {
+	globalNotificacionService = svc
+}
+
+// GetGlobalNotificacionService returns the global singleton
+func GetGlobalNotificacionService() *NotificacionService {
+	return globalNotificacionService
+}

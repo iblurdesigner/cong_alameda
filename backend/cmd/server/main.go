@@ -70,7 +70,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userService)
 	casaHandler := handlers.NewCasaHandler(casaService, userService)
 	visitaHandler := handlers.NewVisitaHandler(visitaService, casaService, userService)
-	notifHandler := handlers.NewNotificacionHandler(notifService)
+	notifHandler := handlers.NewNotificacionHandler(notifService, userService, casaService)
 	userHandler := handlers.NewUserHandler(userService)
 
 	// ====== FASE 2: Grupos, Territorios, Semanas ======
@@ -111,7 +111,7 @@ func main() {
 	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo, grupoRepo)
 
 	// Initialize Fase 3 handlers
-	asignacionHandler := handlers.NewAsignacionHandler(asignacionService, userService)
+	asignacionHandler := handlers.NewAsignacionHandler(asignacionService, userService, notifService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
@@ -217,6 +217,8 @@ func main() {
 	notificaciones.Get("/", notifHandler.List)
 	notificaciones.Put("/:id/read", notifHandler.MarkAsRead)
 	notificaciones.Put("/read-all", notifHandler.MarkAllAsRead)
+	notificaciones.Delete("/cleanup", notifHandler.CleanupOldNotifications)
+	notificaciones.Post("/rekindle/visitas", notifHandler.RekindleVisitas)
 
 	// User routes - SUPER_ADMIN can manage all, SUPERINTENDENTE can create
 	users := protected.Group("/users")
