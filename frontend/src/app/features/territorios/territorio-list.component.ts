@@ -500,7 +500,7 @@ export class TerritorioListComponent implements OnInit {
         this.closeUploadModal();
         this.uploading.set(false);
       },
-      error: (err) => {
+      error: (err: { error?: { error?: string } }) => {
         alert(err.error?.error || 'Error al subir el archivo');
         this.uploading.set(false);
       }

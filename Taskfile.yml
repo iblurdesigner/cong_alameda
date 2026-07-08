@@ -1,0 +1,41 @@
+# Taskfile.yml — Root-level task runner
+# Requires: go-task/task v3.x
+
+version: '3'
+
+tasks:
+  lint:
+    desc: "Run all linters (Go backend + frontend)"
+    cmds:
+      - cd backend && golangci-lint run ./...
+      - cd frontend && npx eslint .
+      - cd frontend && npx stylelint "src/**/*.scss"
+
+  format:
+    desc: "Format all code (Go backend + frontend)"
+    cmds:
+      - cd backend && gofumpt -w .
+      - cd frontend && npx eslint . --fix
+      - cd frontend && npx stylelint "src/**/*.scss" --fix
+
+  lint-backend:
+    desc: "Lint Go backend only"
+    cmds:
+      - cd backend && golangci-lint run ./...
+
+  lint-frontend:
+    desc: "Lint frontend only (ESLint + stylelint)"
+    cmds:
+      - cd frontend && npx eslint .
+      - cd frontend && npx stylelint "src/**/*.scss"
+
+  format-backend:
+    desc: "Format Go backend with gofumpt"
+    cmds:
+      - cd backend && gofumpt -w .
+
+  format-frontend:
+    desc: "Format frontend with eslint --fix and stylelint --fix"
+    cmds:
+      - cd frontend && npx eslint . --fix
+      - cd frontend && npx stylelint "src/**/*.scss" --fix

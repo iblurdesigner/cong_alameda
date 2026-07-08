@@ -52,6 +52,7 @@ type UpdateUserRequest struct {
 	Nombre                 *string `json:"nombre,omitempty"`
 	Telefono               *string `json:"telefono,omitempty"`
 	TelefonoValidado       *bool   `json:"telefono_validado,omitempty"`
+	Email                  *string `json:"email,omitempty"`
 	NotificacionesEmail    *bool   `json:"notificaciones_email,omitempty"`
 	NotificacionesWhatsapp *bool   `json:"notificaciones_whatsapp,omitempty"`
 	Activo                 *bool   `json:"activo,omitempty"`

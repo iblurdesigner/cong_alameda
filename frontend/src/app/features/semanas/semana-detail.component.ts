@@ -439,7 +439,7 @@ export class SemanaDetailComponent implements OnInit {
     const dia = this.editingDia();
     if (!dia) return;
     
-    const data: any = {};
+    const data: Partial<Dia> = {};
     if (this.editForm.territorio_manana_id) {
       data.territorio_manana_id = this.editForm.territorio_manana_id;
     }

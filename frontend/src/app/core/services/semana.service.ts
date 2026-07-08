@@ -19,9 +19,9 @@ export interface Dia {
   territorio_manana_id?: string;
   territorio_tarde_id?: string;
   grupo_asignado_id?: string;
-  territorio_manana?: any;
-  territorio_tarde?: any;
-  grupo_asignado?: any;
+  territorio_manana?: { id: string; nombre: string };
+  territorio_tarde?: { id: string; nombre: string };
+  grupo_asignado?: { id: string; numero: number; nombre: string };
 }
 
 export interface SemanaDetail extends Semana {

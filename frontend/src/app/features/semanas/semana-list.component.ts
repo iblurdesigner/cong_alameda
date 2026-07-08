@@ -1,8 +1,8 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { SemanaService, Semana } from '../../core/services/semana.service';
+import { SemanaService } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -309,7 +309,7 @@ export class SemanaListComponent implements OnInit {
         this.loadSemanas();
         this.closeModal();
       },
-      error: (err) => {
+      error: (err: { error?: { error?: string } }) => {
         alert(err.error?.error || 'Error al crear la semana');
       }
     });

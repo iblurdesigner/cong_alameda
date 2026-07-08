@@ -157,7 +157,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       // Then mark as read
@@ -176,7 +176,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       // Mark the unread notification (id: '1') as read
@@ -199,7 +199,7 @@ describe('NotificationService', () => {
 
       service.loadNotifications().subscribe();
 
-      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(response);
 
       // Mark notification as read
@@ -242,7 +242,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       // Mark all as read
@@ -260,7 +260,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       expect(service.unreadCount()).toBe(1);

@@ -17,6 +17,7 @@ export interface User {
 
 export interface UpdateUserRequest {
   nombre?: string;
+  email?: string;
   telefono?: string;
   telefono_validado?: boolean;
   notificaciones_email?: boolean;

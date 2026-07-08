@@ -316,13 +316,13 @@ export class VisitaListComponent implements OnInit {
   
   loadVisitas() {
     this.visitaService.loadVisitas({ estado: this.estadoFilter || undefined }).subscribe({
-      next: (res) => this.visitas.set(res.data)
+      next: (res: { data: Visita[] }) => this.visitas.set(res.data)
     });
   }
   
   loadUsers() {
     this.userService.getUsers().subscribe({
-      next: (users) => this.users.set(users)
+      next: (users: User[]) => this.users.set(users)
     });
   }
   
@@ -364,10 +364,10 @@ export class VisitaListComponent implements OnInit {
     
     this.saving.set(true);
     
-    const updates: any = {};
+    const updates: Partial<Visita> = {};
     
     if (this.estado && this.estado !== visita.estado) {
-      updates.estado = this.estado;
+      updates.estado = this.estado as Visita['estado'];
     }
     if (this.visitante1Id) {
       updates.visitante_1_id = this.visitante1Id;
@@ -391,7 +391,7 @@ export class VisitaListComponent implements OnInit {
     }
     
     this.visitaService.updateVisita(visita.id, updates).subscribe({
-      next: (updated) => {
+      next: (updated: Visita) => {
         this.visitas.update(visitas => 
           visitas.map(v => v.id === visita.id ? updated : v)
         );
@@ -438,6 +438,6 @@ export class VisitaListComponent implements OnInit {
       const url = `https://www.google.com/maps?q=${encodeURIComponent(coords)}&output=embed&z=16`;
       return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
-    return '' as SafeResourceUrl;
+    return '';
   }
 }

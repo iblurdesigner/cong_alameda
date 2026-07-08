@@ -19,8 +19,8 @@ export interface Asignacion {
   dia_semana: number;
   observaciones?: string;
   tipo_asignacion?: TipoAsignacion;
-  user?: any;
-  grupo?: any;
+  user?: { id: string; nombre: string; email?: string; rol?: string };
+  grupo?: { id: string; nombre: string; numero?: number };
   created_at: string;
 }
 
@@ -29,7 +29,7 @@ export interface SemanaConAsignaciones {
   fecha_inicio: string;
   fecha_fin: string;
   nombre: string;
-  dias: any[];
+  dias: { dia_semana: number; fecha: string }[];
   asignaciones: Asignacion[];
 }
 
@@ -86,7 +86,7 @@ export class AsignacionService {
     return this.http.post(`${environment.apiUrl}/asignaciones`, data);
   }
 
-  bulkCreateAsignaciones(semanaId: string, asignaciones: any[]) {
+  bulkCreateAsignaciones(semanaId: string, asignaciones: { tipo_asignacion_id: string; user_id: string | null; grupo_id: string | null; dia_semana: number; fecha?: string }[]) {
     return this.http.post(`${environment.apiUrl}/asignaciones/bulk`, {
       semana_id: semanaId,
       asignaciones: asignaciones

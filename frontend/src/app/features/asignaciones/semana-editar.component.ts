@@ -2,9 +2,9 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AsignacionService, TipoAsignacion, Asignacion, SemanaConAsignaciones } from '../../core/services/asignacion.service';
+import { AsignacionService, TipoAsignacion, Asignacion } from '../../core/services/asignacion.service';
 import { SemanaService, Semana } from '../../core/services/semana.service';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService, User } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
 @Component({
@@ -386,7 +386,7 @@ export class SemanaEditarComponent implements OnInit {
 
   semana = signal<Semana | null>(null);
   tipos = signal<TipoAsignacion[]>([]);
-  users = signal<any[]>([]);
+  users = signal<User[]>([]);
   grupos = signal<Grupo[]>([]);
   asignaciones = signal<Asignacion[]>([]);
   
@@ -414,7 +414,7 @@ export class SemanaEditarComponent implements OnInit {
         this.semana.set(semana);
         this.generateWeekDays(semana);
       },
-      error: (err) => {
+      error: (err: { status?: number }) => {
         console.error('Error cargando semana:', err);
         // Si es 401, no navegar al login - solo mostrar error
         if (err.status === 401) {
@@ -429,7 +429,7 @@ export class SemanaEditarComponent implements OnInit {
         console.log('Asignaciones cargadas:', data);
         this.asignaciones.set(data.asignaciones || []);
       },
-      error: (err) => {
+      error: (err: { status?: number }) => {
         console.error('Error cargando asignaciones:', err);
         if (err.status === 401) {
           console.warn('Token inválido o expirado');
@@ -442,7 +442,7 @@ export class SemanaEditarComponent implements OnInit {
       next: () => {
         this.tipos.set(this.asignacionService.tipos());
       },
-      error: (err) => {
+      error: (err: { status?: number }) => {
         console.error('Error cargando tipos:', err);
         if (err.status === 401) {
           console.warn('Token inválido o expirado');
@@ -454,7 +454,7 @@ export class SemanaEditarComponent implements OnInit {
     this.loadUsersAndGrupos();
   }
 
-  generateWeekDays(semana: any) {
+  generateWeekDays(semana: Semana) {
     const inicio = new Date(semana.fecha_inicio);
     this.weekDays = [];
     for (let i = 0; i < 7; i++) {
@@ -477,17 +477,17 @@ export class SemanaEditarComponent implements OnInit {
   loadUsersAndGrupos() {
     // Load ALL users from the users endpoint
     this.authService.getUsers().subscribe({
-      next: (res: any) => {
-        this.users.set(res.data || res);
+      next: (res: User[] | { data: User[] }) => {
+        this.users.set(Array.isArray(res) ? res : res.data);
       },
-      error: (err) => {
+      error: (err: { status?: number }) => {
         console.error('Error loading users:', err);
         // Fallback: try loading from existing asignaciones
         this.asignacionService.loadAsignaciones().subscribe(() => {
           const allAsigs = this.asignacionService.asignaciones();
-          const uniqueUsers = new Map();
+          const uniqueUsers = new Map<string, User>();
           allAsigs.forEach(a => {
-            if (a.user) uniqueUsers.set(a.user.id, a.user);
+            if (a.user) uniqueUsers.set(a.user.id, a.user as unknown as User);
           });
           this.users.set(Array.from(uniqueUsers.values()));
         });
@@ -592,7 +592,7 @@ export class SemanaEditarComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/asignaciones']);
+    void this.router.navigate(['/asignaciones']);
   }
 
   openAssignModal(tipo: TipoAsignacion, diaSemana: number) {

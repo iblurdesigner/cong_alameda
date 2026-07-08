@@ -2,9 +2,9 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AsignacionService, TipoAsignacion, Asignacion } from '../../core/services/asignacion.service';
+import { AsignacionService, TipoAsignacion, Asignacion, SemanaConAsignaciones } from '../../core/services/asignacion.service';
 import { SemanaService, Semana } from '../../core/services/semana.service';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService, User } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
 @Component({
@@ -421,7 +421,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             <div class="export-filters">
               <div class="filter-group">
                 <label for="filterMonth">Filtrar por mes:</label>
-                <select id="filterMonth" [value]="filterMonth()" (change)="setFilterMonth($any($event.target).value)">
+                <select id="filterMonth" [value]="filterMonth()" (change)="setFilterMonth($any($event).target.value)">
                   <option value="">Todos los meses</option>
                   @for (month of getAvailableMonths(); track month.value) {
                     <option [value]="month.value">{{ month.label }}</option>
@@ -974,10 +974,10 @@ export class AsignacionListComponent implements OnInit {
   grupoService = inject(GrupoService);
   
   semanas = signal<Semana[]>([]);
-  users = signal<any[]>([]);
+  users = signal<User[]>([]);
   tipos = signal<TipoAsignacion[]>([]);
   grupos = signal<Grupo[]>([]);
-  semanaActual: any = null;
+  semanaActual: SemanaConAsignaciones | null = null;
   
   selectedSemanaId = '';
   showAssignModal = false;
@@ -1167,7 +1167,7 @@ export class AsignacionListComponent implements OnInit {
       const semana = this.findSemanaByDate(day.date);
       if (semana) {
         console.log('Navegando a semana:', semana.id, semana.nombre);
-        this.router.navigate(['/asignaciones/semana', semana.id]);
+        void this.router.navigate(['/asignaciones/semana', semana.id]);
         return;
       } else {
         console.warn('No se encontró semana para la fecha:', day.date);
@@ -1215,7 +1215,7 @@ export class AsignacionListComponent implements OnInit {
     
     // Check if any assignment exists for this specific week AND day of week
     return this.allAsignaciones.some(a => 
-      (a as any).semana_id === targetSemana.id && a.dia_semana === dayOfWeek
+      a.semana_id === targetSemana.id && a.dia_semana === dayOfWeek
     );
   }
 
@@ -1273,7 +1273,7 @@ export class AsignacionListComponent implements OnInit {
       this.allAsignaciones
         .filter((a: Asignacion) => {
           // Must match the week AND the day of week
-          const matchesSemana = (a as any).semana_id === targetSemana.id;
+          const matchesSemana = a.semana_id === targetSemana.id;
           const matchesDia = a.dia_semana === dayOfWeek;
           return matchesSemana && matchesDia;
         })
@@ -1406,7 +1406,7 @@ export class AsignacionListComponent implements OnInit {
         // Update local state
         const semanas = this.semanas().map(s => {
           if (s.id === semana.id) {
-            return { ...s, archivado: !currentlyArchived } as Semana;
+            return { ...s, archivado: !currentlyArchived };
           }
           return s;
         });
@@ -1432,7 +1432,7 @@ export class AsignacionListComponent implements OnInit {
   loadUsers() {
     console.log('Loading users...');
     this.authService.getUsers().subscribe({
-      next: (res: any) => {
+      next: (res: User[]) => {
         console.log('Users loaded:', res);
         this.users.set(res);
       },
@@ -1445,11 +1445,9 @@ export class AsignacionListComponent implements OnInit {
   loadGrupos() {
     console.log('Loading grupos...');
     this.grupoService.loadGrupos().subscribe({
-      next: (res: any) => {
+      next: (res: { data: Grupo[] }) => {
         console.log('Grupos loaded:', res);
-        // Extract data from response if it's wrapped
-        const gruposData = res.data || res;
-        this.grupos.set(gruposData);
+        this.grupos.set(res.data);
       },
       error: (err) => {
         console.error('Error loading grupos:', err);
@@ -1461,7 +1459,7 @@ export class AsignacionListComponent implements OnInit {
     if (!this.selectedSemanaId) return;
     
     this.asignacionService.loadAsignacionesBySemana(this.selectedSemanaId).subscribe({
-      next: (data: any) => {
+      next: (data: SemanaConAsignaciones) => {
         this.semanaActual = data;
         const map = new Map<string, Asignacion>();
         data.asignaciones?.forEach((a: Asignacion) => {
@@ -1553,14 +1551,14 @@ export class AsignacionListComponent implements OnInit {
     );
   }
 
-  getAvailableUsersForTipo(): any[] {
+  getAvailableUsersForTipo(): User[] {
     // Return all users that are not already assigned for this tipo and day
     const assigned = this.getCurrentAssignmentsForTipo();
     const assignedIds = assigned.map(a => a.user_id);
     return this.getUsersList().filter(u => !assignedIds.includes(u.id));
   }
 
-  getAllUsers(): any[] {
+  getAllUsers(): User[] {
     // Return all registered users (no filtering)
     return this.getUsersList();
   }
@@ -1606,16 +1604,13 @@ export class AsignacionListComponent implements OnInit {
     // Otherwise, create new assignment
     if (!this.assignForm.user_id && !this.assignForm.grupo_id) return;
     
-    const asignacion = {
-      semana_id: this.selectedSemanaId,
+    this.asignacionService.createAsignacion({
+      semana_id: this.selectedSemanaId || '',
       tipo_asignacion_id: this.assignForm.tipo_id,
-      user_id: this.assignForm.user_id || null,
-      grupo_id: this.assignForm.grupo_id || null,
+      user_id: this.assignForm.user_id || '',
       dia_semana: this.editingDiaSemana,
       observaciones: this.assignForm.observaciones || undefined
-    };
-    
-    this.asignacionService.createAsignacion(asignacion as any).subscribe({
+    }).subscribe({
       next: () => {
         this.loadSemana();
         // Reset user selection but keep tipo selected
@@ -1645,16 +1640,15 @@ export class AsignacionListComponent implements OnInit {
     // Always reload users and grupos to ensure we have the latest
     console.log('Loading users and grupos...');
     this.authService.getUsers().subscribe({
-      next: (res: any) => {
+      next: (res: User[]) => {
         console.log('Users loaded in bulk modal:', res);
         this.users.set(res);
         
         // Also load grupos
         this.grupoService.loadGrupos().subscribe({
-          next: (gruposRes: any) => {
+          next: (gruposRes: { data: Grupo[] }) => {
             console.log('Grupos loaded in bulk modal:', gruposRes);
-            const gruposData = gruposRes.data || gruposRes;
-            this.grupos.set(gruposData);
+            this.grupos.set(gruposRes.data);
             // Select today's date by default
             const today = this.formatDateISO(new Date());
             this.selectBulkDate(today);
@@ -1703,7 +1697,7 @@ export class AsignacionListComponent implements OnInit {
     
     // Load existing assignments for this day (both users AND grupos)
     if (this.semanaActual && this.semanaActual.asignaciones) {
-      const asignaciones = this.semanaActual.asignaciones as Asignacion[];
+      const asignaciones = this.semanaActual.asignaciones;
       asignaciones
         .filter((a: Asignacion) => a.dia_semana === diaSemana)
         .forEach((a: Asignacion) => {
@@ -1755,7 +1749,7 @@ export class AsignacionListComponent implements OnInit {
     }
   }
   
-  getAvailableUsers(tipoId: string): any[] {
+  getAvailableUsers(): User[] {
     // Return all users (you could filter by role if needed)
     return this.users();
   }
@@ -1767,7 +1761,7 @@ export class AsignacionListComponent implements OnInit {
     }
     
     const diaSemana = this.getDayOfWeek(this.selectedBulkDate);
-    const asignaciones: any[] = [];
+    const asignaciones: { tipo_asignacion_id: string; user_id: string | null; grupo_id: string | null; dia_semana: number; fecha: string }[] = [];
     
     console.log('saveBulkAsignaciones - tipos():', this.tipos());
     console.log('saveBulkAsignaciones - bulkAssignments:', this.bulkAssignments);
@@ -1791,7 +1785,7 @@ export class AsignacionListComponent implements OnInit {
               grupo_id: assignment.userId.replace('grupo_', ''),
               user_id: null,
               dia_semana: diaSemana,
-              fecha: this.selectedBulkDate
+              fecha: this.selectedBulkDate!
             });
           } else {
             // It's a regular user
@@ -1800,7 +1794,7 @@ export class AsignacionListComponent implements OnInit {
               user_id: assignment.userId,
               grupo_id: null,
               dia_semana: diaSemana,
-              fecha: this.selectedBulkDate
+              fecha: this.selectedBulkDate!
             });
           }
         }
@@ -1818,7 +1812,7 @@ export class AsignacionListComponent implements OnInit {
     this.saveDateBasedAssignments(asignaciones);
   }
   
-  saveDateBasedAssignments(asignaciones: any[]) {
+  saveDateBasedAssignments(asignaciones: { tipo_asignacion_id: string; user_id: string | null; grupo_id: string | null; dia_semana: number; fecha: string }[]) {
     // Find which week contains this date
     const targetDate = new Date(this.selectedBulkDate!);
     let targetSemana = this.semanas().find(semana => {
@@ -1854,11 +1848,11 @@ export class AsignacionListComponent implements OnInit {
   // Load all weeks for summary
   loadAllWeeksForSummary() {
     let loadedCount = 0;
-    const summaryData: any[] = [];
+    const summaryData: { semana: Semana; asignaciones: Asignacion[] }[] = [];
     
     this.semanas().forEach(semana => {
       this.asignacionService.loadAsignacionesBySemana(semana.id).subscribe({
-        next: (data: any) => {
+        next: (data: SemanaConAsignaciones) => {
           if (data && data.asignaciones && data.asignaciones.length > 0) {
             summaryData.push({
               semana: semana,
@@ -1879,7 +1873,7 @@ export class AsignacionListComponent implements OnInit {
     }
   }
   
-  showSummaryModal(summaryData: any[]) {
+  showSummaryModal(summaryData: { semana: Semana; asignaciones: Asignacion[] }[]) {
     this.summaryData = summaryData;
     this.showBulkModal = false;
     this.showSummaryModalFlag = true;
@@ -1892,17 +1886,17 @@ export class AsignacionListComponent implements OnInit {
   }
   
   // Get sorted summary data for display (ascending by fecha_inicio)
-  getSortedSummaryData(): any[] {
-    return [...this.summaryData].sort((a: any, b: any) => 
+  getSortedSummaryData(): { semana: Semana; asignaciones: Asignacion[] }[] {
+    return [...this.summaryData].sort((a, b) => 
       new Date(a.semana.fecha_inicio).getTime() - new Date(b.semana.fecha_inicio).getTime()
     );
   }
   
-  summaryData: any[] = [];
+  summaryData: { semana: Semana; asignaciones: Asignacion[] }[] = [];
   showSummaryModalFlag = false;
 
   // Helper methods to safely get lists
-  getUsersList(): any[] {
+  getUsersList(): User[] {
     const u = this.users();
     return Array.isArray(u) ? u : [];
   }
@@ -1942,9 +1936,9 @@ export class AsignacionListComponent implements OnInit {
     ] as TipoAsignacion[];
   }
   
-  getAssignmentsForTipoAndSemana(semanaData: any, tipoId: string): any[] {
+  getAssignmentsForTipoAndSemana(semanaData: { asignaciones: Asignacion[] }, tipoId: string): Asignacion[] {
     if (!semanaData.asignaciones) return [];
-    return semanaData.asignaciones.filter((a: any) => a.tipo_asignacion_id === tipoId);
+    return semanaData.asignaciones.filter((a: Asignacion) => a.tipo_asignacion_id === tipoId);
   }
   
   exportToPDF() {
@@ -2057,10 +2051,10 @@ export class AsignacionListComponent implements OnInit {
     // Generate content for each week
     const tipos = this.getTiposList();
     // Sort weeks by start date (ascending - oldest first)
-    const sortedSummary = [...this.summaryData].sort((a: any, b: any) => 
+    const sortedSummary = [...this.summaryData].sort((a, b) => 
       new Date(a.semana.fecha_inicio).getTime() - new Date(b.semana.fecha_inicio).getTime()
     );
-    sortedSummary.forEach((semanaData: any) => {
+    sortedSummary.forEach((semanaData) => {
       html += `
         <div class="semana-section">
           <div class="semana-title">${semanaData.semana.nombre}</div>
@@ -2077,10 +2071,10 @@ export class AsignacionListComponent implements OnInit {
             <tbody>
       `;
       
-      tipos.forEach((tipo: any) => {
-        const asignaciones = this.getAssignmentsForTipoAndSemana(semanaData, tipo.id);
-        if (asignaciones.length > 0) {
-          const personas = asignaciones.map((a: any) => 
+      tipos.forEach((tipo: TipoAsignacion) => {
+        const tipoAsignaciones = this.getAssignmentsForTipoAndSemana(semanaData, tipo.id);
+        if (tipoAsignaciones.length > 0) {
+          const personas = tipoAsignaciones.map((a: Asignacion) => 
             `<span class="persona-tag">${a.user?.nombre || 'Usuario'}</span>`
           ).join('');
           
@@ -2130,7 +2124,6 @@ export class AsignacionListComponent implements OnInit {
   
   exportAllToPDF(selectedSemanaIds?: string[]) {
     // Load all weeks with their assignments and generate PDF
-    const semanasData: any[] = [];
     let semanasList = this.semanas();
     
     // Filter weeks if specific weeks were selected
@@ -2145,16 +2138,13 @@ export class AsignacionListComponent implements OnInit {
     
     // Collect all assignments from all weeks
     // Since allAsignaciones already has all data from loadAllAsignaciones, we can group by week
-    const groupedByWeek = new Map<string, any[]>();
+    const groupedByWeek = new Map<string, Asignacion[]>();
     
     this.allAsignaciones.forEach((a: Asignacion) => {
       // Find which week this assignment belongs to
       const semana = semanasList.find((s: Semana) => {
-        const inicio = new Date(s.fecha_inicio);
-        const fin = new Date(s.fecha_fin);
-        // We don't have the week ID directly in assignment, but we can match by dates
-        // Actually, assignments have semana_id
-        return s.id === (a as any).semana_id;
+        // Match by semana_id directly (assignments have semana_id)
+        return s.id === a.semana_id;
       });
       
       if (semana) {

@@ -1,0 +1,39 @@
+# .golangci.yml — Configuration for golangci-lint
+# Gradual adoption: only flags issues in NEW code (diff from HEAD)
+# See https://golangci-lint.run/usage/configuration/
+
+run:
+  go: "1.21"
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+  disable:
+    - exhaustive
+    - exhaustruct
+
+linters-settings:
+  gofumpt:
+    lang-version: "1.21"
+  govet:
+    enable-all: true
+  staticcheck:
+    checks: ["all"]
+
+issues:
+  # Only flag issues in lines changed since HEAD (gradual adoption)
+  new-from-rev: HEAD
+  exclude-dirs:
+    - .git
+  exclude-use-default: false
+
+output:
+  format: colored-line-number

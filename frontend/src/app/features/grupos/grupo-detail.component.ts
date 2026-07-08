@@ -425,7 +425,7 @@ export class GrupoDetailComponent implements OnInit {
   
   closePreview() {
     this.previewTerritorio.set(null);
-    this.previewUrl.set('' as SafeResourceUrl);
+    this.previewUrl.set('');
   }
   
   deleteTerritorio(territorio: Territorio) {

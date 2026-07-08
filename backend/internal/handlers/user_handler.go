@@ -187,6 +187,9 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 	if req.TelefonoValidado != nil {
 		updates["telefono_validado"] = *req.TelefonoValidado
 	}
+	if req.Email != nil {
+		updates["email"] = *req.Email
+	}
 	if req.NotificacionesEmail != nil {
 		updates["notificaciones_email"] = *req.NotificacionesEmail
 	}

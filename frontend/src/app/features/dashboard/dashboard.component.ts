@@ -2,7 +2,6 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VisitaService, VisitaStats } from '../../core/services/visita.service';
-import { CasaService } from '../../core/services/casa.service';
 
 @Component({
   selector: 'app-dashboard',

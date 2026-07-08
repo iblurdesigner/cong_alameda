@@ -204,8 +204,8 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
 
       <!-- Modal de Edición -->
       @if (editingUser()) {
-        <div class="modal-overlay" (click)="closeEditModal()">
-          <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-overlay">
+          <div class="modal-content">
             <div class="modal-header">
               <h2>Editar Usuario</h2>
               <button class="btn-close" (click)="closeEditModal()">✕</button>
@@ -799,7 +799,7 @@ export class UsuariosListComponent implements OnInit {
         this.users.set(users);
         this.loading.set(false);
       },
-      error: (err) => {
+      error: () => {
         this.error.set('Error al cargar usuarios');
         this.loading.set(false);
       }
@@ -829,6 +829,7 @@ export class UsuariosListComponent implements OnInit {
 
     const update: UpdateUserRequest = {
       nombre: form.nombre,
+      email: form.email,
       telefono: form.telefono || undefined,
       telefono_validado: form.telefono_validado
     };
