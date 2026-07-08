@@ -1,5 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from '../../../environments/environment';
 import { tap } from 'rxjs/operators';
 
@@ -22,7 +23,10 @@ export class TerritorioService {
   territorios = computed(() => this.territoriosSignal());
   loading = computed(() => this.loadingSignal());
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
+  ) {}
 
   loadTerritorios(grupoId?: string) {
     this.loadingSignal.set(true);
@@ -67,5 +71,10 @@ export class TerritorioService {
 
   deleteTerritorio(id: string) {
     return this.http.delete(`${environment.apiUrl}/territorios/${id}`);
+  }
+
+  previewTerritorio(id: string): SafeResourceUrl {
+    const url = `${environment.apiUrl.replace('/api', '')}/public/territorios/${id}/previsualizar`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 }

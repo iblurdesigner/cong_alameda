@@ -11,7 +11,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
   template: `
     <div class="page-container">
       <header class="page-header">
-        <a routerLink="/casas" class="back-link">← Volver a Casas</a>
+        <a routerLink="/casas" class="back-link">ΓåÉ Volver a Casas</a>
       </header>
       
       @if (loading()) {
@@ -21,7 +21,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
           <div class="main-content">
             <div class="card">
               <div class="card-header">
-                <h2>Información de la Casa</h2>
+                <h2>Informaci├│n de la Casa</h2>
                 <span class="badge" [ngClass]="getEstadoClass(casa()!.estado)">
                   {{ getEstadoLabel(casa()!.estado) }}
                 </span>
@@ -29,7 +29,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
               
               <div class="info-grid">
                 <div class="info-item">
-                  <label>Dirección</label>
+                  <label>Direcci├│n</label>
                   <span class="value">
                     {{ casa()!.calle_principal }} {{ casa()!.numeracion }}
                     @if (casa()!.calle_secundaria) {
@@ -52,7 +52,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                 
                 <div class="info-item full-width">
                   <label>Motivo "No Visitar"</label>
-                  <span class="value motivo">{{ casa()!.motivo_no_volver }}</span>
+                  <span class="value motivo">{{ casa()!.motivo_no_volver || 'Sin motivo' }}</span>
                 </div>
                 
                 <div class="info-item">
@@ -77,16 +77,33 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
               } @else {
                 <div class="visits-list">
                   @for (visita of visitas(); track visita.id) {
-                    <div class="visit-item">
+                    <div class="visit-item" (click)="openVisitDetail(visita)" style="cursor: pointer;">
                       <div class="visit-header">
-                        <span class="visit-date">{{ formatDate(visita.fecha_programada) }}</span>
+                        <span class="visit-date">
+                          @if (visita.estado === 'REALIZADA' && visita.fecha_realizada) {
+                            Γ£à {{ formatDate(visita.fecha_realizada) }}
+                          } @else {
+                            ≡ƒôà {{ formatDate(visita.fecha_programada) }}
+                          }
+                        </span>
                         <span class="badge" [ngClass]="getVisitaEstadoClass(visita.estado)">
                           {{ getVisitaEstadoLabel(visita.estado) }}
                         </span>
                       </div>
-                      @if (visita.observaciones) {
+                      
+                      @if (visita.visitante_1_nombre || visita.visitante_2_nombre) {
+                        <p class="visit-visitors">
+                          ≡ƒæÑ {{ [visita.visitante_1_nombre, visita.visitante_2_nombre].filter(n => n).join(', ') }}
+                        </p>
+                      }
+                      
+                      @if (visita.observaciones && visita.observaciones.length > 50) {
+                        <p class="visit-obs-preview">{{ visita.observaciones | slice:0:50 }}...</p>
+                      } @else if (visita.observaciones) {
                         <p class="visit-obs">{{ visita.observaciones }}</p>
                       }
+                      
+                      <span class="click-hint">Click para ver detalles ΓåÆ</span>
                     </div>
                   }
                 </div>
@@ -96,15 +113,88 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
           
           <div class="actions-sidebar">
             <a [routerLink]="['/casas', casa()!.id, 'edit']" class="btn btn-primary btn-block">
-              ✏️ Editar Casa
+              Γ£Å∩╕Å Editar Casa
             </a>
             <a [routerLink]="['/visitas']" [queryParams]="{casa_id: casa()!.id}" class="btn btn-outline btn-block">
-              📅 Ver Visitas
+              ≡ƒôà Ver Visitas
             </a>
           </div>
         </div>
       }
     </div>
+
+    <!-- Modal de Detalles de Visita -->
+    @if (selectedVisit()) {
+      <div class="modal-overlay" (click)="closeModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h2>Detalle de la Visita</h2>
+            <button class="modal-close" (click)="closeModal()">Γ£ò</button>
+          </div>
+          
+          <div class="modal-body">
+            <div class="detail-section">
+              <h3>≡ƒôà Programaci├│n</h3>
+              <div class="detail-row">
+                <span class="detail-label">Fecha Programada:</span>
+                <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_programada) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Estado:</span>
+                <span class="badge" [ngClass]="getVisitaEstadoClass(selectedVisit()!.estado)">
+                  {{ getVisitaEstadoLabel(selectedVisit()!.estado) }}
+                </span>
+              </div>
+            </div>
+
+            @if (selectedVisit()!.fecha_realizada) {
+              <div class="detail-section">
+                <h3>Γ£à Visita Realizada</h3>
+                <div class="detail-row">
+                  <span class="detail-label">Fecha de Realizaci├│n:</span>
+                  <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_realizada!) }}</span>
+                </div>
+              </div>
+            }
+
+            <div class="detail-section">
+              <h3>≡ƒæÑ Visitantes</h3>
+              <div class="detail-row">
+                <span class="detail-label">Visitante 1:</span>
+                <span class="detail-value">{{ selectedVisit()!.visitante_1_nombre || 'No asignado' }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Visitante 2:</span>
+                <span class="detail-value">{{ selectedVisit()!.visitante_2_nombre || 'No asignado' }}</span>
+              </div>
+            </div>
+
+            @if (selectedVisit()!.observaciones) {
+              <div class="detail-section">
+                <h3>≡ƒô¥ Observaciones</h3>
+                <div class="observaciones-box">{{ selectedVisit()!.observaciones }}</div>
+              </div>
+            }
+
+            @if (selectedVisit()!.desea_seguir_recibiendo !== undefined) {
+              <div class="detail-section">
+                <h3>≡ƒôó Respuesta del Habitante</h3>
+                <div class="detail-row">
+                  <span class="detail-label">Desea seguir recibiendo:</span>
+                  <span class="detail-value" [class.text-success]="selectedVisit()!.desea_seguir_recibiendo" [class.text-danger]="!selectedVisit()!.desea_seguir_recibiendo">
+                    {{ selectedVisit()!.desea_seguir_recibiendo ? 'Γ£à S├¡' : 'Γ¥î No' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeModal()">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-container { max-width: 1000px; margin: 0 auto; }
@@ -124,9 +214,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
       display: grid;
       grid-template-columns: 1fr 250px;
       gap: 1.5rem;
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-      }
+      @media (max-width: 768px) { grid-template-columns: 1fr; }
     }
     
     .card {
@@ -183,13 +271,24 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
       padding: 1rem;
       background: var(--background-color);
       border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+      
+      &:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      
       .visit-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 0.5rem;
       }
-      .visit-obs { font-size: 0.875rem; color: var(--text-secondary); margin: 0; }
+      .visit-visitors { font-size: 0.875rem; color: var(--text-primary); margin: 0.25rem 0; }
+      .visit-obs { font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0; }
+      .visit-obs-preview { font-size: 0.8rem; color: var(--text-secondary); margin: 0.25rem 0; font-style: italic; }
+      .click-hint { font-size: 0.7rem; color: var(--primary-color); opacity: 0.7; }
     }
     
     .actions-sidebar {
@@ -198,6 +297,11 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
       gap: 0.75rem;
       .btn-block { width: 100%; justify-content: center; }
     }
+    
+    .btn { padding: 0.625rem 1rem; border-radius: var(--radius-md); font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; border: none; }
+    .btn-primary { background: var(--primary-color); color: white; &:hover { background: var(--primary-dark); } }
+    .btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); &:hover { background: var(--border-color); } }
+    .btn-secondary { padding: 0.625rem 1.25rem; background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer; font-size: 0.875rem; font-weight: 500; &:hover { background: var(--border-color); } }
     
     .badge {
       padding: 0.25rem 0.75rem;
@@ -209,6 +313,31 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
     .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
     .badge-primary { background: rgba(37, 99, 235, 0.1); color: var(--primary-color); }
     .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success-color); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .modal-content { background: var(--surface-color); border-radius: var(--radius-xl); width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color); h2 { font-size: 1.25rem; font-weight: 600; margin: 0; } }
+    .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); padding: 0.25rem; &:hover { color: var(--text-primary); } }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); }
+    
+    .detail-section { margin-bottom: 1.5rem; &:last-child { margin-bottom: 0; } h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; } }
+    .detail-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+    .detail-label { font-size: 0.875rem; color: var(--text-secondary); }
+    .detail-value { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
+    .text-success { color: var(--success-color) !important; }
+    .text-danger { color: var(--danger-color) !important; }
+    
+    .observaciones-box {
+      background: var(--background-color);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      white-space: pre-wrap;
+      border: 1px solid var(--border-color);
+    }
   `]
 })
 export class CasaDetailComponent implements OnInit {
@@ -220,6 +349,7 @@ export class CasaDetailComponent implements OnInit {
   casa = signal<Casa | null>(null);
   visitas = signal<Visita[]>([]);
   loading = signal(true);
+  selectedVisit = signal<Visita | null>(null);
   
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -237,7 +367,7 @@ export class CasaDetailComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
-        this.router.navigate(['/casas']);
+        void this.router.navigate(['/casas']);
       }
     });
   }
@@ -246,6 +376,14 @@ export class CasaDetailComponent implements OnInit {
     this.visitaService.loadVisitas({ casa_id: casaId }).subscribe({
       next: (res) => this.visitas.set(res.data)
     });
+  }
+  
+  openVisitDetail(visita: Visita) {
+    this.selectedVisit.set(visita);
+  }
+  
+  closeModal() {
+    this.selectedVisit.set(null);
   }
   
   formatDate(dateStr: string): string {

@@ -8,6 +8,7 @@ export interface Semana {
   fecha_inicio: string;
   fecha_fin: string;
   nombre: string;
+  archivado?: boolean;
   created_at: string;
 }
 
@@ -18,9 +19,9 @@ export interface Dia {
   territorio_manana_id?: string;
   territorio_tarde_id?: string;
   grupo_asignado_id?: string;
-  territorio_manana?: any;
-  territorio_tarde?: any;
-  grupo_asignado?: any;
+  territorio_manana?: { id: string; nombre: string };
+  territorio_tarde?: { id: string; nombre: string };
+  grupo_asignado?: { id: string; numero: number; nombre: string };
 }
 
 export interface SemanaDetail extends Semana {
@@ -32,7 +33,7 @@ export class SemanaService {
   private semanasSignal = signal<Semana[]>([]);
   private loadingSignal = signal(false);
 
-  semanas = computed(() => this.semanasSignal());
+  semanas = computed(() => this.semanasSignal() || []);
   loading = computed(() => this.loadingSignal());
 
   constructor(private http: HttpClient) {}
@@ -42,7 +43,7 @@ export class SemanaService {
     return this.http.get<{ data: Semana[] }>(`${environment.apiUrl}/semanas`)
       .pipe(
         tap(response => {
-          this.semanasSignal.set(response.data);
+          this.semanasSignal.set(response?.data || []);
           this.loadingSignal.set(false);
         })
       );
@@ -70,5 +71,9 @@ export class SemanaService {
 
   updateDia(id: string, data: Partial<Dia>) {
     return this.http.put<Dia>(`${environment.apiUrl}/dias/${id}`, data);
+  }
+  
+  archiveSemana(id: string, archivado: boolean) {
+    return this.http.put(`${environment.apiUrl}/semanas/${id}/archivar`, { archivado });
   }
 }

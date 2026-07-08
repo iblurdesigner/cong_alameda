@@ -15,18 +15,18 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <a routerLink="/semanas" class="back-link">← Volver a Semanas</a>
+          <a routerLink="/semanas" class="back-link">ΓåÉ Volver a Semanas</a>
           @if (semana()) {
             <h1>{{ semana()!.nombre }}</h1>
             <p>{{ formatDate(semana()!.fecha_inicio) }} - {{ formatDate(semana()!.fecha_fin) }}</p>
           }
         </div>
-        @if (authService.isSuperintendente() && semana()) {
+        @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && semana()) {
           <button 
             class="btn btn-outline btn-sm btn-danger"
             (click)="confirmDelete()"
           >
-            🗑️ Eliminar Semana
+            ≡ƒùæ∩╕Å Eliminar Semana
           </button>
         }
       </header>
@@ -44,7 +44,7 @@ import { AuthService } from '../../core/services/auth.service';
               
               <div class="dia-content">
                 <div class="turno">
-                  <label>🌅 Mañana</label>
+                  <label>≡ƒîà Ma├▒ana</label>
                   @if (dia.territorio_manana) {
                     <div class="territorio-assigned">
                       <span>{{ dia.territorio_manana.nombre }}</span>
@@ -55,7 +55,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 
                 <div class="turno">
-                  <label>🌆 Tarde</label>
+                  <label>≡ƒîå Tarde</label>
                   @if (dia.territorio_tarde) {
                     <div class="territorio-assigned">
                       <span>{{ dia.territorio_tarde.nombre }}</span>
@@ -66,7 +66,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 
                 <div class="turno">
-                  <label>👥 Grupo</label>
+                  <label>≡ƒæÑ Grupo</label>
                   @if (dia.grupo_asignado) {
                     <div class="grupo-assigned">
                       <span>#{{ dia.grupo_asignado.numero }} {{ dia.grupo_asignado.nombre }}</span>
@@ -77,10 +77,10 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
               </div>
               
-              @if (authService.isSuperintendente()) {
+              @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                 <div class="dia-actions">
                   <button class="btn btn-outline btn-sm" (click)="editDia(dia)">
-                    ✏️ Asignar Territorios
+                    Γ£Å∩╕Å Asignar Territorios
                   </button>
                 </div>
               }
@@ -96,11 +96,11 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>Asignar Territorios - {{ editingDia()?.dia_semana !== undefined ? getDiaSemanaLabel(editingDia()!.dia_semana) : '' }}</h2>
-            <button class="btn-close" (click)="closeEditModal()">×</button>
+            <button class="btn-close" (click)="closeEditModal()">├ù</button>
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label for="territorio_manana">Territorio Mañana</label>
+              <label for="territorio_manana">Territorio Ma├▒ana</label>
               <select id="territorio_manana" [(ngModel)]="editForm.territorio_manana_id">
                 <option value="">Sin asignar</option>
                 @for (t of territorios(); track t.id) {
@@ -393,7 +393,7 @@ export class SemanaDetailComponent implements OnInit {
   }
   
   getDiaSemanaLabel(diaSemana: number): string {
-    const labels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const labels = ['Domingo', 'Lunes', 'Martes', 'Mi├⌐rcoles', 'Jueves', 'Viernes', 'S├íbado'];
     return labels[diaSemana] || '';
   }
   
@@ -439,7 +439,7 @@ export class SemanaDetailComponent implements OnInit {
     const dia = this.editingDia();
     if (!dia) return;
     
-    const data: any = {};
+    const data: Partial<Dia> = {};
     if (this.editForm.territorio_manana_id) {
       data.territorio_manana_id = this.editForm.territorio_manana_id;
     }
@@ -468,7 +468,7 @@ export class SemanaDetailComponent implements OnInit {
   }
   
   confirmDelete() {
-    if (confirm('¿Eliminar esta semana de visita?')) {
+    if (confirm('┬┐Eliminar esta semana de visita?')) {
       const id = this.semana()?.id;
       if (id) {
         this.semanaService.deleteSemana(id).subscribe({
