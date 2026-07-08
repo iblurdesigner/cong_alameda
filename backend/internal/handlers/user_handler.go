@@ -175,8 +175,30 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 	if req.Telefono != nil {
 		updates["telefono"] = *req.Telefono
 	}
+	if req.TelefonoValidado != nil {
+		updates["telefono_validado"] = *req.TelefonoValidado
+	}
+	if req.Email != nil {
+		updates["email"] = *req.Email
+	}
+	if req.NotificacionesEmail != nil {
+		updates["notificaciones_email"] = *req.NotificacionesEmail
+	}
+	if req.NotificacionesWhatsapp != nil {
+		updates["notificaciones_whatsapp"] = *req.NotificacionesWhatsapp
+	}
 	if req.Activo != nil {
 		updates["activo"] = *req.Activo
+	}
+	if req.Rol != nil {
+		rol := models.Rol(*req.Rol)
+		if !rol.IsValid() {
+			return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+				Error:   "validation_error",
+				Message: "Rol inválido. Valores: SUPER_ADMIN, SUPERINTENDENTE, ANCIANO, VISITANTE",
+			})
+		}
+		updates["rol"] = rol
 	}
 
 	user, err := h.userService.Update(c.Context(), id, updates)

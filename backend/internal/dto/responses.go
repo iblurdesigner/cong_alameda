@@ -20,12 +20,15 @@ type LoginResponse struct {
 // ========== User DTOs ==========
 
 type UserResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Nombre   string    `json:"nombre"`
-	Telefono *string   `json:"telefono,omitempty"`
-	Email    string    `json:"email"`
-	Rol      string    `json:"rol"`
-	Activo   bool      `json:"activo"`
+	ID                     uuid.UUID `json:"id"`
+	Nombre                 string    `json:"nombre"`
+	Telefono               *string   `json:"telefono,omitempty"`
+	TelefonoValidado       bool      `json:"telefono_validado"`
+	Email                  string    `json:"email"`
+	Rol                    string    `json:"rol"`
+	Activo                 bool      `json:"activo"`
+	NotificacionesEmail    bool      `json:"notificaciones_email"`
+	NotificacionesWhatsapp bool      `json:"notificaciones_whatsapp"`
 }
 
 type CreateUserRequest struct {
@@ -37,9 +40,14 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
-	Nombre   *string `json:"nombre,omitempty"`
-	Telefono *string `json:"telefono,omitempty"`
-	Activo   *bool   `json:"activo,omitempty"`
+	Nombre                 *string `json:"nombre,omitempty"`
+	Telefono               *string `json:"telefono,omitempty"`
+	TelefonoValidado       *bool   `json:"telefono_validado,omitempty"`
+	Email                  *string `json:"email,omitempty"`
+	NotificacionesEmail    *bool   `json:"notificaciones_email,omitempty"`
+	NotificacionesWhatsapp *bool   `json:"notificaciones_whatsapp,omitempty"`
+	Activo                 *bool   `json:"activo,omitempty"`
+	Rol                    *string `json:"rol,omitempty"`
 }
 
 // ========== Casa DTOs ==========
@@ -207,12 +215,15 @@ func ToCasaResponse(c *models.Casa) CasaResponse {
 
 func ToUserResponse(u *models.User) UserResponse {
 	return UserResponse{
-		ID:       u.ID,
-		Nombre:   u.Nombre,
-		Telefono: u.Telefono,
-		Email:    u.Email,
-		Rol:      string(u.Rol),
-		Activo:   u.Activo,
+		ID:                     u.ID,
+		Nombre:                 u.Nombre,
+		Telefono:               u.Telefono,
+		TelefonoValidado:       u.TelefonoValidado,
+		Email:                  u.Email,
+		Rol:                    string(u.Rol),
+		Activo:                 u.Activo,
+		NotificacionesEmail:    u.NotificacionesEmail,
+		NotificacionesWhatsapp: u.NotificacionesWhatsapp,
 	}
 }
 
