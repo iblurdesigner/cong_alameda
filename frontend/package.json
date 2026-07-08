@@ -8,7 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "lint": "eslint . && stylelint \"src/**/*.scss\"",
+    "lint:fix": "eslint . --fix && stylelint \"src/**/*.scss\" --fix",
+    "format": "eslint . --fix && stylelint \"src/**/*.scss\" --fix"
   },
   "private": true,
   "dependencies": {
@@ -28,12 +31,24 @@
     "@angular/build": "^21.0.0",
     "@angular/cli": "^21.0.0",
     "@angular/compiler-cli": "^21.0.0",
+    "@types/google.maps": "^3.64.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
     "jest": "^30.0.0",
     "jest-environment-jsdom": "^30.0.0",
     "jest-preset-angular": "^16.0.0",
     "ts-jest": "^29.2.0",
-    "typescript": "~5.9.0"
+    "typescript": "~5.9.0",
+    "@angular-eslint/eslint-plugin": "^19.0.0",
+    "@angular-eslint/eslint-plugin-template": "^19.0.0",
+    "@angular-eslint/template-parser": "^19.0.0",
+    "@eslint/js": "^9.0.0",
+    "angular-eslint": "^19.0.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard-scss": "^14.0.0",
+    "typescript-eslint": "^8.0.0"
   }
 }
