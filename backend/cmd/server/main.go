@@ -93,6 +93,11 @@ func main() {
 	// Initialize Fase 3 handlers
 	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)
 
+	// Initialize ProgramaPredicacion repo, service, handler
+	programaRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
+	programaService := services.NewProgramaPredicacionService(programaRepo)
+	programaHandler := handlers.NewProgramaPredicacionHandler(programaService)
+
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 
@@ -218,6 +223,16 @@ func main() {
 	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.BulkCreate)
 	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Update)
 	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Delete)
+
+	// ====== PROGRAMA PREDICACION ROUTES ======
+
+	// Programa Predicacion routes (any authenticated user, no role guard)
+	programas := protected.Group("/programas-predicacion")
+	programas.Get("/", programaHandler.List)
+	programas.Get("/:id", programaHandler.GetByID)
+	programas.Post("/", programaHandler.Create)
+	programas.Put("/:id", programaHandler.Update)
+	programas.Delete("/:id", programaHandler.Delete)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)
