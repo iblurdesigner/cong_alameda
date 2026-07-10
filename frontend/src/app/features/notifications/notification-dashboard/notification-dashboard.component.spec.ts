@@ -1,13 +1,17 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NotificationDashboardComponent } from './notification-dashboard.component';
 import { NotificationService, Notificacion, NotificacionListResponse } from '../../../core/services/notification.service';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { of } from 'rxjs';
 
 describe('NotificationDashboardComponent', () => {
   let component: NotificationDashboardComponent;
   let fixture: ComponentFixture<NotificationDashboardComponent>;
-  let mockNotificationService: Partial<NotificationService>;
+  let mockNotificationService: Partial<NotificationService> & {
+    _notifSignal: WritableSignal<Notificacion[]>;
+    _unreadSignal: WritableSignal<number>;
+    _loadingSignal: WritableSignal<boolean>;
+  };
 
   const mockNotificaciones: Notificacion[] = [
     {
@@ -47,19 +51,30 @@ describe('NotificationDashboardComponent', () => {
     },
   ];
 
-  function createMockNotificationService(override?: Partial<NotificationService>): Partial<NotificationService> {
+  function createMockNotificationService(override?: Partial<NotificationService>): Partial<NotificationService> & {
+    _notifSignal: WritableSignal<Notificacion[]>;
+    _unreadSignal: WritableSignal<number>;
+    _loadingSignal: WritableSignal<boolean>;
+  } {
+    const _notifSignal = signal(mockNotificaciones);
+    const _unreadSignal = signal(3);
+    const _loadingSignal = signal(false);
     return {
-      notificaciones: signal(mockNotificaciones).asReadonly(),
-      unreadCount: signal(3).asReadonly(),
-      loading: signal(false).asReadonly(),
+      notificaciones: _notifSignal.asReadonly(),
+      unreadCount: _unreadSignal.asReadonly(),
+      loading: _loadingSignal.asReadonly(),
       loadNotifications: jest.fn().mockReturnValue(of({ data: mockNotificaciones, unread_count: 3 })),
       markAsRead: jest.fn().mockReturnValue(of({ message: 'Notificaci├│n marcada como le├¡da' })),
       markAllAsRead: jest.fn().mockReturnValue(of({ message: 'Todas las notificaciones marcadas como le├¡das' })),
+      _notifSignal,
+      _unreadSignal,
+      _loadingSignal,
       ...override,
     };
   }
 
   beforeEach(async () => {
+    TestBed.resetTestingModule();
     mockNotificationService = createMockNotificationService();
 
     await TestBed.configureTestingModule({
@@ -89,13 +104,13 @@ describe('NotificationDashboardComponent', () => {
       expect(mockNotificationService.loadNotifications).toHaveBeenCalled();
     });
 
-    it('should display unread count in header', fakeAsync(() => {
-      tick();
+    it('should display unread count in header', () => {
+
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('3 sin leer');
-    }));
+    });
 
     it('should display "Marcar todas como le├¡das" button', () => {
       const compiled = fixture.nativeElement as HTMLElement;
@@ -106,17 +121,17 @@ describe('NotificationDashboardComponent', () => {
   // ========== Filter Chips ==========
 
   describe('filter chips', () => {
-    it('should have "Todos" chip as default active', fakeAsync(() => {
-      tick();
+    it('should have "Todos" chip as default active', () => {
+
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
       expect(chips[0].textContent).toContain('Todos');
       expect(chips[0].classList).toContain('active');
-    }));
+    });
 
-    it('should display all notification types as chips', fakeAsync(() => {
-      tick();
+    it('should display all notification types as chips', () => {
+
       fixture.detectChanges();
 
       const expectedTipos = [
@@ -129,67 +144,67 @@ describe('NotificationDashboardComponent', () => {
         'ASIGNACION_COMPLETADA',
       ];
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
       expect(chips.length).toBe(expectedTipos.length + 1); // +1 for "Todos"
-    }));
+    });
 
-    it('should show badge count on chips with notifications', fakeAsync(() => {
-      tick();
+    it('should show badge count on chips with notifications', () => {
+
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
-      const casaChip = Array.from(chips).find(chip => 
-        chip.textContent?.includes('Casas')
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
+      const casaChip = Array.from<Element>(chips).find(c =>
+        c.textContent?.includes('Casas')
       );
       
-      expect(casaChip?.querySelector('.chip-badge')).toBeTruthy();
-      expect(casaChip?.querySelector('.chip-badge')?.textContent).toBe('2');
-    }));
+      expect(casaChip?.querySelector('.filter-count')).toBeTruthy();
+      expect(casaChip?.querySelector('.filter-count')?.textContent).toBe('2');
+    });
 
-    it('should not show badge when count is 0', fakeAsync(() => {
-      tick();
+    it('should not show badge when count is 0', () => {
+
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
-      const completadaChip = Array.from(chips).find(chip => 
-        chip.textContent?.includes('Completadas')
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
+      const completadaChip = Array.from<Element>(chips).find(c =>
+        c.textContent?.includes('Completadas')
       );
       
       // Should not have badge if count is 0
-      expect(completadaChip?.querySelector('.chip-badge')).toBeNull();
-    }));
+      expect(completadaChip?.querySelector('.filter-count')).toBeNull();
+    });
 
-    it('should set filter when chip is clicked', fakeAsync(() => {
-      tick();
+    it('should set filter when chip is clicked', () => {
+
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
       const casaChip = chips[1]; // Second chip (after "Todos")
 
       casaChip.click();
-      tick();
+
       fixture.detectChanges();
 
       expect(component.selectedTipo()).toBe('CASA_REGISTRADA');
       expect(casaChip.classList).toContain('active');
-    }));
+    });
 
-    it('should reset page to 1 when filter changes', fakeAsync(() => {
+    it('should reset page to 1 when filter changes', () => {
       component.currentPage.set(3);
-      tick();
+
 
       component.setFilter('VISITA_PROGRAMADA');
-      tick();
+
 
       expect(component.currentPage()).toBe(1);
-    }));
+    });
   });
 
   // ========== Grouping by Type ==========
 
   describe('grouping by type', () => {
-    it('should group notifications by tipo', fakeAsync(() => {
-      tick();
+    it('should group notifications by tipo', () => {
+
       fixture.detectChanges();
 
       const groups = component.groupedNotificaciones();
@@ -197,20 +212,20 @@ describe('NotificationDashboardComponent', () => {
       // Should have 4 groups: CASA_REGISTRADA(2), VISITA_PROGRAMADA(1), 
       // ASIGNACION_CREADA(1), ASIGNACION_ACTUALIZADA(1)
       expect(groups.length).toBeGreaterThanOrEqual(1);
-    }));
+    });
 
-    it('should show count per group', fakeAsync(() => {
-      tick();
+    it('should show count per group', () => {
+
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
       const groupTitles = compiled.querySelectorAll('.group-title');
       
       expect(groupTitles.length).toBeGreaterThanOrEqual(1);
-    }));
+    });
 
-    it('should sort groups alphabetically by tipo', fakeAsync(() => {
-      tick();
+    it('should sort groups alphabetically by tipo', () => {
+
       fixture.detectChanges();
 
       const groups = component.groupedNotificaciones();
@@ -218,11 +233,11 @@ describe('NotificationDashboardComponent', () => {
       
       const sorted = [...tipos].sort();
       expect(tipos).toEqual(sorted);
-    }));
+    });
 
-    it('should not group when filtered by tipo', fakeAsync(() => {
+    it('should not group when filtered by tipo', () => {
       component.setFilter('CASA_REGISTRADA');
-      tick();
+
       fixture.detectChanges();
 
       const groups = component.groupedNotificaciones();
@@ -231,146 +246,146 @@ describe('NotificationDashboardComponent', () => {
         expect(groups.length).toBe(1);
         expect(groups[0].tipo).toBe('CASA_REGISTRADA');
       }
-    }));
+    });
   });
 
   // ========== Notification Cards ==========
 
   describe('notification cards', () => {
-    it('should display notification mensaje', fakeAsync(() => {
-      tick();
+    it('should display notification mensaje', () => {
+
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('Nueva casa registrada en el sector Norte');
-    }));
+    });
 
-    it('should display formatted date', fakeAsync(() => {
-      tick();
+    it('should display formatted date', () => {
+
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('24 abr');
-    }));
+    });
 
-    it('should show unread badge for unread notifications', fakeAsync(() => {
-      tick();
+    it('should show unread badge for unread notifications', () => {
+
       fixture.detectChanges();
 
       const unreadBadges = fixture.nativeElement.querySelectorAll('.unread-badge');
       expect(unreadBadges.length).toBeGreaterThanOrEqual(1);
-    }));
+    });
 
-    it('should not show unread badge for read notifications', fakeAsync(() => {
-      tick();
+    it('should not show unread badge for read notifications', () => {
+
       fixture.detectChanges();
 
       const readNotifications = fixture.nativeElement.querySelectorAll('.notif-card:not(.unread)');
       expect(readNotifications.length).toBeGreaterThanOrEqual(1);
-    }));
+    });
 
-    it('should have unread class on unread notifications', fakeAsync(() => {
-      tick();
+    it('should have unread class on unread notifications', () => {
+
       fixture.detectChanges();
 
       const unreadCards = fixture.nativeElement.querySelectorAll('.notif-card.unread');
       expect(unreadCards.length).toBeGreaterThanOrEqual(1);
-    }));
+    });
   });
 
   // ========== Mark as Read ==========
 
   describe('mark as read', () => {
-    it('should call markAsRead when unread notification is clicked', fakeAsync(() => {
-      tick();
+    it('should call markAsRead when unread notification is clicked', () => {
+
       fixture.detectChanges();
 
       const unreadCards = fixture.nativeElement.querySelectorAll('.notif-card.unread');
       if (unreadCards.length > 0) {
         unreadCards[0].click();
-        tick();
+  
 
         expect(mockNotificationService.markAsRead).toHaveBeenCalled();
       }
-    }));
+    });
 
-    it('should not call markAsRead when read notification is clicked', fakeAsync(() => {
-      tick();
+    it('should not call markAsRead when read notification is clicked', () => {
+
       fixture.detectChanges();
 
       const readCards = fixture.nativeElement.querySelectorAll('.notif-card:not(.unread)');
       if (readCards.length > 0) {
         readCards[0].click();
-        tick();
+  
 
         // markAsRead should not be called for already read notifications
         // In the component, this is handled by the markRead method
       }
-    }));
+    });
 
-    it('should call markAllAsRead when button is clicked', fakeAsync(() => {
-      tick();
+    it('should call markAllAsRead when button is clicked', () => {
+
       fixture.detectChanges();
 
       const markAllButton = fixture.nativeElement.querySelector('.page-header button');
       markAllButton?.click();
-      tick();
+
 
       expect(mockNotificationService.markAllAsRead).toHaveBeenCalled();
-    }));
+    });
 
-    it('should disable mark all button when unread count is 0', fakeAsync(() => {
-      (mockNotificationService as any).unreadCount = signal(0);
-      tick();
+    it('should disable mark all button when unread count is 0', () => {
+      mockNotificationService._unreadSignal.set(0);
+
       fixture.detectChanges();
 
       const markAllButton = fixture.nativeElement.querySelector('.page-header button') as HTMLButtonElement;
       expect(markAllButton?.disabled).toBe(true);
-    }));
+    });
   });
 
   // ========== Empty State ==========
 
   describe('empty state', () => {
-    it('should show empty state when no notifications', fakeAsync(() => {
-      (mockNotificationService as any).notificaciones = signal([]);
-      tick();
+    it('should show empty state when no notifications', () => {
+      mockNotificationService._notifSignal.set([]);
+
       fixture.detectChanges();
 
       const emptyState = fixture.nativeElement.querySelector('.empty-state');
       expect(emptyState).toBeTruthy();
       expect(emptyState?.textContent).toContain('No hay notificaciones');
-    }));
+    });
 
-    it('should show empty state when filter has no matches', fakeAsync(() => {
+    it('should show empty state when filter has no matches', () => {
       // This type has no notifications in mock
       component.setFilter('PERSONA_REQUIERE_VISITA');
-      tick();
+
       fixture.detectChanges();
 
       const emptyState = fixture.nativeElement.querySelector('.empty-state');
       expect(emptyState).toBeTruthy();
-    }));
+    });
   });
 
   // ========== Loading State ==========
 
   describe('loading state', () => {
-    it('should show loading when loading is true', fakeAsync(() => {
-      (mockNotificationService as any).loading = signal(true);
-      tick();
+    it('should show loading when loading is true', () => {
+      mockNotificationService._loadingSignal.set(true);
+
       fixture.detectChanges();
 
-      const loading = fixture.nativeElement.querySelector('.loading');
+      const loading = fixture.nativeElement.querySelector('.loader-container');
       expect(loading).toBeTruthy();
       expect(loading?.textContent).toContain('Cargando');
-    }));
+    });
   });
 
   // ========== Pagination ==========
 
   describe('pagination', () => {
-    it('should show pagination when totalPages > 1', fakeAsync(() => {
+    it('should show pagination when totalPages > 1', () => {
       // Add more notifications to trigger pagination (PAGE_SIZE = 50)
       const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
         id: `notif-${i}`,
@@ -380,76 +395,114 @@ describe('NotificationDashboardComponent', () => {
         created_at: new Date().toISOString(),
       }));
 
-      (mockNotificationService as any).notificaciones = signal(manyNotificaciones);
+      mockNotificationService._notifSignal.set(manyNotificaciones);
       component.setFilter(null);
-      tick();
+
       fixture.detectChanges();
 
       const pagination = fixture.nativeElement.querySelector('.pagination');
       expect(pagination).toBeTruthy();
-    }));
+    });
 
-    it('should show correct page info', fakeAsync(() => {
+    it('should show correct page info', () => {
+      const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
+        id: `notif-${i}`,
+        tipo: i < 50 ? 'CASA_REGISTRADA' : 'VISITA_PROGRAMADA',
+        mensaje: `Notification ${i}`,
+        leida: i % 2 === 0,
+        created_at: new Date().toISOString(),
+      }));
+      mockNotificationService._notifSignal.set(manyNotificaciones);
+      component.setFilter(null);
       component.currentPage.set(2);
-      tick();
+
       fixture.detectChanges();
 
       const pageInfo = fixture.nativeElement.querySelector('.page-info');
       expect(pageInfo?.textContent).toContain('P├ígina 2');
-    }));
+    });
 
-    it('should disable prev button on page 1', fakeAsync(() => {
+    it('should disable prev button on page 1', () => {
+      const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
+        id: `notif-${i}`,
+        tipo: i < 50 ? 'CASA_REGISTRADA' : 'VISITA_PROGRAMADA',
+        mensaje: `Notification ${i}`,
+        leida: i % 2 === 0,
+        created_at: new Date().toISOString(),
+      }));
+      mockNotificationService._notifSignal.set(manyNotificaciones);
+      component.setFilter(null);
       component.currentPage.set(1);
-      tick();
+
       fixture.detectChanges();
 
-      const prevButton = fixture.nativeElement.querySelector('.pagination button:first-child') as HTMLButtonElement;
+      const prevButton = fixture.nativeElement.querySelector('.page-btn:first-child') as HTMLButtonElement;
       expect(prevButton?.disabled).toBe(true);
-    }));
+    });
 
-    it('should go to previous page', fakeAsync(() => {
+    it('should go to previous page', () => {
+      const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
+        id: `notif-${i}`,
+        tipo: i < 50 ? 'CASA_REGISTRADA' : 'VISITA_PROGRAMADA',
+        mensaje: `Notification ${i}`,
+        leida: i % 2 === 0,
+        created_at: new Date().toISOString(),
+      }));
+      mockNotificationService._notifSignal.set(manyNotificaciones);
+      component.setFilter(null);
       component.currentPage.set(2);
-      tick();
 
-      const prevButton = fixture.nativeElement.querySelector('.pagination button:first-child');
+      fixture.detectChanges();
+
+      const prevButton = fixture.nativeElement.querySelector('.page-btn:first-child');
       prevButton?.click();
-      tick();
+
 
       expect(component.currentPage()).toBe(1);
-    }));
+    });
 
-    it('should go to next page', fakeAsync(() => {
+    it('should go to next page', () => {
+      const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
+        id: `notif-${i}`,
+        tipo: i < 50 ? 'CASA_REGISTRADA' : 'VISITA_PROGRAMADA',
+        mensaje: `Notification ${i}`,
+        leida: i % 2 === 0,
+        created_at: new Date().toISOString(),
+      }));
+      mockNotificationService._notifSignal.set(manyNotificaciones);
+      component.setFilter(null);
       component.currentPage.set(1);
-      tick();
 
-      const nextButton = fixture.nativeElement.querySelector('.pagination button:last-child');
+      fixture.detectChanges();
+
+      const nextButton = fixture.nativeElement.querySelector('.page-btn:last-child');
       nextButton?.click();
-      tick();
+
 
       expect(component.currentPage()).toBe(2);
-    }));
+    });
   });
 
   // ========== Computed Signals ==========
 
   describe('computed signals', () => {
-    it('filteredNotificaciones should return all when no filter', fakeAsync(() => {
+    it('filteredNotificaciones should return all when no filter', () => {
       component.setFilter(null);
-      tick();
+
 
       const filtered = component.filteredNotificaciones();
       expect(filtered.length).toBe(mockNotificaciones.length);
-    }));
+    });
 
-    it('filteredNotificaciones should filter by tipo', fakeAsync(() => {
+    it('filteredNotificaciones should filter by tipo', () => {
       component.setFilter('CASA_REGISTRADA');
-      tick();
+
 
       const filtered = component.filteredNotificaciones();
       expect(filtered.every(n => n.tipo === 'CASA_REGISTRADA')).toBe(true);
-    }));
+    });
 
-    it('totalPages should calculate correctly', fakeAsync(() => {
+    it('totalPages should calculate correctly', () => {
       // 5 items with PAGE_SIZE=50 should give 1 page
       expect(component.totalPages()).toBe(1);
 
@@ -462,49 +515,48 @@ describe('NotificationDashboardComponent', () => {
         created_at: new Date().toISOString(),
       }));
 
-      (mockNotificationService as any).notificaciones = signal(manyNotificaciones);
+      mockNotificationService._notifSignal.set(manyNotificaciones);
       component.setFilter(null);
-      tick();
 
       expect(component.totalPages()).toBe(2);
-    }));
+    });
   });
 
   // ========== Helper Methods ==========
 
   describe('helper methods', () => {
-    it('getCountByTipo should return correct count', fakeAsync(() => {
-      tick();
+    it('getCountByTipo should return correct count', () => {
+
 
       expect(component.getCountByTipo('CASA_REGISTRADA')).toBe(2);
       expect(component.getCountByTipo('VISITA_PROGRAMADA')).toBe(1);
       expect(component.getCountByTipo('ASIGNACION_CREADA')).toBe(1);
       expect(component.getCountByTipo('PERSONA_REQUIERE_VISITA')).toBe(0);
-    }));
+    });
 
-    it('getTipoConfig should return config for valid tipo', fakeAsync(() => {
-      tick();
+    it('getTipoConfig should return config for valid tipo', () => {
+
 
       const config = component.getTipoConfig('CASA_REGISTRADA');
       expect(config).toBeTruthy();
       expect(config?.key).toBe('CASA_REGISTRADA');
       expect(config?.icon).toBe('≡ƒÅá');
       expect(config?.color).toBe('#22c55e');
-    }));
+    });
 
-    it('getTipoConfig should return undefined for invalid tipo', fakeAsync(() => {
-      tick();
+    it('getTipoConfig should return undefined for invalid tipo', () => {
+
 
       const config = component.getTipoConfig('INVALID_TYPE');
       expect(config).toBeUndefined();
-    }));
+    });
 
-    it('getTipoLabel should return config label or tipo as fallback', fakeAsync(() => {
-      tick();
+    it('getTipoLabel should return config label or tipo as fallback', () => {
+
 
       expect(component.getTipoLabel('CASA_REGISTRADA')).toBe('Casas');
       expect(component.getTipoLabel('UNKNOWN')).toBe('UNKNOWN');
-    }));
+    });
 
     it('formatDate should format date correctly', () => {
       const dateStr = '2024-04-24T10:30:00Z';

@@ -2,7 +2,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": ["jest", "node"]
+    "types": ["jest", "node"],
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@angular/core/testing": ["node_modules/@angular/core/types/testing.d.ts"],
+      "@angular/common/http/testing": ["node_modules/@angular/common/types/http-testing.d.ts"],
+      "@angular/common/http": ["node_modules/@angular/common/types/http.d.ts"]
+    }
   },
   "include": [
     "src/**/*.spec.ts",

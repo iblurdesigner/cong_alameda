@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -53,8 +54,12 @@ func main() {
 	visitaService := services.NewVisitaService(visitaRepo, casaRepo, userRepo, notifService)
 	userService := services.NewUserService(userRepo, jwtManager)
 
+	// Initialize email service and rate limiter
+	emailService := services.NewConsoleEmailService(cfg.FrontendURL)
+	rateLimiter := services.NewRateLimiter(5 * time.Minute)
+
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(userService)
+	authHandler := handlers.NewAuthHandler(userService, jwtManager, emailService, rateLimiter)
 	casaHandler := handlers.NewCasaHandler(casaService)
 	visitaHandler := handlers.NewVisitaHandler(visitaService)
 	notifHandler := handlers.NewNotificacionHandler(notifService)
@@ -126,6 +131,8 @@ func main() {
 	// Auth routes (public)
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
+	auth.Post("/recover-request", authHandler.RequestRecovery)
+	auth.Post("/recover-password", authHandler.ResetPassword)
 
 	// Protected routes
 	protected := api.Group("", authMiddleware.Authenticate())
