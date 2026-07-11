@@ -69,7 +69,7 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
         
         <div class="demo-credentials">
           <p>Credenciales de administrador:</p>
-          <code>davidisaac.floresmedrano&#64;gmail.com / admin123</code>
+          <code>davidisaac.floresmedrano&#64;gmail.com / admin7Blur</code>
         </div>
       </div>
     </div>
