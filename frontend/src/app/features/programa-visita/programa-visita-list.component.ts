@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -12,23 +12,24 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-programa-visita-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1>≡ƒÜù Predicaci├│n Visita</h1>
+          <h1><re-icon icon="smart-car2" size="24" weight="outline"></re-icon> Predicaci├│n Visita</h1>
           <p class="header-subtitle">Personaliza la programaci├│n diaria para cada visita</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
-            Γ₧ò Nueva Visita
+            <re-icon icon="add-square2" size="16" weight="outline"></re-icon> Nueva Visita
           </button>
         }
       </header>
 
       <!-- Selector de D├¡a para cargar plantilla -->
       <div class="plantilla-section">
-        <h3>≡ƒôï Cargar desde D├¡a Predicaci├│n</h3>
+        <h3><re-icon icon="import-12" size="18" weight="outline"></re-icon> Cargar desde D├¡a Predicaci├│n</h3>
         <div class="form-row">
           <div class="form-group">
             <label for="dia_plantilla">Seleccionar D├¡a:</label>
@@ -47,7 +48,7 @@ import { AuthService } from '../../core/services/auth.service';
             <input type="date" id="fecha_visita" [(ngModel)]="fechaBusqueda" />
           </div>
           <button class="btn btn-outline" (click)="cargarPlantilla()">
-            ≡ƒôÑ Cargar Plantilla
+            <re-icon icon="import-12" size="16" weight="outline"></re-icon> Cargar Plantilla
           </button>
         </div>
       </div>
@@ -56,7 +57,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (visitas().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒÜù</div>
+          <re-icon icon="smart-car2" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay programas de visita registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="openCreateModal()">
@@ -75,27 +76,27 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="visita-content">
                 @if (visita.fecha) {
                   <div class="info-row">
-                    <span class="label">≡ƒôà Fecha:</span>
+                    <span class="label"><re-icon icon="calendar-12" size="14" weight="outline"></re-icon> Fecha:</span>
                     <span class="value">{{ visita.fecha }}</span>
                   </div>
                 }
                 @if (visita.hora) {
                   <div class="info-row">
-                    <span class="label">ΓÅ░ Hora:</span>
+                    <span class="label"><re-icon icon="clock-circle" size="14" weight="outline"></re-icon> Hora:</span>
                     <span class="value">{{ visita.hora }}</span>
                   </div>
                 }
                 <div class="info-row">
-                  <span class="label">≡ƒÄñ Conductor:</span>
+                  <span class="label"><re-icon icon="user-circle" size="14" weight="outline"></re-icon> Conductor:</span>
                   <span class="value">{{ visita.conductor || 'Sin asignar' }}</span>
                 </div>
                 <div class="info-row">
-                  <span class="label">≡ƒôì Lugar:</span>
+                  <span class="label"><re-icon icon="map-point" size="14" weight="outline"></re-icon> Lugar:</span>
                   <span class="value">{{ visita.lugar_nombre || 'Sin asignar' }}</span>
                 </div>
                 @if (visita.lugar_direccion) {
                   <div class="info-row">
-                    <span class="label">≡ƒÅá Direcci├│n:</span>
+                    <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Direcci├│n:</span>
                     <span class="value">{{ visita.lugar_direccion }}</span>
                   </div>
                 }
@@ -225,7 +226,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="modal-body">
             @if (viewingVisita()!.fecha) {
               <div class="info-row">
-                <span class="label">≡ƒôà Fecha:</span>
+                <span class="label"><re-icon icon="calendar-12" size="14" weight="outline"></re-icon> Fecha:</span>
                 <span class="value">{{ viewingVisita()!.fecha }}</span>
               </div>
             }
@@ -237,21 +238,21 @@ import { AuthService } from '../../core/services/auth.service';
             }
             @if (viewingVisita()!.hora) {
               <div class="info-row">
-                <span class="label">ΓÅ░ Hora:</span>
+                <span class="label"><re-icon icon="clock-circle" size="14" weight="outline"></re-icon> Hora:</span>
                 <span class="value">{{ viewingVisita()!.hora }}</span>
               </div>
             }
             <div class="info-row">
-              <span class="label">≡ƒÄñ Conductor:</span>
+              <span class="label"><re-icon icon="user-circle" size="14" weight="outline"></re-icon> Conductor:</span>
               <span class="value">{{ viewingVisita()!.conductor || 'Sin asignar' }}</span>
             </div>
             <div class="info-row">
-              <span class="label">≡ƒôì Lugar:</span>
+              <span class="label"><re-icon icon="map-point" size="14" weight="outline"></re-icon> Lugar:</span>
               <span class="value">{{ viewingVisita()!.lugar_nombre || 'Sin asignar' }}</span>
             </div>
             @if (viewingVisita()!.lugar_direccion) {
               <div class="info-row">
-                <span class="label">≡ƒÅá Direcci├│n:</span>
+                <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Direcci├│n:</span>
                 <span class="value">{{ viewingVisita()!.lugar_direccion }}</span>
               </div>
               

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -9,6 +9,7 @@ import { UserService, User } from '../../../core/services/user.service';
   selector: 'app-visita-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -31,7 +32,7 @@ import { UserService, User } from '../../../core/services/user.service';
         <div class="loading">Cargando...</div>
       } @else if (visitas().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒôà</div>
+          <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay visitas registradas</p>
         </div>
       } @else {
@@ -125,7 +126,7 @@ import { UserService, User } from '../../../core/services/user.service';
                     <img [src]="selectedVisit()!.casa!.foto_url" alt="Foto casa" class="detail-foto" />
                   } @else {
                     <div class="detail-foto-placeholder">
-                      <span class="placeholder-icon">≡ƒÅá</span>
+                      <re-icon icon="home" size="32" weight="outline" class="placeholder-icon"></re-icon>
                       <span class="placeholder-text">Sin foto</span>
                     </div>
                   }
@@ -248,7 +249,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .page-header { margin-bottom: 1.5rem; h1 { font-size: 1.75rem; font-weight: 700; } .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; } }
     .filters-bar { margin-bottom: 1.5rem; .filter-select { padding: 0.625rem 2rem 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-primary); font-size: 1rem; min-height: 44px; width: 100%; max-width: 300px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; } }
     .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
-    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; .empty-icon { font-size: 3rem; opacity: 0.5; } }
+    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; .empty-icon { display: inline-flex; align-items: center; opacity: 0.5; } }
     .visitas-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
     .visita-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05); &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); } }
     .visita-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
@@ -278,7 +279,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .detail-value { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
     .detail-foto { width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 0.75rem; }
     .detail-foto-container { margin-bottom: 0.75rem; }
-    .detail-foto-placeholder { width: 100%; height: 150px; background: var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); .placeholder-icon { font-size: 2rem; opacity: 0.5; } .placeholder-text { font-size: 0.875rem; } }
+    .detail-foto-placeholder { width: 100%; height: 150px; background: var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); .placeholder-icon { display: inline-flex; align-items: center; opacity: 0.5; } .placeholder-text { font-size: 0.875rem; } }
     .detail-map { margin-top: 0.75rem; .btn-maps { display: block; text-align: center; padding: 0.375rem 0.75rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 500; margin-top: 0.375rem; text-decoration: none; &:hover { background: var(--primary-color); color: white; } } }
     .form-group { margin-bottom: 1rem; label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-primary); } }
     .form-select, .form-input, .form-textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.875rem; background: var(--surface-color); color: var(--text-primary); min-height: 44px; }

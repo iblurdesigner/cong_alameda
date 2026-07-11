@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -11,16 +11,17 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-programa-predicacion-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1>≡ƒôà D├¡a Predicaci├│n</h1>
+          <h1><re-icon icon="calendar-12" size="24" weight="outline"></re-icon> D├¡a Predicaci├│n</h1>
           <p class="header-subtitle">Horario y territorios por d├¡a de la semana</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
-            Γ₧ò Nueva Fecha
+            <re-icon icon="add-square2" size="16" weight="outline"></re-icon> Nueva Fecha
           </button>
         }
       </header>
@@ -29,7 +30,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (programas().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒôà</div>
+          <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay programas de pr├⌐dicaci├│n registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="openCreateModal()">
@@ -54,25 +55,25 @@ import { AuthService } from '../../core/services/auth.service';
                   
                   <div class="dia-content">
                     <div class="info-row">
-                      <span class="label">≡ƒÄñ Conductor:</span>
+                      <span class="label"><re-icon icon="user-circle" size="14" weight="outline"></re-icon> Conductor:</span>
                       <span class="value">{{ prog.conductor || 'Sin asignar' }}</span>
                     </div>
                     
                     <div class="info-row">
-                      <span class="label">≡ƒôì Lugar:</span>
+                      <span class="label"><re-icon icon="map-point" size="14" weight="outline"></re-icon> Lugar:</span>
                       <span class="value">{{ prog.lugar_nombre || 'Sin asignar' }}</span>
                     </div>
                     
                     @if (prog.territorios && prog.territorios.length > 0) {
                       <div class="info-row territorio">
-                        <span class="label">≡ƒù║∩╕Å Territorios:</span>
+                        <span class="label"><re-icon icon="folder-open" size="14" weight="outline"></re-icon> Territorios:</span>
                         <span class="value">{{ prog.territorios.map(t => t.nombre).join(', ') }}</span>
                       </div>
                     }
                     
                     @if (prog.grupo) {
                       <div class="info-row grupo">
-                        <span class="label">≡ƒæÑ Grupo:</span>
+                        <span class="label"><re-icon icon="crown-12" size="14" weight="outline"></re-icon> Grupo:</span>
                         <span class="value">#{{ prog.grupo.numero }} {{ prog.grupo.nombre }}</span>
                       </div>
                     }
@@ -80,10 +81,10 @@ import { AuthService } from '../../core/services/auth.service';
                   
                   <div class="dia-actions">
                     <button class="btn-icon" (click)="viewPrograma(prog)" title="Ver Detalles">
-                      ≡ƒæü∩╕Å Ver
+                      <re-icon icon="eye-open" size="16" weight="outline"></re-icon> Ver
                     </button>
                     @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                      <span class="btn-edit" (click)="editPrograma(prog)">Γ£Å∩╕Å Editar</span>
+                      <span class="btn-edit" (click)="editPrograma(prog)"><re-icon icon="edit-22" size="16" weight="outline"></re-icon> Editar</span>
                     }
                   </div>
                 </div>

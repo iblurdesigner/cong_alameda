@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+﻿import { Component, inject, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-semana-list',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -18,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
-            <span class="btn-icon-only">Γ₧ò</span>
+            <re-icon icon="add-square2" size="16" weight="outline" class="btn-icon-only"></re-icon>
             <span class="btn-text">Nueva Semana</span>
           </button>
         }
@@ -28,7 +29,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (semanaService.semanas().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒôà</div>
+          <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay semanas de visita registradas</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showModal = true">

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,6 +9,7 @@ import { environment } from '../../../environments/environment';
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <div class="profile-card">
@@ -81,7 +82,7 @@ import { environment } from '../../../environments/environment';
                 name="notificaciones_email"
               >
               <span class="checkbox-text">
-                ≡ƒôº Recibir notificaciones por correo electr├│nico
+                <re-icon icon="call-12" size="18" weight="outline"></re-icon> Recibir notificaciones por correo electr├│nico
               </span>
             </label>
           </div>
@@ -94,7 +95,7 @@ import { environment } from '../../../environments/environment';
                 name="notificaciones_whatsapp"
               >
               <span class="checkbox-text">
-                ≡ƒô▒ Recibir notificaciones por WhatsApp
+                <re-icon icon="call-12" size="18" weight="outline"></re-icon> Recibir notificaciones por WhatsApp
               </span>
             </label>
           </div>
@@ -113,7 +114,7 @@ import { environment } from '../../../environments/environment';
 
       <!-- Info Card -->
       <div class="info-card">
-        <h3>Γä╣∩╕Å Informaci├│n de tu Cuenta</h3>
+        <h3>Γä╣ Informaci├│n de tu Cuenta</h3>
         <ul>
           <li><strong>Estado:</strong> {{ currentUser()?.activo ? 'Activa' : 'Inactiva' }}</li>
           <li><strong>Tel├⌐fono validado:</strong> {{ currentUser()?.telefono_validado ? 'S├¡' : 'No' }}</li>

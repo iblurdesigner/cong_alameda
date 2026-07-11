@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -11,6 +11,7 @@ import { environment } from '../../../environments/environment';
   selector: 'app-grupo-detail',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -23,7 +24,7 @@ import { environment } from '../../../environments/environment';
         </div>
         @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && grupo()) {
           <a [routerLink]="['/territorios']" [queryParams]="{grupo_id: grupo()!.id}" class="btn btn-primary">
-            Γ₧ò Agregar Territorio
+            <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Agregar Territorio
           </a>
         }
       </header>
@@ -51,7 +52,7 @@ import { environment } from '../../../environments/environment';
           <div class="territorios-grid">
             @for (territorio of grupo()!.territorios; track territorio.id) {
               <div class="territorio-card">
-                <div class="territorio-icon">≡ƒôä</div>
+                <div class="territorio-icon"><re-icon icon="document-text2" size="18" weight="outline"></re-icon></div>
                 <div class="territorio-info">
                   <h4>{{ territorio.nombre }}</h4>
                   <p class="file-info">
@@ -67,14 +68,14 @@ import { environment } from '../../../environments/environment';
                     (click)="openPreview(territorio)"
                     title="Visualizar PDF"
                   >
-                    ≡ƒæü∩╕Å Ver
+                    <re-icon icon="eye-open" size="18" weight="outline"></re-icon> Ver
                   </button>
                   <button 
                     class="btn btn-primary btn-sm"
                     (click)="downloadTerritorio(territorio)"
                     title="Descargar PDF"
                   >
-                    Γ¼ç∩╕Å Descargar
+                    <re-icon icon="download-square" size="18" weight="outline"></re-icon> Descargar
                   </button>
                   @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                     <button 
@@ -82,7 +83,7 @@ import { environment } from '../../../environments/environment';
                       (click)="deleteTerritorio(territorio)"
                       title="Eliminar"
                     >
-                      ≡ƒùæ∩╕Å
+                      <re-icon icon="trush-square2" size="18" weight="outline"></re-icon>
                     </button>
                   }
                 </div>
@@ -104,9 +105,9 @@ import { environment } from '../../../environments/environment';
                 href="javascript:void(0)" 
                 (click)="openInNewTab(previewTerritorio()!)" 
                 class="btn-open-new"
-                title="Abrir en nueva pesta├▒a"
+                title="Abrir en nueva pestaña"
               >
-                Γåù∩╕Å Nueva pesta├▒a
+                <re-icon icon="link-12" size="18" weight="outline"></re-icon> Nueva pestaña
               </a>
               <button class="modal-close" (click)="closePreview()">Γ£ò</button>
             </div>
@@ -217,7 +218,9 @@ import { environment } from '../../../environments/environment';
     }
     
     .territorio-icon {
-      font-size: 2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .territorio-info {

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/services/auth.service';
   selector: 'app-casa-list',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <!-- Modal de Confirmaci├│n -->
@@ -37,7 +38,7 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <a routerLink="/casas/new" class="btn btn-primary btn-mobile-full">
-            <span class="btn-icon-only">Γ₧ò</span>
+            <re-icon icon="add-square2" size="16" weight="outline" class="btn-icon-only"></re-icon>
             <span class="btn-text">Nueva Casa</span>
           </a>
         }
@@ -45,7 +46,7 @@ import { AuthService } from '../../../core/services/auth.service';
       
       <div class="filters-bar">
         <div class="search-box">
-          <span class="search-icon">≡ƒöì</span>
+          <re-icon icon="search-normal2" size="20" weight="outline" class="search-icon"></re-icon>
           <input 
             type="text" 
             placeholder="Buscar direcci├│n..." 
@@ -76,7 +77,7 @@ import { AuthService } from '../../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (casaService.casas().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒÅá</div>
+          <re-icon icon="home" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay casas registradas</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <a routerLink="/casas/new" class="btn btn-primary">Registrar primera casa</a>
@@ -143,9 +144,9 @@ import { AuthService } from '../../../core/services/auth.service';
                   </td>
                   <td>{{ formatDate(casa.fecha_registro) }}</td>
                   <td style="display: flex; gap: 0.5rem;">
-                    <a [routerLink]="['/casas', casa.id]" class="btn-icon">≡ƒæü∩╕Å</a>
+                    <a [routerLink]="['/casas', casa.id]" class="btn-icon"><re-icon icon="eye-open" size="16" weight="outline"></re-icon></a>
                     @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                      <button (click)="deleteCasa(casa.id)" class="btn-icon btn-danger" title="Eliminar">≡ƒùæ∩╕Å</button>
+                      <button (click)="deleteCasa(casa.id)" class="btn-icon btn-danger" title="Eliminar"><re-icon icon="trush-square2" size="16" weight="outline"></re-icon></button>
                     }
                   </td>
                 </tr>
@@ -274,7 +275,7 @@ import { AuthService } from '../../../core/services/auth.service';
       align-items: center;
       gap: 1rem;
       
-      .empty-icon { font-size: 3rem; opacity: 0.5; }
+      .empty-icon { display: inline-flex; align-items: center; opacity: 0.5; }
     }
     
     /* Cards Grid - Mobile First */
@@ -476,7 +477,7 @@ import { AuthService } from '../../../core/services/auth.service';
         .btn-mobile-full {
           width: 100%;
           justify-content: center;
-          .btn-icon-only { display: inline; }
+          .btn-icon-only { display: inline-flex; align-items: center; }
           .btn-text { display: none; }
         }
       }

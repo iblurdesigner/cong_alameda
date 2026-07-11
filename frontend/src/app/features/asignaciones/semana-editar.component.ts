@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -11,6 +11,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
   selector: 'app-semana-editar',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="semana-editar-page">
       <!-- Header -->
@@ -20,7 +21,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             ΓåÉ Volver
           </button>
           <div class="title-section">
-            <h1>≡ƒôà {{ semana()?.nombre || 'Semana' }}</h1>
+            <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> {{ semana()?.nombre || 'Semana' }}</h1>
             <p class="date-range">{{ formatDateRange() }}</p>
           </div>
         </div>
@@ -33,7 +34,11 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             @if (personas.length > 0) {
               <div class="tipo-seccion">
                 <h3 class="tipo-titulo">
-                  <span class="icono">{{ tipo.icono || '≡ƒôï' }}</span>
+                  <span class="icono">@if (tipo.icono) {
+                <re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon>
+              } @else {
+                <re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>
+              }</span>
                   {{ getTipoNombre(tipo.nombre) }}
                 </h3>
                 
@@ -47,7 +52,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                       }
                       @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                         <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
-                          Γ£Å∩╕Å
+                          Γ£Å
                         </button>
                       }
                     </div>
@@ -64,7 +69,13 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         <div class="modal-overlay" (click)="closeAssignModal()">
           <div class="modal" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h2>{{ assignForm.isEditing ? 'Γ£Å∩╕Å Editar Asignaci├│n' : 'Agregar Persona' }}</h2>
+              <h2>
+              @if (assignForm.isEditing) {
+              <re-icon icon="edit-22" size="18" weight="outline"></re-icon> Editar Asignación
+            } @else {
+              Agregar Persona
+            }
+            </h2>
               <button class="btn-close" (click)="closeAssignModal()">├ù</button>
             </div>
             <div class="modal-body">
@@ -83,7 +94,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 <label for="tipoAsignacion">Tipo de Asignaci├│n *</label>
                 <select id="tipoAsignacion" [(ngModel)]="assignForm.tipo_id" disabled>
                   @for (tipo of tipos(); track tipo.id) {
-                    <option [value]="tipo.id">{{ tipo.icono }} {{ getTipoNombre(tipo.nombre) }}</option>
+                    <option [value]="tipo.id"><re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon> {{ getTipoNombre(tipo.nombre) }}</option>
                   }
                 </select>
               </div>
@@ -118,7 +129,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             </div>
             <div class="modal-footer">
               @if (assignForm.isEditing) {
-                <button class="btn btn-danger" (click)="deleteAsignacion()">≡ƒùæ∩╕Å Eliminar</button>
+                <button class="btn btn-danger" (click)="deleteAsignacion()"><re-icon icon="trush-square2" size="18" weight="outline"></re-icon> Eliminar</button>
               }
               <button class="btn btn-outline" (click)="closeAssignModal()">Cancelar</button>
               <button 
@@ -126,7 +137,11 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 (click)="saveAsignacion()"
                 [disabled]="!assignForm.user_id && !assignForm.grupo_id"
               >
-                {{ assignForm.isEditing ? '≡ƒÆ╛ Guardar Cambios' : 'Γ₧ò Agregar' }}
+                @if (assignForm.isEditing) {
+                <re-icon icon="note-text2" size="18" weight="outline"></re-icon> Guardar Cambios
+              } @else {
+                <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Agregar
+              }
               </button>
             </div>
           </div>

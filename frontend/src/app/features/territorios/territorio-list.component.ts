@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -10,6 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-territorio-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -19,7 +20,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showUploadModal = true">
-            <span class="btn-icon-only">Γ₧ò</span>
+            <re-icon icon="add-square2" size="16" weight="outline" class="btn-icon-only"></re-icon>
             <span class="btn-text">Subir Territorio</span>
           </button>
         }
@@ -40,7 +41,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (territorioService.territorios().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒôü</div>
+          <re-icon icon="folder-open" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay territorios registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showUploadModal = true">
@@ -52,7 +53,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="territorios-grid">
           @for (territorio of territorioService.territorios(); track territorio.id) {
             <div class="territorio-card">
-              <div class="territorio-icon">≡ƒôä</div>
+              <re-icon icon="document-text2" size="32" weight="outline" class="territorio-icon"></re-icon>
               <div class="territorio-info">
                 <h4 class="territorio-nombre">{{ territorio.nombre }}</h4>
                 <p class="meta">{{ territorio.nombre_original }} ΓÇó {{ formatSize(territorio.tamano) }}</p>
@@ -63,7 +64,7 @@ import { AuthService } from '../../core/services/auth.service';
                   class="btn btn-primary btn-sm"
                   (click)="downloadTerritorio(territorio)"
                 >
-                  Γ¼ç∩╕Å Descargar
+                  <re-icon icon="download-square" size="16" weight="outline"></re-icon> Descargar
                 </button>
                 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                   <button 
@@ -71,7 +72,7 @@ import { AuthService } from '../../core/services/auth.service';
                     (click)="deleteTerritorio(territorio)"
                     title="Eliminar"
                   >
-                    ≡ƒùæ∩╕Å
+                    <re-icon icon="trush-square2" size="16" weight="outline"></re-icon>
                   </button>
                 }
               </div>
@@ -135,7 +136,7 @@ import { AuthService } from '../../core/services/auth.service';
                   </div>
                 } @else {
                   <div class="dropzone-content">
-                    <span class="dropzone-icon">≡ƒôü</span>
+                    <re-icon icon="upload-square" size="32" weight="outline" class="dropzone-icon"></re-icon>
                     <p>Arrastra el PDF aqu├¡ o haz clic para seleccionar</p>
                     <span class="dropzone-hint">M├íximo 10MB, solo PDF</span>
                   </div>

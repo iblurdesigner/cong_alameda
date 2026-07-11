@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from './core/services/auth.service';
@@ -9,6 +9,7 @@ import { ThemeService } from './core/services/theme.service';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     @if (authService.isAuthenticated()) {
       <div class="app-layout">
@@ -24,31 +25,31 @@ import { ThemeService } from './core/services/theme.service';
           <ul class="nav-list">
             <li>
               <a routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒôè</span>
+                <re-icon icon="chart-square" size="18" weight="outline" class="icon"></re-icon>
                 Dashboard
               </a>
             </li>
             <li>
               <a routerLink="/perfil" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒæñ</span>
+                <re-icon icon="user-circle" size="18" weight="outline" class="icon"></re-icon>
                 Mi Perfil
               </a>
             </li>
             <li>
               <a routerLink="/casas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒÅá</span>
+                <re-icon icon="home" size="18" weight="outline" class="icon"></re-icon>
                 Casas
               </a>
             </li>
             <li>
               <a routerLink="/visitas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒôà</span>
+                <re-icon icon="calendar-12" size="18" weight="outline" class="icon"></re-icon>
                 Visitas
               </a>
             </li>
             <li>
               <a routerLink="/notificaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒöö</span>
+                <re-icon icon="bell-ring" size="18" weight="outline" class="icon"></re-icon>
                 Notificaciones
                 @if (notificationService.unreadCount() > 0) {
                   <span class="badge">{{ notificationService.unreadCount() }}</span>
@@ -61,25 +62,25 @@ import { ThemeService } from './core/services/theme.service';
             </li>
             <li>
               <a routerLink="/grupos" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒæÑ</span>
+                <re-icon icon="crown-12" size="18" weight="outline" class="icon"></re-icon>
                 Grupos
               </a>
             </li>
             <li>
               <a routerLink="/territorios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒôü</span>
+                <re-icon icon="folder-open" size="18" weight="outline" class="icon"></re-icon>
                 Territorios
               </a>
             </li>
             <li>
               <a routerLink="/dia-predicacion" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒôà</span>
+                <re-icon icon="calendar-12" size="18" weight="outline" class="icon"></re-icon>
                 D├¡a Predicaci├│n
               </a>
             </li>
             <li>
               <a routerLink="/predicacion-visita" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒÜù</span>
+                <re-icon icon="smart-car2" size="18" weight="outline" class="icon"></re-icon>
                 Predicaci├│n Visita
               </a>
             </li>
@@ -89,7 +90,7 @@ import { ThemeService } from './core/services/theme.service';
             </li>
             <li>
               <a routerLink="/asignaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">≡ƒôï</span>
+                <re-icon icon="setting-22" size="18" weight="outline" class="icon"></re-icon>
                 Asignaciones
               </a>
             </li>
@@ -100,7 +101,7 @@ import { ThemeService } from './core/services/theme.service';
               </li>
               <li>
                 <a routerLink="/usuarios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                  <span class="icon">≡ƒæñ</span>
+                  <re-icon icon="user-circle" size="18" weight="outline" class="icon"></re-icon>
                   Usuarios
                 </a>
               </li>
@@ -112,7 +113,11 @@ import { ThemeService } from './core/services/theme.service';
               <span class="user-role">{{ authService.currentUser()?.rol }}</span>
             </div>
             <button class="theme-toggle" (click)="themeService.toggle()" [attr.aria-label]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-              <span class="theme-icon">{{ themeService.isDark() ? 'ΓÿÇ∩╕Å' : '≡ƒîÖ' }}</span>
+              @if (themeService.isDark()) {
+              <re-icon icon="moon-stars" size="18" weight="outline"></re-icon>
+            } @else {
+              <re-icon icon="sun-12" size="18" weight="outline"></re-icon>
+            }
               <span class="theme-label">{{ themeService.isDark() ? 'Modo Claro' : 'Modo Oscuro' }}</span>
             </button>
             <button class="btn-logout" (click)="logout()">

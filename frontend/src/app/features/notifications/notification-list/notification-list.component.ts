@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService, Notificacion } from '../../../core/services/notification.service';
 
@@ -6,6 +6,7 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
   selector: 'app-notification-list',
   standalone: true,
   imports: [CommonModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -27,7 +28,7 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
         </div>
       } @else if (notificationService.notificaciones().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒöö</div>
+          <re-icon icon="bell-ring" size="48" weight="outline" class="empty-icon"></re-icon>
           <p>No hay notificaciones</p>
         </div>
       } @else {
@@ -35,7 +36,7 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
           @for (notif of notificationService.notificaciones(); track notif.id) {
             <div class="notif-card" [class.unread]="!notif.leida" (click)="markRead(notif)">
               <div class="notif-icon-wrapper" [attr.data-tipo]="notif.tipo">
-                <span class="notif-icon">{{ getIcon(notif.tipo) }}</span>
+                <re-icon [attr.icon]="getIcon(notif.tipo)" size="24" weight="outline" class="notif-icon"></re-icon>
               </div>
               <div class="notif-content">
                 <div class="notif-header">
@@ -217,12 +218,12 @@ export class NotificationListComponent implements OnInit {
   }
   
   getIcon(tipo: string): string {
-    const icons: Record<string, string> = { CASA_REGISTRADA: '≡ƒÅá', VISITA_PROGRAMADA: '≡ƒôà', VISITA_COMPLETADA: 'Γ£à', PERSONA_REQUIERE_VISITA: '≡ƒñ¥' };
-    return icons[tipo] || '≡ƒöö';
+    const icons: Record<string, string> = { CASA_REGISTRADA: 'home', VISITA_PROGRAMADA: 'calendar-12', VISITA_COMPLETADA: 'check-circle', PERSONA_REQUIERE_VISITA: 'help-circle' };
+    return icons[tipo] || 'bell-ring';
   }
   
   getTipoLabel(tipo: string): string {
-    const labels: Record<string, string> = { CASA_REGISTRADA: 'Casa Registrada', VISITA_PROGRAMADA: 'Visita Programada', VISITA_COMPLETADA: 'Visita Completada', PERSONA_REQUIERE_VISITA: 'Persona Requiere Visita' };
+    const labels: Record<string, string> = { CASA_REGISTRADA: 'home', VISITA_PROGRAMADA: 'calendar-12', VISITA_COMPLETADA: 'check-circle', PERSONA_REQUIERE_VISITA: 'help-circle' };
     return labels[tipo] || tipo;
   }
 }

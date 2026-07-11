@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-grupo-list',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -18,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
-            <span class="btn-icon-only">Γ₧ò</span>
+            <span class="btn-icon-only"><re-icon icon="add-square2" size="18" weight="outline"></re-icon></span>
             <span class="btn-text">Nuevo Grupo</span>
           </button>
         }
@@ -28,7 +29,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (grupoService.grupos().length === 0) {
         <div class="empty-state">
-          <div class="empty-icon">≡ƒæÑ</div>
+          <div class="empty-icon"><re-icon icon="user-circle" size="18" weight="outline"></re-icon></div>
           <p>No hay grupos registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showModal = true">Crear primer grupo</button>
@@ -51,21 +52,21 @@ import { AuthService } from '../../core/services/auth.service';
               @if (grupo.direccion || grupo.contacto || grupo.conductor || grupo.horario) {
                 <div class="grupo-detalles">
                   @if (grupo.direccion) {
-                    <p class="detalle">≡ƒôì {{ grupo.direccion }}</p>
+                    <p class="detalle"><re-icon icon="map-point" size="18" weight="outline"></re-icon> {{ grupo.direccion }}</p>
                   }
                   @if (grupo.contacto) {
-                    <p class="detalle">≡ƒô₧ {{ grupo.contacto }}</p>
+                    <p class="detalle"><re-icon icon="call-12" size="18" weight="outline"></re-icon> {{ grupo.contacto }}</p>
                   }
                   @if (grupo.conductor) {
-                    <p class="detalle">≡ƒÜù Conductor: {{ grupo.conductor }}</p>
+                    <p class="detalle"><re-icon icon="smart-car2" size="18" weight="outline"></re-icon> Conductor: {{ grupo.conductor }}</p>
                   }
                   @if (grupo.horario) {
-                    <p class="detalle">≡ƒòÉ {{ grupo.horario }}</p>
+                    <p class="detalle"><re-icon icon="clock-circle" size="18" weight="outline"></re-icon> {{ grupo.horario }}</p>
                   }
                 </div>
               }
               <div class="grupo-stats">
-                <span class="stat">≡ƒôü {{ grupo.territorio_count || 0 }} territorios</span>
+                <span class="stat"><re-icon icon="folder-open" size="18" weight="outline"></re-icon> {{ grupo.territorio_count || 0 }} territorios</span>
               </div>
               <div class="grupo-actions">
                 <a [routerLink]="['/grupos', grupo.id]" class="btn btn-outline btn-sm btn-mobile-full">
@@ -77,14 +78,14 @@ import { AuthService } from '../../core/services/auth.service';
                     (click)="editGrupo(grupo)"
                     title="Editar"
                   >
-                    Γ£Å∩╕Å
+                    Γ£Å
                   </button>
                   <button 
                     class="btn btn-icon btn-sm btn-danger" 
                     (click)="confirmDelete(grupo)"
                     title="Eliminar"
                   >
-                    ≡ƒùæ∩╕Å
+                    <re-icon icon="trush-square2" size="18" weight="outline"></re-icon>
                   </button>
                 }
               </div>
@@ -248,7 +249,7 @@ import { AuthService } from '../../core/services/auth.service';
       flex-direction: column;
       align-items: center;
       gap: 1rem;
-      .empty-icon { font-size: 3rem; opacity: 0.5; }
+      .empty-icon { display: inline-flex; align-items: center; justify-content: center; opacity: 0.5; }
     }
     
     .grupos-grid {

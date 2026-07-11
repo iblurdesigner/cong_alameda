@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -11,21 +11,22 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
   selector: 'app-asignacion-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="asignaciones-page">
       <!-- Header -->
       <header class="header">
         <div class="header-left">
-          <h1>≡ƒôà Asignaciones Semanales</h1>
+          <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Asignaciones Semanales</h1>
           <p>Programa el equipo de servicio para cada d├¡a de la semana</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-outline" (click)="openPdfExportModal()">
-            ≡ƒôä Exportar PDF
+            <re-icon icon="export-12" size="18" weight="outline"></re-icon> Exportar PDF
           </button>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary btn-lg" (click)="openBulkModal()">
-              Γ₧ò Nueva Programaci├│n
+              <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Nueva Programaci├│n
             </button>
           }
         </div>
@@ -95,7 +96,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               </div>
               @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                 <button class="btn btn-primary" (click)="openAssignModal(null!, getDayOfWeek(selectedDate))">
-                  Γ₧ò Agregar Persona
+                  <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Agregar Persona
                 </button>
               }
             </div>
@@ -106,7 +107,11 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 @if (getAsignacionForDayAndTipo(selectedDate!, tipo.id); as asignacion) {
                   <div class="assignment-card">
                     <div class="assignment-type">
-                      <span class="icono">{{ tipo.icono || '≡ƒôï' }}</span>
+                      <span class="icono">@if (tipo.icono) {
+                <re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon>
+              } @else {
+                <re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>
+              }</span>
                       <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
                     </div>
                     @if (asignacion && (asignacion.user || asignacion.grupo)) {
@@ -119,7 +124,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                         </span>
                         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                           <button class="btn-icon" (click)="editAsignacion(asignacion, tipo, getDayOfWeek(selectedDate!))">
-                            Γ£Å∩╕Å
+                            Γ£Å
                           </button>
                         }
                       </div>
@@ -138,7 +143,11 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 } @else {
                   <div class="assignment-card empty">
                     <div class="assignment-type">
-                      <span class="icono">{{ tipo.icono || '≡ƒôï' }}</span>
+                      <span class="icono">@if (tipo.icono) {
+                <re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon>
+              } @else {
+                <re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>
+              }</span>
                       <span class="nombre">{{ getTipoNombre(tipo.nombre) }}</span>
                     </div>
                     <div class="no-assignment">
@@ -168,7 +177,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="modal-overlay" (click)="closeAssignModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>{{ assignForm.isEditing ? 'Γ£Å∩╕Å Editar Asignaci├│n' : 'Agregar Persona' }}</h2>
+            <h2>{{ assignForm.isEditing ? 'Γ£Å Editar Asignaci├│n' : 'Agregar Persona' }}</h2>
             <button class="btn-close" (click)="closeAssignModal()">├ù</button>
           </div>
           <div class="modal-body">
@@ -190,7 +199,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               <select id="tipoAsignacion" [(ngModel)]="assignForm.tipo_id" (ngModelChange)="onTipoChange()">
                 <option value="">Seleccionar tipo...</option>
                 @for (tipo of getTiposList(); track tipo.id) {
-                  <option [value]="tipo.id">{{ tipo.icono }} {{ getTipoNombre(tipo.nombre) }}</option>
+                  <option [value]="tipo.id"><re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon> {{ getTipoNombre(tipo.nombre) }}</option>
                 }
               </select>
             </div>
@@ -202,7 +211,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 @for (assignment of getCurrentAssignmentsForTipo(); track assignment.id) {
                   <div class="assignment-item">
                     <span>{{ assignment.user?.nombre || assignment.grupo?.nombre || 'Asignado' }}</span>
-                    <button class="btn-icon btn-danger" (click)="removeAssignment(assignment.id)">≡ƒùæ∩╕Å</button>
+                    <button class="btn-icon btn-danger" (click)="removeAssignment(assignment.id)"><re-icon icon="trush-square2" size="18" weight="outline"></re-icon></button>
                   </div>
                 }
               </div>
@@ -249,7 +258,11 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               (click)="saveAsignacion()"
               [disabled]="!assignForm.user_id && !assignForm.grupo_id"
             >
-              {{ assignForm.isEditing ? '≡ƒÆ╛ Guardar Cambios' : 'Γ₧ò Agregar' }}
+              @if (assignForm.isEditing) {
+                <re-icon icon="note-text2" size="18" weight="outline"></re-icon> Guardar Cambios
+              } @else {
+                <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Agregar
+              }
             </button>
           </div>
         </div>
@@ -261,7 +274,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="modal-overlay" (click)="closeBulkModal()">
         <div class="modal-full" (click)="$event.stopPropagation()">
           <div class="modal-header-simple">
-            <h2>≡ƒôà Programar Asignaciones</h2>
+            <h2><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Programar Asignaciones</h2>
             <button class="btn-close" (click)="closeBulkModal()">├ù</button>
           </div>
           
@@ -307,7 +320,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               @for (tipo of getTiposList(); track tipo.id) {
                 <div class="category-card">
                   <div class="category-header">
-                    <span class="category-icon">{{ tipo.icono }}</span>
+                    <span class="category-icon"><re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon></span>
                     <span class="category-name">{{ getTipoNombre(tipo.nombre) }}</span>
                   </div>
                   
@@ -349,7 +362,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           <div class="modal-footer-simple">
             <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
             <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
-              ≡ƒÆ╛ Guardar Asignaciones
+              <re-icon icon="note-text2" size="18" weight="outline"></re-icon> Guardar Asignaciones
             </button>
           </div>
         </div>
@@ -377,7 +390,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 @for (tipo of getTiposList(); track tipo.id) {
                   @if (getAssignmentsForTipoAndSemana(semanaData, tipo.id).length > 0) {
                     <div class="summary-tipo">
-                      <span class="tipo-icon">{{ tipo.icono }}</span>
+                      <span class="tipo-icon"><re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon></span>
                       <span class="tipo-name">{{ getTipoNombre(tipo.nombre) }}</span>
                       <div class="tipo-personas">
                         @for (asig of getAssignmentsForTipoAndSemana(semanaData, tipo.id); track asig.id) {
@@ -398,7 +411,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="exportToPDF()">
-              ≡ƒôä Exportar PDF
+              <re-icon icon="export-12" size="18" weight="outline"></re-icon> Exportar PDF
             </button>
             <button class="btn btn-primary" (click)="closeSummaryModal()">
               Aceptar
@@ -413,7 +426,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="modal-overlay" (click)="closePdfExportModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>≡ƒôä Seleccionar Semanas para PDF</h2>
+            <h2><re-icon icon="export-12" size="18" weight="outline"></re-icon> Seleccionar Semanas para PDF</h2>
             <button class="btn-close" (click)="closePdfExportModal()">├ù</button>
           </div>
           <div class="modal-body">
@@ -463,7 +476,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                     (change)="toggleWeekForExport(semana.id)"
                   >
                   @if (semana.archivado) {
-                    <span class="archive-badge">≡ƒôª</span>
+                    <span class="archive-badge"><re-icon icon="lock-12" size="18" weight="outline"></re-icon></span>
                   }
                   <span class="week-name">{{ semana.nombre }}</span>
                   <span class="week-dates">{{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }}</span>
@@ -473,7 +486,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                       (click)="toggleSemanaArchive(semana); $event.stopPropagation()"
                       [title]="semana.archivado ? 'Desarchivar' : 'Archivar'"
                     >
-                    {{ semana.archivado ? '≡ƒôñ' : '≡ƒôÑ' }}
+                    <re-icon [attr.icon]="semana.archivado ? 'lock-12' : 'close-circle2'" size="18" weight="outline"></re-icon>
                     </button>
                   }
                 </label>
@@ -603,7 +616,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .role-sections { display: flex; flex-direction: column; gap: 1.5rem; }
     .role-section { background: var(--background-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; }
     .role-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); }
-    .role-icon { font-size: 1.5rem; }
+    .role-icon { display: inline-flex; align-items: center; justify-content: center; }
     .role-name { font-weight: 600; color: var(--text-primary); font-size: 1.125rem; }
     .role-count { color: var(--text-secondary); font-size: 0.875rem; margin-left: auto; }
     .role-assignments { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
@@ -630,7 +643,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .summary-semana h3 { margin: 0 0 0.5rem 0; color: var(--primary-color); font-size: 1.125rem; }
     .summary-semana .date-range { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem; }
     .summary-tipo { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0.5rem; background: var(--surface-color); border-radius: var(--radius-sm); }
-    .summary-tipo .tipo-icon { font-size: 1.25rem; }
+    .summary-tipo .tipo-icon { display: inline-flex; align-items: center; justify-content: center; }
     .summary-tipo .tipo-name { font-weight: 600; color: var(--text-primary); min-width: 120px; }
     .summary-tipo .tipo-personas { display: flex; flex-wrap: wrap; gap: 0.5rem; }
     .person-tag { display: inline-block; padding: 0.25rem 0.5rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-sm); font-size: 0.875rem; }
@@ -918,7 +931,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       gap: 0.5rem;
       margin-bottom: 0.75rem;
     }
-    .category-icon { font-size: 1.25rem; }
+    .category-icon { display: inline-flex; align-items: center; justify-content: center; }
     .category-name { font-weight: 600; color: var(--text-primary); }
     .category-assignments {
       display: flex;
@@ -1926,13 +1939,13 @@ export class AsignacionListComponent implements OnInit {
     }
     // Fallback default tipos if not loaded yet
     return [
-      { id: '2ba65bba-c8af-47a3-a6ce-e357c041e345', nombre: 'PRESIDENTE', icono: '≡ƒÄ»', descripcion: 'Presidente' },
-      { id: '161a5d7c-2dd3-46ca-aebf-e319c1295a01', nombre: 'LECTOR_ATALAYA', icono: '≡ƒôû', descripcion: 'Lector Atalaya' },
-      { id: '9bb8d1a0-f9dd-48fa-932a-229090f4e2aa', nombre: 'ACOMODADOR_SALON', icono: '≡ƒ¬æ', descripcion: 'Acomodador' },
-      { id: '96014a5f-834e-44fd-92af-73d36850eb88', nombre: 'PARQUEADERO', icono: '≡ƒÜù', descripcion: 'Parqueadero' },
-      { id: 'de3076d0-5896-4ee6-a113-41212893856e', nombre: 'MICROFONO', icono: '≡ƒÄñ', descripcion: 'Micr├│fono' },
-      { id: '74c7a6e6-a3aa-4bd8-a129-7b1c2a2c1b99', nombre: 'PLATAFORMA', icono: '≡ƒô║', descripcion: 'Plataforma' },
-      { id: 'b10c74a7-ba4c-4a71-b639-1248aa404eb4', nombre: 'ASEO_SALON', icono: '≡ƒº╣', descripcion: 'Aseo del Sal├│n' }
+      { id: '2ba65bba-c8af-47a3-a6ce-e357c041e345', nombre: 'PRESIDENTE', icono: 'crown-12', descripcion: 'Presidente' },
+      { id: '161a5d7c-2dd3-46ca-aebf-e319c1295a01', nombre: 'LECTOR_ATALAYA', icono: 'document-text2', descripcion: 'Lector Atalaya' },
+      { id: '9bb8d1a0-f9dd-48fa-932a-229090f4e2aa', nombre: 'ACOMODADOR_SALON', icono: 'note-text2', descripcion: 'Acomodador' },
+      { id: '96014a5f-834e-44fd-92af-73d36850eb88', nombre: 'PARQUEADERO', icono: 'smart-car2', descripcion: 'Parqueadero' },
+      { id: 'de3076d0-5896-4ee6-a113-41212893856e', nombre: 'MICROFONO', icono: 'user-circle', descripcion: 'Micr├│fono' },
+      { id: '74c7a6e6-a3aa-4bd8-a129-7b1c2a2c1b99', nombre: 'PLATAFORMA', icono: 'chart-square', descripcion: 'Plataforma' },
+      { id: 'b10c74a7-ba4c-4a71-b639-1248aa404eb4', nombre: 'ASEO_SALON', icono: 'note-text2', descripcion: 'Aseo del Sal├│n' }
     ] as TipoAsignacion[];
   }
   
@@ -2043,7 +2056,7 @@ export class AsignacionListComponent implements OnInit {
       </head>
       <body>
         <div class="header">
-          <h1>≡ƒôà Asignaciones Semanales</h1>
+          <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Asignaciones Semanales</h1>
           <p>Congregaci├│n Alameda - Programa de Servicio</p>
         </div>
     `;
@@ -2059,7 +2072,7 @@ export class AsignacionListComponent implements OnInit {
         <div class="semana-section">
           <div class="semana-title">${semanaData.semana.nombre}</div>
           <div class="semana-dates">
-            ≡ƒôà ${this.formatDate(semanaData.semana.fecha_inicio)} - ${this.formatDate(semanaData.semana.fecha_fin)}
+            <re-icon icon="calendar-12" size="18" weight="outline"></re-icon> ${this.formatDate(semanaData.semana.fecha_inicio)} - ${this.formatDate(semanaData.semana.fecha_fin)}
           </div>
           <table class="tabla-asignaciones">
             <thead>
@@ -2278,7 +2291,7 @@ export class AsignacionListComponent implements OnInit {
       </head>
       <body>
         <div class="header">
-          <h1>≡ƒôà Asignaciones Semanales</h1>
+          <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Asignaciones Semanales</h1>
           <p>Congregaci├│n Alameda - Programa de Servicio</p>
         </div>
         <div class="weeks-container">
@@ -2299,7 +2312,7 @@ export class AsignacionListComponent implements OnInit {
         <div class="semana-section">
           <div class="semana-title">${semana.nombre}</div>
           <div class="semana-dates">
-            ≡ƒôà ${this.formatDate(semana.fecha_inicio)} - ${this.formatDate(semana.fecha_fin)}
+            <re-icon icon="calendar-12" size="18" weight="outline"></re-icon> ${this.formatDate(semana.fecha_inicio)} - ${this.formatDate(semana.fecha_fin)}
           </div>
           <table class="tabla-asignaciones">
             <thead>
@@ -2326,7 +2339,7 @@ export class AsignacionListComponent implements OnInit {
             <tr>
               <td>
                 <div class="categoria">
-                  <span>${tipo.icono || '≡ƒôï'}</span>
+                  <span>${tipo.icono || '<re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>'}</span>
                   <span>${this.getTipoNombre(tipo.nombre)}</span>
                 </div>
               </td>
@@ -2342,7 +2355,7 @@ export class AsignacionListComponent implements OnInit {
             <tr>
               <td>
                 <div class="categoria">
-                  <span>${tipo.icono || '≡ƒôï'}</span>
+                  <span>${tipo.icono || '<re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>'}</span>
                   <span>${this.getTipoNombre(tipo.nombre)}</span>
                 </div>
               </td>

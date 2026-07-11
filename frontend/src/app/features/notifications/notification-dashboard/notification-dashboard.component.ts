@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NotificationService, Notificacion } from '../../../core/services/notification.service';
@@ -14,6 +14,7 @@ interface NotificacionTipo {
   selector: 'app-notification-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="dashboard-container">
       <header class="page-header">
@@ -33,7 +34,7 @@ interface NotificacionTipo {
             class="filter-card" 
             [class.active]="selectedTipo() === null"
             (click)="setFilter(null)">
-            <span class="filter-icon">≡ƒôï</span>
+            <re-icon icon="notification-12" weight="outline" class="filter-icon"></re-icon>
             <span class="filter-label">Todos</span>
           </button>
           @for (tipo of tipos; track tipo.key) {
@@ -42,7 +43,7 @@ interface NotificacionTipo {
               [class.active]="selectedTipo() === tipo.key"
               [style.--card-color]="tipo.color"
               (click)="setFilter(tipo.key)">
-              <span class="filter-icon">{{ tipo.icon }}</span>
+              <re-icon [attr.icon]="tipo.icon" size="24" weight="outline" class="filter-icon"></re-icon>
               <span class="filter-label">{{ tipo.label }}</span>
               @if (getCountByTipo(tipo.key) > 0) {
                 <span class="filter-count">{{ getCountByTipo(tipo.key) }}</span>
@@ -60,7 +61,7 @@ interface NotificacionTipo {
       } @else if (filteredNotificaciones().length === 0) {
         <!-- Empty State -->
         <div class="empty-state">
-          <div class="empty-icon">≡ƒöö</div>
+          <re-icon icon="bell-ring" weight="outline" class="empty-icon"></re-icon>
           <h3>No hay notificaciones</h3>
           <p>{{ selectedTipo() ? 'No hay notificaciones de tipo ' + getTipoLabel(selectedTipo()!) : 'No tienes notificaciones a├║n' }}</p>
         </div>
@@ -69,7 +70,7 @@ interface NotificacionTipo {
         @for (group of groupedNotificaciones(); track group.tipo) {
           <div class="notif-group">
             <h3 class="group-title" [style.color]="getTipoConfig(group.tipo)?.color">
-              <span class="group-icon">{{ getTipoConfig(group.tipo)?.icon }}</span>
+              <re-icon [attr.icon]="getTipoConfig(group.tipo)?.icon" size="20" weight="outline" class="group-icon"></re-icon>
               {{ getTipoLabel(group.tipo) }}
               <span class="group-count">({{ group.notificaciones.length }})</span>
             </h3>
@@ -81,7 +82,7 @@ interface NotificacionTipo {
                   [style.--tipo-color]="getTipoConfig(notif.tipo)?.color"
                   (click)="markRead(notif)">
                   <div class="notif-icon" [style.background]="getTipoConfig(notif.tipo)?.color + '20'">
-                    {{ getTipoConfig(notif.tipo)?.icon }}
+                    <re-icon [attr.icon]="getTipoConfig(notif.tipo)?.icon" size="20" weight="outline" class="notif-icon"></re-icon>
                   </div>
                   <div class="notif-content">
                     <p class="notif-mensaje">{{ notif.mensaje }}</p>
@@ -315,13 +316,13 @@ export class NotificationDashboardComponent implements OnInit {
   
   // Config de tipos con iconos y colores
   tipos: NotificacionTipo[] = [
-    { key: 'CASA_REGISTRADA', label: 'Casas', icon: '≡ƒÅá', color: '#22c55e' },
-    { key: 'VISITA_PROGRAMADA', label: 'Visitas', icon: '≡ƒôà', color: '#3b82f6' },
-    { key: 'VISITA_COMPLETADA', label: 'Completadas', icon: 'Γ£à', color: '#10b981' },
-    { key: 'PERSONA_REQUIERE_VISITA', label: 'Requiere Visita', icon: '≡ƒñ¥', color: '#f59e0b' },
-    { key: 'ASIGNACION_CREADA', label: 'Asignaci├│n Nueva', icon: '≡ƒÄñ', color: '#8b5cf6' },
-    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignaci├│n Actualizada', icon: '≡ƒöä', color: '#ec4899' },
-    { key: 'ASIGNACION_COMPLETADA', label: 'Asignaci├│n Completada', icon: '≡ƒÄ»', color: '#14b8a6' },
+    { key: 'CASA_REGISTRADA', label: 'Casas', icon: 'home', color: '#22c55e' },
+    { key: 'VISITA_PROGRAMADA', label: 'Visitas', icon: 'calendar-12', color: '#3b82f6' },
+    { key: 'VISITA_COMPLETADA', label: 'Completadas', icon: 'check-circle', color: '#10b981' },
+    { key: 'PERSONA_REQUIERE_VISITA', label: 'Requiere Visita', icon: 'help-circle', color: '#f59e0b' },
+    { key: 'ASIGNACION_CREADA', label: 'Asignaci├│n Nueva', icon: 'add-square2', color: '#8b5cf6' },
+    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignaci├│n Actualizada', icon: 'refresh-circle', color: '#ec4899' },
+    { key: 'ASIGNACION_COMPLETADA', label: 'Asignaci├│n Completada', icon: 'check-circle', color: '#14b8a6' },
   ];
   
   PAGE_SIZE = 50;
