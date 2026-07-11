@@ -19,7 +19,7 @@ import { AuthService } from '../../../core/services/auth.service';
                 <path d="M20 6L9 17l-5-5"/>
               </svg>
             </div>
-            <h3 class="modal-title">┬í├ëxito!</h3>
+            <h3 class="modal-title">¡Éxito!</h3>
             <p class="modal-message">{{ successMessage() }}</p>
             <button class="btn btn-primary" (click)="goToList()">
               Volver a la lista
@@ -32,7 +32,7 @@ import { AuthService } from '../../../core/services/auth.service';
       }
 
       <header class="page-header">
-        <a routerLink="/casas" class="back-link">ΓåÉ Volver</a>
+        <a routerLink="/casas" class="back-link">← Volver</a>
         <h1>{{ isEdit() ? 'Editar Casa' : 'Registrar Nueva Casa' }}</h1>
       </header>
       
@@ -42,7 +42,7 @@ import { AuthService } from '../../../core/services/auth.service';
         }
         
         <div class="form-section">
-          <h3>Direcci├│n</h3>
+          <h3>Dirección</h3>
           
           <div class="form-row">
             <div class="form-group flex-2">
@@ -52,7 +52,7 @@ import { AuthService } from '../../../core/services/auth.service';
             </div>
             
             <div class="form-group flex-1">
-              <label for="numeracion">N├║mero *</label>
+              <label for="numeracion">Número *</label>
               <input type="text" id="numeracion" [(ngModel)]="formData.numeracion" 
                      name="numeracion" required placeholder="123" />
             </div>
@@ -75,7 +75,7 @@ import { AuthService } from '../../../core/services/auth.service';
 <div class="form-group">
               <label for="referencia">Referencia</label>
               <input type="text" id="referencia" [(ngModel)]="formData.referencia" 
-                     name="referencia" placeholder="Casa azul, port├│n verde..." />
+                     name="referencia" placeholder="Casa azul, portón verde..." />
             </div>
             
             <!-- Foto de la casa -->
@@ -86,7 +86,7 @@ import { AuthService } from '../../../core/services/auth.service';
               @if (previewUrl()) {
                 <div class="preview-container">
                   <img [src]="previewUrl()" alt="Preview" class="preview-image" />
-                  <button type="button" class="btn-remove-photo" (click)="removePhoto()">Γ£ò Quitar</button>
+                  <button type="button" class="btn-remove-photo" (click)="removePhoto()">✕ Quitar</button>
                 </div>
               }
             </div>
@@ -107,13 +107,13 @@ import { AuthService } from '../../../core/services/auth.service';
           </div>
         
         <div class="form-section">
-          <h3>Informaci├│n del Registro</h3>
+          <h3>Información del Registro</h3>
           
           <div class="form-group">
             <label for="motivo_no_volver">Motivo "No Visitar" *</label>
             <textarea id="motivo_no_volver" [(ngModel)]="formData.motivo_no_volver" 
                       name="motivo_no_volver" required rows="3"
-                      placeholder="Explica por qu├⌐ la persona pidi├│ no ser visitada..."></textarea>
+                      placeholder="Explica por qué la persona pidió no ser visitada..."></textarea>
           </div>
           
           <div class="form-group">
@@ -227,7 +227,7 @@ export class CasaFormComponent implements OnInit {
             },
             error: () => {
               this.loading.set(false);
-              // La casa ya se guard├│, pero la foto fall├│
+              // La casa ya se guardó, pero la foto falló
               this.successMessage.set('Casa guardada (foto no subida)');
             }
           });

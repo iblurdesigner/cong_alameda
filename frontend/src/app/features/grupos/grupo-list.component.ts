@@ -14,8 +14,8 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1>Grupos de Predicaci├│n</h1>
-          <p class="header-subtitle">5 grupos de predicaci├│n con territorios PDF</p>
+          <h1>Grupos de Predicación</h1>
+          <p class="header-subtitle">5 grupos de predicación con territorios PDF</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
@@ -78,7 +78,7 @@ import { AuthService } from '../../core/services/auth.service';
                     (click)="editGrupo(grupo)"
                     title="Editar"
                   >
-                    Γ£Å
+                    ✏
                   </button>
                   <button 
                     class="btn btn-icon btn-sm btn-danger" 
@@ -101,7 +101,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>{{ editingGrupo ? 'Editar Grupo' : 'Nuevo Grupo' }}</h2>
-            <button class="btn-close" (click)="closeModal()">├ù</button>
+            <button class="btn-close" (click)="closeModal()">×</button>
           </div>
           <div class="modal-body">
             <div class="form-group">
@@ -115,7 +115,7 @@ import { AuthService } from '../../core/services/auth.service';
               />
             </div>
             <div class="form-group">
-              <label for="numero">N├║mero *</label>
+              <label for="numero">Número *</label>
               <input 
                 type="number" 
                 id="numero" 
@@ -126,16 +126,16 @@ import { AuthService } from '../../core/services/auth.service';
               />
             </div>
             <div class="form-group">
-              <label for="descripcion">Descripci├│n</label>
+              <label for="descripcion">Descripción</label>
               <textarea 
                 id="descripcion" 
                 [(ngModel)]="formData.descripcion" 
                 rows="3"
-                placeholder="Descripci├│n opcional del grupo"
+                placeholder="Descripción opcional del grupo"
               ></textarea>
             </div>
             <div class="form-group">
-              <label for="direccion">Direcci├│n</label>
+              <label for="direccion">Dirección</label>
               <input 
                 type="text" 
                 id="direccion" 
@@ -149,7 +149,7 @@ import { AuthService } from '../../core/services/auth.service';
                 type="text" 
                 id="contacto" 
                 [(ngModel)]="formData.contacto" 
-                placeholder="Ej: Tel├⌐fono o email"
+                placeholder="Ej: Teléfono o email"
               />
             </div>
             <div class="form-group">
@@ -167,7 +167,7 @@ import { AuthService } from '../../core/services/auth.service';
                 type="text" 
                 id="horario" 
                 [(ngModel)]="formData.horario" 
-                placeholder="Ej: S├íbados 9:00 AM"
+                placeholder="Ej: Sábados 9:00 AM"
               />
             </div>
           </div>
@@ -190,11 +190,11 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="modal-overlay" (click)="showDeleteModal = false">
         <div class="modal modal-sm" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Confirmar Eliminaci├│n</h2>
+            <h2>Confirmar Eliminación</h2>
           </div>
           <div class="modal-body">
-            <p>┬┐Est├ís seguro de eliminar el grupo "{{ deletingGrupo?.nombre }}"?</p>
-            <p class="text-muted">Esta acci├│n realiza un borrado suave (inactiva el grupo).</p>
+            <p>¿Estás seguro de eliminar el grupo "{{ deletingGrupo?.nombre }}"?</p>
+            <p class="text-muted">Esta acción realiza un borrado suave (inactiva el grupo).</p>
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="showDeleteModal = false">Cancelar</button>

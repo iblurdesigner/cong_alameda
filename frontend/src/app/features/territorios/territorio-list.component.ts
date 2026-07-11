@@ -16,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
       <header class="page-header">
         <div class="header-content">
           <h1>Territorios</h1>
-          <p class="header-subtitle">Archivos PDF de los territorios de predicaci├│n</p>
+          <p class="header-subtitle">Archivos PDF de los territorios de predicación</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showUploadModal = true">
@@ -56,7 +56,7 @@ import { AuthService } from '../../core/services/auth.service';
               <re-icon icon="document-text2" size="32" weight="outline" class="territorio-icon"></re-icon>
               <div class="territorio-info">
                 <h4 class="territorio-nombre">{{ territorio.nombre }}</h4>
-                <p class="meta">{{ territorio.nombre_original }} ΓÇó {{ formatSize(territorio.tamano) }}</p>
+                <p class="meta">{{ territorio.nombre_original }} • {{ formatSize(territorio.tamano) }}</p>
                 <p class="meta">Subido: {{ formatDate(territorio.created_at) }}</p>
               </div>
               <div class="territorio-actions">
@@ -88,7 +88,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>Subir Territorio PDF</h2>
-            <button class="btn-close" (click)="closeUploadModal()">├ù</button>
+            <button class="btn-close" (click)="closeUploadModal()">×</button>
           </div>
           <div class="modal-body">
             <div class="form-group">
@@ -137,8 +137,8 @@ import { AuthService } from '../../core/services/auth.service';
                 } @else {
                   <div class="dropzone-content">
                     <re-icon icon="upload-square" size="32" weight="outline" class="dropzone-icon"></re-icon>
-                    <p>Arrastra el PDF aqu├¡ o haz clic para seleccionar</p>
-                    <span class="dropzone-hint">M├íximo 10MB, solo PDF</span>
+                    <p>Arrastra el PDF aquí o haz clic para seleccionar</p>
+                    <span class="dropzone-hint">Máximo 10MB, solo PDF</span>
                   </div>
                 }
               </div>
@@ -472,7 +472,7 @@ export class TerritorioListComponent implements OnInit {
       return;
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('El archivo excede el l├¡mite de 10MB');
+      alert('El archivo excede el límite de 10MB');
       return;
     }
     this.selectedFile = file;
@@ -513,7 +513,7 @@ export class TerritorioListComponent implements OnInit {
   }
   
   deleteTerritorio(territorio: Territorio) {
-    if (confirm(`┬┐Eliminar "${territorio.nombre}"?`)) {
+    if (confirm(`¿Eliminar "${territorio.nombre}"?`)) {
       this.territorioService.deleteTerritorio(territorio.id).subscribe({
         next: () => this.loadTerritorios()
       });

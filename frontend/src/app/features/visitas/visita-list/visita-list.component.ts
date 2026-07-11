@@ -15,7 +15,7 @@ import { UserService, User } from '../../../core/services/user.service';
       <header class="page-header">
         <div class="header-content">
           <h1>Visitas</h1>
-          <p class="header-subtitle">Programaci├│n y seguimiento de visitas</p>
+          <p class="header-subtitle">Programación y seguimiento de visitas</p>
         </div>
       </header>
       
@@ -86,7 +86,7 @@ import { UserService, User } from '../../../core/services/user.service';
               }
               
               @if (visita.fecha_realizada) {
-                <p class="visita-realizada">Γ£à Realizada: {{ formatDate(visita.fecha_realizada) }}</p>
+                <p class="visita-realizada">✅ Realizada: {{ formatDate(visita.fecha_realizada) }}</p>
               }
               
               @if (visita.observaciones) {
@@ -95,11 +95,11 @@ import { UserService, User } from '../../../core/services/user.service';
               
               @if (visita.desea_seguir_recibiendo !== undefined) {
                 <p class="visita-resp">
-                  {{ visita.desea_seguir_recibiendo ? 'Γ£à Desea visitas' : 'Γ¥î No desea visitas' }}
+                  {{ visita.desea_seguir_recibiendo ? '✅ Desea visitas' : '❌ No desea visitas' }}
                 </p>
               }
 
-              <button class="btn-ver" (click)="openDetail(visita)">≡ƒæü∩╕Å Ver</button>
+              <button class="btn-ver" (click)="openDetail(visita)">≡ƒæü️ Ver</button>
             </div>
           }
         </div>
@@ -112,14 +112,14 @@ import { UserService, User } from '../../../core/services/user.service';
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>Detalles de la Visita</h2>
-            <button class="modal-close" (click)="closeModal()">Γ£ò</button>
+            <button class="modal-close" (click)="closeModal()">✕</button>
           </div>
           
           <div class="modal-body">
             <!-- Info de la Casa -->
             @if (selectedVisit()!.casa) {
               <div class="detail-section">
-                <h3>≡ƒÅá Informaci├│n de la Casa</h3>
+                <h3>≡ƒÅá Información de la Casa</h3>
                 <!-- Foto de la casa -->
                 <div class="detail-foto-container">
                   @if (selectedVisit()!.casa!.foto_url) {
@@ -132,7 +132,7 @@ import { UserService, User } from '../../../core/services/user.service';
                   }
                 </div>
                 <div class="detail-row">
-                  <span class="detail-label">Direcci├│n:</span>
+                  <span class="detail-label">Dirección:</span>
                   <span class="detail-value">
                     {{ selectedVisit()!.casa!.calle_principal }} {{ selectedVisit()!.casa!.numeracion }}
                     @if (selectedVisit()!.casa!.calle_secundaria) {
@@ -169,9 +169,9 @@ import { UserService, User } from '../../../core/services/user.service';
               </div>
             }
 
-            <!-- Programaci├│n -->
+            <!-- Programación -->
             <div class="detail-section">
-              <h3>≡ƒôà Programaci├│n</h3>
+              <h3>≡ƒôà Programación</h3>
               <div class="detail-row">
                 <span class="detail-label">Fecha programada:</span>
                 <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_programada) }}</span>
@@ -186,7 +186,7 @@ import { UserService, User } from '../../../core/services/user.service';
               </div>
               @if (estado === 'REALIZADA') {
                 <div class="form-group">
-                  <label>Fecha de realizaci├│n:</label>
+                  <label>Fecha de realización:</label>
                   <input type="date" [(ngModel)]="fechaRealizada" class="form-input" />
                 </div>
               }
@@ -194,23 +194,23 @@ import { UserService, User } from '../../../core/services/user.service';
 
             @if (estado === 'REALIZADA') {
               <div class="detail-section">
-                <h3>Γ£à Resultado de la Visita</h3>
+                <h3>✅ Resultado de la Visita</h3>
                 <div class="form-group">
                   <label>Observaciones:</label>
                   <textarea [(ngModel)]="observaciones" class="form-textarea" rows="3" placeholder="Observaciones de la visita..."></textarea>
                 </div>
                 <div class="form-group">
-                  <label>┬┐Desea seguir recibiendo visitas?</label>
+                  <label>¿Desea seguir recibiendo visitas?</label>
                   <select [(ngModel)]="deseaSeguirRecibiendo" class="form-select">
                     <option value="">No especificado</option>
-                    <option value="true">S├¡, desea seguir recibiendo</option>
-                    <option value="false">No, no desea recibir m├ís</option>
+                    <option value="true">Sí, desea seguir recibiendo</option>
+                    <option value="false">No, no desea recibir más</option>
                   </select>
                 </div>
               </div>
             }
 
-            <!-- Asignaci├│n de Visitantes -->
+            <!-- Asignación de Visitantes -->
             <div class="detail-section">
               <h3>≡ƒæÑ Asignar Visitantes</h3>
               <div class="form-group">

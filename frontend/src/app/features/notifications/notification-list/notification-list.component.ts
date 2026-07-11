@@ -16,7 +16,7 @@ import { NotificationService, Notificacion } from '../../../core/services/notifi
         </div>
         @if (notificationService.unreadCount() > 0) {
           <button class="btn btn-outline btn-mobile-full" (click)="markAllRead()">
-            Marcar todas como le├¡das
+            Marcar todas como leídas
           </button>
         }
       </header>

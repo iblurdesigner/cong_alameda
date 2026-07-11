@@ -20,7 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        // NO hacer logout autom├íticamente - solo rechazar el request
+        // NO hacer logout automáticamente - solo rechazar el request
         // El usuario puede re-autenticarse si es necesario
         console.warn('[Interceptor] 401 received but NOT logging out:', req.url);
       }

@@ -23,7 +23,7 @@ interface NotificacionTipo {
           <p class="header-subtitle">{{ notificationService.unreadCount() }} sin leer</p>
         </div>
         <button class="btn btn-outline" (click)="markAllRead()" [disabled]="notificationService.unreadCount() === 0">
-          Marcar todas como le├¡das
+          Marcar todas como leídas
         </button>
       </header>
 
@@ -63,7 +63,7 @@ interface NotificacionTipo {
         <div class="empty-state">
           <re-icon icon="bell-ring" weight="outline" class="empty-icon"></re-icon>
           <h3>No hay notificaciones</h3>
-          <p>{{ selectedTipo() ? 'No hay notificaciones de tipo ' + getTipoLabel(selectedTipo()!) : 'No tienes notificaciones a├║n' }}</p>
+          <p>{{ selectedTipo() ? 'No hay notificaciones de tipo ' + getTipoLabel(selectedTipo()!) : 'No tienes notificaciones aún' }}</p>
         </div>
       } @else {
         <!-- Agrupado por tipo -->
@@ -97,21 +97,21 @@ interface NotificacionTipo {
           </div>
         }
 
-        <!-- Paginaci├│n -->
+        <!-- Paginación -->
         @if (totalPages() > 1) {
           <div class="pagination">
             <button 
               class="page-btn" 
               (click)="prevPage()" 
               [disabled]="currentPage() === 1">
-              ΓåÉ Anterior
+              ← Anterior
             </button>
-            <span class="page-info">P├ígina {{ currentPage() }} de {{ totalPages() }}</span>
+            <span class="page-info">Página {{ currentPage() }} de {{ totalPages() }}</span>
             <button 
               class="page-btn" 
               (click)="nextPage()" 
               [disabled]="currentPage() === totalPages()">
-              Siguiente ΓåÆ
+              Siguiente →
             </button>
           </div>
         }
@@ -320,9 +320,9 @@ export class NotificationDashboardComponent implements OnInit {
     { key: 'VISITA_PROGRAMADA', label: 'Visitas', icon: 'calendar-12', color: '#3b82f6' },
     { key: 'VISITA_COMPLETADA', label: 'Completadas', icon: 'check-circle', color: '#10b981' },
     { key: 'PERSONA_REQUIERE_VISITA', label: 'Requiere Visita', icon: 'help-circle', color: '#f59e0b' },
-    { key: 'ASIGNACION_CREADA', label: 'Asignaci├│n Nueva', icon: 'add-square2', color: '#8b5cf6' },
-    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignaci├│n Actualizada', icon: 'refresh-circle', color: '#ec4899' },
-    { key: 'ASIGNACION_COMPLETADA', label: 'Asignaci├│n Completada', icon: 'check-circle', color: '#14b8a6' },
+    { key: 'ASIGNACION_CREADA', label: 'Asignación Nueva', icon: 'add-square2', color: '#8b5cf6' },
+    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignación Actualizada', icon: 'refresh-circle', color: '#ec4899' },
+    { key: 'ASIGNACION_COMPLETADA', label: 'Asignación Completada', icon: 'check-circle', color: '#14b8a6' },
   ];
   
   PAGE_SIZE = 50;
@@ -340,7 +340,7 @@ export class NotificationDashboardComponent implements OnInit {
     return notifs;
   });
   
-  // Total de p├íginas
+  // Total de páginas
   totalPages = computed(() => {
     return Math.ceil(this.filteredNotificaciones().length / this.PAGE_SIZE);
   });

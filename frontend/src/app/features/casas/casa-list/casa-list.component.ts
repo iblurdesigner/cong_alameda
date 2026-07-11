@@ -12,7 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
-      <!-- Modal de Confirmaci├│n -->
+      <!-- Modal de Confirmación -->
       @if (confirmDelete()) {
         <div class="modal-overlay" (click)="cancelDelete()">
           <div class="modal-box" (click)="$event.stopPropagation()">
@@ -22,7 +22,7 @@ import { AuthService } from '../../../core/services/auth.service';
               </svg>
             </div>
             <h3 class="modal-title">Eliminar Casa</h3>
-            <p class="modal-message">┬┐Est├í seguro de eliminar esta casa? Esta acci├│n no se puede deshacer.</p>
+            <p class="modal-message">¿Está seguro de eliminar esta casa? Esta acción no se puede deshacer.</p>
             <div class="modal-actions">
               <button class="btn btn-secondary" (click)="cancelDelete()">Cancelar</button>
               <button class="btn btn-danger" (click)="confirmDeleteAction()">Eliminar</button>
@@ -34,7 +34,7 @@ import { AuthService } from '../../../core/services/auth.service';
       <header class="page-header">
         <div class="header-content">
           <h1>Casas</h1>
-          <p class="header-subtitle">Gesti├│n de casas con motivo "no visitar"</p>
+          <p class="header-subtitle">Gestión de casas con motivo "no visitar"</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <a routerLink="/casas/new" class="btn btn-primary btn-mobile-full">
@@ -49,7 +49,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <re-icon icon="search-normal2" size="20" weight="outline" class="search-icon"></re-icon>
           <input 
             type="text" 
-            placeholder="Buscar direcci├│n..." 
+            placeholder="Buscar dirección..." 
             [(ngModel)]="searchTerm"
             (ngModelChange)="onSearch()"
           />
@@ -107,7 +107,7 @@ import { AuthService } from '../../../core/services/auth.service';
               </div>
               <div class="card-footer">
                 <span class="card-date">≡ƒôà {{ formatDate(casa.fecha_registro) }}</span>
-                <span class="card-action">Ver ΓåÆ</span>
+                <span class="card-action">Ver →</span>
               </div>
             </div>
           }
@@ -118,7 +118,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <table class="data-table">
             <thead>
               <tr>
-                <th>Direcci├│n</th>
+                <th>Dirección</th>
                 <th>Sector</th>
                 <th>Estado</th>
                 <th>Fecha Registro</th>
@@ -165,7 +165,7 @@ import { AuthService } from '../../../core/services/auth.service';
             >
               Anterior
             </button>
-            <span class="page-info">P├ígina {{ casaService.currentPage() }}</span>
+            <span class="page-info">Página {{ casaService.currentPage() }}</span>
             <button 
               class="btn btn-outline btn-sm"
               [disabled]="casaService.casas().length < 20"

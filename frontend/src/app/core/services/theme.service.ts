@@ -60,7 +60,7 @@ export class ThemeService implements OnDestroy {
     this.isDark.set(value);
   }
 
-  // M├⌐todo para resetear a preferencia del sistema
+  // Método para resetear a preferencia del sistema
   resetToSystemPreference() {
     localStorage.removeItem(this.STORAGE_KEY);
     if (window.matchMedia) {

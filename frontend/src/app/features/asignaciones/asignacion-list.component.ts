@@ -18,7 +18,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <header class="header">
         <div class="header-left">
           <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Asignaciones Semanales</h1>
-          <p>Programa el equipo de servicio para cada d├¡a de la semana</p>
+          <p>Programa el equipo de servicio para cada día de la semana</p>
         </div>
         <div class="header-actions">
           <button class="btn btn-outline" (click)="openPdfExportModal()">
@@ -26,7 +26,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           </button>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary btn-lg" (click)="openBulkModal()">
-              <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Nueva Programaci├│n
+              <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Nueva Programación
             </button>
           }
         </div>
@@ -36,12 +36,12 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         <div class="calendar-container">
           <div class="calendar">
             <div class="calendar-header">
-              <button class="nav-btn" (click)="previousMonth()">Γ¥«</button>
+              <button class="nav-btn" (click)="previousMonth()">❮</button>
               <span class="month-title">{{ getMonthName(calendarMonth) }} {{ calendarYear }}</span>
-              <button class="nav-btn" (click)="nextMonth()">Γ¥»</button>
+              <button class="nav-btn" (click)="nextMonth()">❯</button>
             </div>
             <div class="weekdays">
-              <span>Dom</span><span>Lun</span><span>Mar</span><span>Mi├⌐</span><span>Jue</span><span>Vie</span><span>S├íb</span>
+              <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
             </div>
             <div class="days">
               @for (day of calendarDays; track $index) {
@@ -124,7 +124,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                         </span>
                         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                           <button class="btn-icon" (click)="editAsignacion(asignacion, tipo, getDayOfWeek(selectedDate!))">
-                            Γ£Å
+                            ✏
                           </button>
                         }
                       </div>
@@ -166,7 +166,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           </div>
         } @else {
           <div class="empty-state">
-            <p>Selecciona un d├¡a del calendario para ver sus asignaciones</p>
+            <p>Selecciona un día del calendario para ver sus asignaciones</p>
           </div>
         }
 
@@ -177,14 +177,14 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="modal-overlay" (click)="closeAssignModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>{{ assignForm.isEditing ? 'Γ£Å Editar Asignaci├│n' : 'Agregar Persona' }}</h2>
-            <button class="btn-close" (click)="closeAssignModal()">├ù</button>
+            <h2>{{ assignForm.isEditing ? '✏ Editar Asignación' : 'Agregar Persona' }}</h2>
+            <button class="btn-close" (click)="closeAssignModal()">×</button>
           </div>
           <div class="modal-body">
             <!-- Show current assignment info when editing -->
             @if (assignForm.isEditing && editingAsignacion) {
               <div class="current-assignment-info">
-                <p><strong>Asignaci├│n actual:</strong> 
+                <p><strong>Asignación actual:</strong> 
                   {{ editingAsignacion.user?.nombre || editingAsignacion.grupo?.nombre || 'Sin asignar' }}
                   @if (editingAsignacion.grupo) {
                     <span class="grupo-badge">Grupo</span>
@@ -195,7 +195,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
             <!-- Assignment Type Selector -->
             <div class="form-group">
-              <label for="tipoAsignacion">Tipo de Asignaci├│n *</label>
+              <label for="tipoAsignacion">Tipo de Asignación *</label>
               <select id="tipoAsignacion" [(ngModel)]="assignForm.tipo_id" (ngModelChange)="onTipoChange()">
                 <option value="">Seleccionar tipo...</option>
                 @for (tipo of getTiposList(); track tipo.id) {
@@ -275,7 +275,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         <div class="modal-full" (click)="$event.stopPropagation()">
           <div class="modal-header-simple">
             <h2><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Programar Asignaciones</h2>
-            <button class="btn-close" (click)="closeBulkModal()">├ù</button>
+            <button class="btn-close" (click)="closeBulkModal()">×</button>
           </div>
           
           <div class="modal-content">
@@ -284,9 +284,9 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               <h3>Selecciona una fecha</h3>
               <div class="mini-calendar">
                 <div class="mini-cal-header">
-                  <button class="nav-btn-sm" (click)="previousMonth()">Γ¥«</button>
+                  <button class="nav-btn-sm" (click)="previousMonth()">❮</button>
                   <span>{{ getMonthName(calendarMonth) }} {{ calendarYear }}</span>
-                  <button class="nav-btn-sm" (click)="nextMonth()">Γ¥»</button>
+                  <button class="nav-btn-sm" (click)="nextMonth()">❯</button>
                 </div>
                 <div class="mini-weekdays">
                   <span>D</span><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span>
@@ -315,7 +315,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
             <!-- Categories Section -->
             <div class="categories-section">
-              <h3>Categor├¡as y Personal</h3>
+              <h3>Categorías y Personal</h3>
               
               @for (tipo of getTiposList(); track tipo.id) {
                 <div class="category-card">
@@ -328,7 +328,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                     @for (assignment of getBulkAssignments(tipo.id); track $index) {
                       <div class="assignment-chip">
                         <span>{{ getUserName(assignment.userId) }}</span>
-                        <button class="remove-btn" (click)="removeBulkAssignment(tipo.id, $index)">├ù</button>
+                        <button class="remove-btn" (click)="removeBulkAssignment(tipo.id, $index)">×</button>
                       </div>
                     }
                   </div>
@@ -374,8 +374,8 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="modal-overlay" (click)="closeSummaryModal()">
         <div class="modal modal-xl" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>Γ£à Asignaciones Guardadas</h2>
-            <button class="btn-close" (click)="closeSummaryModal()">├ù</button>
+            <h2>✅ Asignaciones Guardadas</h2>
+            <button class="btn-close" (click)="closeSummaryModal()">×</button>
           </div>
           <div class="modal-body">
             <p class="summary-intro">Se han guardado las siguientes asignaciones:</p>
@@ -405,7 +405,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             
             @if (summaryData.length === 0) {
               <div class="empty-summary">
-                <p>No hay asignaciones guardadas todav├¡a.</p>
+                <p>No hay asignaciones guardadas todavía.</p>
               </div>
             }
           </div>
@@ -427,7 +427,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2><re-icon icon="export-12" size="18" weight="outline"></re-icon> Seleccionar Semanas para PDF</h2>
-            <button class="btn-close" (click)="closePdfExportModal()">├ù</button>
+            <button class="btn-close" (click)="closePdfExportModal()">×</button>
           </div>
           <div class="modal-body">
             <!-- Filtros -->
@@ -723,7 +723,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
     .day.weekend { background: rgba(245, 158, 11, 0.15); }
     .day.selected.weekend { background: var(--primary-color); }
     
-    // Badge/globo alrededor del n├║mero
+    // Badge/globo alrededor del número
     .day-number {
       font-size: 0.875rem;
       font-weight: 500;
@@ -737,7 +737,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       transition: all 0.2s;
     }
     
-    // Estado: d├¡a con asignaciones
+    // Estado: día con asignaciones
     .day-number.with-assignments {
       background: var(--dot-assignments);
       color: white;
@@ -1174,7 +1174,7 @@ export class AsignacionListComponent implements OnInit {
   selectDay(day: { day: number; date: string; otherMonth: boolean; isToday: boolean }) {
     if (day.otherMonth) return;
     
-    // Si el d├¡a tiene asignaciones, navegar a la pantalla de edici├│n de semana
+    // Si el día tiene asignaciones, navegar a la pantalla de edición de semana
     if (this.hasAssignments(day.date)) {
       // Encontrar la semana que contiene esta fecha
       const semana = this.findSemanaByDate(day.date);
@@ -1183,7 +1183,7 @@ export class AsignacionListComponent implements OnInit {
         void this.router.navigate(['/asignaciones/semana', semana.id]);
         return;
       } else {
-        console.warn('No se encontr├│ semana para la fecha:', day.date);
+        console.warn('No se encontró semana para la fecha:', day.date);
       }
     }
     
@@ -1191,7 +1191,7 @@ export class AsignacionListComponent implements OnInit {
     this.selectedDate = day.date;
   }
 
-  // Encontrar la semana que contiene una fecha espec├¡fica
+  // Encontrar la semana que contiene una fecha específica
   findSemanaByDate(dateStr: string): Semana | null {
     // Usar parsing de fecha local para evitar problemas de timezone
     const parts = dateStr.split('-');
@@ -1490,7 +1490,7 @@ export class AsignacionListComponent implements OnInit {
   }
   
   getDiaNombre(diaSemana: number): string {
-    const nombres = ['Domingo', 'Lunes', 'Martes', 'Mi├⌐rcoles', 'Jueves', 'Viernes', 'S├íbado'];
+    const nombres = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     return nombres[diaSemana] || '';
   }
   
@@ -1498,9 +1498,9 @@ export class AsignacionListComponent implements OnInit {
     const nombres: Record<string, string> = {
       'ACOMODADOR_SALON': 'Acomodador',
       'PARQUEADERO': 'Parqueadero',
-      'MICROFONO': 'Micr├│fono',
+      'MICROFONO': 'Micrófono',
       'PLATAFORMA': 'Plataforma',
-      'ASEO_SALON': 'Aseo del Sal├│n',
+      'ASEO_SALON': 'Aseo del Salón',
       'PRESIDENTE': 'Presidente',
       'LECTOR_ATALAYA': 'Lector Atalaya'
     };
@@ -1943,9 +1943,9 @@ export class AsignacionListComponent implements OnInit {
       { id: '161a5d7c-2dd3-46ca-aebf-e319c1295a01', nombre: 'LECTOR_ATALAYA', icono: 'document-text2', descripcion: 'Lector Atalaya' },
       { id: '9bb8d1a0-f9dd-48fa-932a-229090f4e2aa', nombre: 'ACOMODADOR_SALON', icono: 'note-text2', descripcion: 'Acomodador' },
       { id: '96014a5f-834e-44fd-92af-73d36850eb88', nombre: 'PARQUEADERO', icono: 'smart-car2', descripcion: 'Parqueadero' },
-      { id: 'de3076d0-5896-4ee6-a113-41212893856e', nombre: 'MICROFONO', icono: 'user-circle', descripcion: 'Micr├│fono' },
+      { id: 'de3076d0-5896-4ee6-a113-41212893856e', nombre: 'MICROFONO', icono: 'user-circle', descripcion: 'Micrófono' },
       { id: '74c7a6e6-a3aa-4bd8-a129-7b1c2a2c1b99', nombre: 'PLATAFORMA', icono: 'chart-square', descripcion: 'Plataforma' },
-      { id: 'b10c74a7-ba4c-4a71-b639-1248aa404eb4', nombre: 'ASEO_SALON', icono: 'note-text2', descripcion: 'Aseo del Sal├│n' }
+      { id: 'b10c74a7-ba4c-4a71-b639-1248aa404eb4', nombre: 'ASEO_SALON', icono: 'note-text2', descripcion: 'Aseo del Salón' }
     ] as TipoAsignacion[];
   }
   
@@ -1960,7 +1960,7 @@ export class AsignacionListComponent implements OnInit {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Asignaciones Semanales - Congregaci├│n Alameda</title>
+        <title>Asignaciones Semanales - Congregación Alameda</title>
         <style>
           @page { size: A4; margin: 1.5cm; }
           body { 
@@ -2057,7 +2057,7 @@ export class AsignacionListComponent implements OnInit {
       <body>
         <div class="header">
           <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Asignaciones Semanales</h1>
-          <p>Congregaci├│n Alameda - Programa de Servicio</p>
+          <p>Congregación Alameda - Programa de Servicio</p>
         </div>
     `;
 
@@ -2077,7 +2077,7 @@ export class AsignacionListComponent implements OnInit {
           <table class="tabla-asignaciones">
             <thead>
               <tr>
-                <th style="width: 25%;">Categor├¡a</th>
+                <th style="width: 25%;">Categoría</th>
                 <th style="width: 75%;">Personas Asignadas</th>
               </tr>
             </thead>
@@ -2118,7 +2118,7 @@ export class AsignacionListComponent implements OnInit {
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
-          })} - Congregaci├│n Alameda</p>
+          })} - Congregación Alameda</p>
         </div>
       </body>
       </html>
@@ -2174,7 +2174,7 @@ export class AsignacionListComponent implements OnInit {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Asignaciones Semanales - Congregaci├│n Alameda</title>
+        <title>Asignaciones Semanales - Congregación Alameda</title>
         <style>
           @page { size: A4; margin: 0.5cm; }
           * { box-sizing: border-box; }
@@ -2292,7 +2292,7 @@ export class AsignacionListComponent implements OnInit {
       <body>
         <div class="header">
           <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Asignaciones Semanales</h1>
-          <p>Congregaci├│n Alameda - Programa de Servicio</p>
+          <p>Congregación Alameda - Programa de Servicio</p>
         </div>
         <div class="weeks-container">
     `;
@@ -2317,7 +2317,7 @@ export class AsignacionListComponent implements OnInit {
           <table class="tabla-asignaciones">
             <thead>
               <tr>
-                <th style="width: 25%;">Categor├¡a</th>
+                <th style="width: 25%;">Categoría</th>
                 <th style="width: 75%;">Personas Asignadas</th>
               </tr>
             </thead>
@@ -2382,7 +2382,7 @@ export class AsignacionListComponent implements OnInit {
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
-          })} - Congregaci├│n Alameda</p>
+          })} - Congregación Alameda</p>
         </div>
       </body>
       </html>

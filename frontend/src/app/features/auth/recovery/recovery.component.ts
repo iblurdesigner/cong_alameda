@@ -12,8 +12,8 @@ import { AuthService } from '../../../core/services/auth.service';
     <div class="recovery-container">
       <div class="recovery-card">
         <div class="recovery-header">
-          <h1>Recuperar Contrase├▒a</h1>
-          <p>Ingresa tu nueva contrase├▒a</p>
+          <h1>Recuperar Contraseña</h1>
+          <p>Ingresa tu nueva contraseña</p>
         </div>
 
         @if (error()) {
@@ -24,10 +24,10 @@ import { AuthService } from '../../../core/services/auth.service';
 
         @if (success()) {
           <div class="success-message">
-            <p>┬íContrase├▒a actualizada exitosamente!</p>
-            <p>Ya puedes iniciar sesi├│n con tu nueva contrase├▒a.</p>
+            <p>¡Contraseña actualizada exitosamente!</p>
+            <p>Ya puedes iniciar sesión con tu nueva contraseña.</p>
             <button class="btn btn-primary btn-block" (click)="goToLogin()">
-              Ir a Iniciar Sesi├│n
+              Ir a Iniciar Sesión
             </button>
           </div>
         } @else if (loading()) {
@@ -38,31 +38,31 @@ import { AuthService } from '../../../core/services/auth.service';
         } @else {
           <form (ngSubmit)="onSubmit()" class="recovery-form">
             <div class="form-group">
-              <label for="password">Nueva Contrase├▒a</label>
+              <label for="password">Nueva Contraseña</label>
               <input
                 type="password"
                 id="password"
                 name="password"
                 [(ngModel)]="password"
-                placeholder="M├¡nimo 6 caracteres"
+                placeholder="Mínimo 6 caracteres"
                 required
                 minlength="6"
               />
             </div>
 
             <div class="form-group">
-              <label for="confirmPassword">Confirmar Contrase├▒a</label>
+              <label for="confirmPassword">Confirmar Contraseña</label>
               <input
                 type="password"
                 id="confirmPassword"
                 name="confirmPassword"
                 [(ngModel)]="confirmPassword"
-                placeholder="Repite la contrase├▒a"
+                placeholder="Repite la contraseña"
                 required
               />
               @if (password() && confirmPassword() && password() !== confirmPassword()) {
                 <div class="validation-error">
-                  Las contrase├▒as no coinciden
+                  Las contraseñas no coinciden
                 </div>
               }
             </div>
@@ -72,14 +72,14 @@ import { AuthService } from '../../../core/services/auth.service';
               class="btn btn-primary btn-block"
               [disabled]="loading() || !isValid()"
             >
-              Cambiar Contrase├▒a
+              Cambiar Contraseña
             </button>
           </form>
         }
 
         <div class="back-link">
           <button class="btn-link" (click)="goToLogin()">
-            ΓåÉ Volver al inicio de sesi├│n
+            ← Volver al inicio de sesión
           </button>
         </div>
       </div>
@@ -226,7 +226,7 @@ export class RecoveryComponent implements OnInit {
     this.route.queryParams.subscribe((params: Record<string, string>) => {
       this.token = params['token'] || '';
       if (!this.token) {
-        this.error.set('Token inv├ílido o expirado');
+        this.error.set('Token inválido o expirado');
       }
     });
   }
@@ -258,9 +258,9 @@ export class RecoveryComponent implements OnInit {
         if (err.error?.error === 'token_expired') {
           this.error.set('El enlace ha expirado. Solicita uno nuevo.');
         } else if (err.error?.error === 'invalid_token') {
-          this.error.set('Token inv├ílido. Solicita un nuevo enlace de recuperaci├│n.');
+          this.error.set('Token inválido. Solicita un nuevo enlace de recuperación.');
         } else {
-          this.error.set(err.error?.message || 'Error al cambiar la contrase├▒a');
+          this.error.set(err.error?.message || 'Error al cambiar la contraseña');
         }
       }
     });

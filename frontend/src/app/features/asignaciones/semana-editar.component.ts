@@ -18,7 +18,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <header class="header">
         <div class="header-left">
           <button class="btn-back" (click)="goBack()">
-            ΓåÉ Volver
+            ← Volver
           </button>
           <div class="title-section">
             <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> {{ semana()?.nombre || 'Semana' }}</h1>
@@ -52,7 +52,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                       }
                       @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                         <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
-                          Γ£Å
+                          ✏
                         </button>
                       }
                     </div>
@@ -76,12 +76,12 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               Agregar Persona
             }
             </h2>
-              <button class="btn-close" (click)="closeAssignModal()">├ù</button>
+              <button class="btn-close" (click)="closeAssignModal()">×</button>
             </div>
             <div class="modal-body">
               @if (assignForm.isEditing && editingAsignacion) {
                 <div class="current-assignment-info">
-                  <p><strong>Asignaci├│n actual:</strong> 
+                  <p><strong>Asignación actual:</strong> 
                     {{ editingAsignacion.user?.nombre || editingAsignacion.grupo?.nombre || 'Sin asignar' }}
                     @if (editingAsignacion.grupo) {
                       <span class="grupo-badge">Grupo</span>
@@ -91,7 +91,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               }
 
               <div class="form-group">
-                <label for="tipoAsignacion">Tipo de Asignaci├│n *</label>
+                <label for="tipoAsignacion">Tipo de Asignación *</label>
                 <select id="tipoAsignacion" [(ngModel)]="assignForm.tipo_id" disabled>
                   @for (tipo of tipos(); track tipo.id) {
                     <option [value]="tipo.id"><re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon> {{ getTipoNombre(tipo.nombre) }}</option>
@@ -189,7 +189,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       margin-top: 0.25rem;
     }
     
-    /* Resumen Lista - Dise├▒o simple */
+    /* Resumen Lista - Diseño simple */
     .resumen-lista {
       display: flex;
       flex-direction: column;
@@ -433,7 +433,7 @@ export class SemanaEditarComponent implements OnInit {
         console.error('Error cargando semana:', err);
         // Si es 401, no navegar al login - solo mostrar error
         if (err.status === 401) {
-          console.warn('Token inv├ílido o expirado');
+          console.warn('Token inválido o expirado');
         }
       }
     });
@@ -447,7 +447,7 @@ export class SemanaEditarComponent implements OnInit {
       error: (err: { status?: number }) => {
         console.error('Error cargando asignaciones:', err);
         if (err.status === 401) {
-          console.warn('Token inv├ílido o expirado');
+          console.warn('Token inválido o expirado');
         }
       }
     });
@@ -460,7 +460,7 @@ export class SemanaEditarComponent implements OnInit {
       error: (err: { status?: number }) => {
         console.error('Error cargando tipos:', err);
         if (err.status === 401) {
-          console.warn('Token inv├ílido o expirado');
+          console.warn('Token inválido o expirado');
         }
       }
     });
@@ -516,7 +516,7 @@ export class SemanaEditarComponent implements OnInit {
   }
 
   getDiaNombre(diaSemana: number): string {
-    const dias = ['Lunes', 'Martes', 'Mi├⌐rcoles', 'Jueves', 'Viernes', 'S├íbado', 'Domingo'];
+    const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
     return dias[diaSemana] || '';
   }
 
@@ -549,7 +549,7 @@ export class SemanaEditarComponent implements OnInit {
     return this.asignaciones().find(a => a.dia_semana === diaSemana && a.tipo_asignacion_id === tipoId) || null;
   }
 
-  // Obtiene las personas asignadas para un tipo espec├¡fico
+  // Obtiene las personas asignadas para un tipo específico
   getPersonasConAsignaciones(tipoId: string): { nombre: string; diaSemana: number; esGrupo: boolean; userId?: string; grupoId?: string; asignacionId: string }[] {
     const tipoAsignaciones = this.asignaciones().filter(a => a.tipo_asignacion_id === tipoId);
     const result: { nombre: string; diaSemana: number; esGrupo: boolean; userId?: string; grupoId?: string; asignacionId: string }[] = [];
@@ -575,11 +575,11 @@ export class SemanaEditarComponent implements OnInit {
       }
     }
     
-    // Ordenar por d├¡a de la semana
+    // Ordenar por día de la semana
     return result.sort((a, b) => a.diaSemana - b.diaSemana);
   }
 
-  // Obtiene los d├¡as sin asignar para un tipo espec├¡fico
+  // Obtiene los días sin asignar para un tipo específico
   getDiasSinAsignar(tipoId: string): number[] {
     const diasAsignados = this.asignaciones()
       .filter(a => a.tipo_asignacion_id === tipoId)
@@ -589,7 +589,7 @@ export class SemanaEditarComponent implements OnInit {
     return todosDias.filter(dia => !diasAsignados.includes(dia));
   }
 
-  // Abre el modal de asignaci├│n para un tipo y d├¡a espec├¡ficos
+  // Abre el modal de asignación para un tipo y día específicos
   openAssignModalByTipoAndDia(tipoId: string, diaSemana: number) {
     const tipo = this.tipos().find(t => t.id === tipoId);
     if (tipo) {
@@ -597,7 +597,7 @@ export class SemanaEditarComponent implements OnInit {
     }
   }
 
-  // Edita una asignaci├│n directa por ID
+  // Edita una asignación directa por ID
   editAsignacionDirecta(asignacionId: string, tipoId: string, diaSemana: number) {
     const asignacion = this.asignaciones().find(a => a.id === asignacionId);
     const tipo = this.tipos().find(t => t.id === tipoId);
@@ -668,7 +668,7 @@ export class SemanaEditarComponent implements OnInit {
     if (!this.editingAsignacion) return;
     const semana = this.semana();
     
-    if (confirm('┬┐Est├ís seguro de eliminar esta asignaci├│n?')) {
+    if (confirm('¿Estás seguro de eliminar esta asignación?')) {
       this.asignacionService.deleteAsignacion(this.editingAsignacion.id).subscribe(() => {
         this.closeAssignModal();
         if (semana) this.loadData(semana.id);

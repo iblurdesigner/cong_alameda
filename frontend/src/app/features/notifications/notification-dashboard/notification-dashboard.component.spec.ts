@@ -38,14 +38,14 @@ describe('NotificationDashboardComponent', () => {
     {
       id: '4',
       tipo: 'ASIGNACION_CREADA',
-      mensaje: 'Nueva asignaci├│n: Usher para el domingo',
+      mensaje: 'Nueva asignación: Usher para el domingo',
       leida: false,
       created_at: '2024-04-24T08:00:00Z',
     },
     {
       id: '5',
       tipo: 'ASIGNACION_ACTUALIZADA',
-      mensaje: 'Asignaci├│n de Parking actualizada',
+      mensaje: 'Asignación de Parking actualizada',
       leida: true,
       created_at: '2024-04-23T16:00:00Z',
     },
@@ -64,8 +64,8 @@ describe('NotificationDashboardComponent', () => {
       unreadCount: _unreadSignal.asReadonly(),
       loading: _loadingSignal.asReadonly(),
       loadNotifications: jest.fn().mockReturnValue(of({ data: mockNotificaciones, unread_count: 3 })),
-      markAsRead: jest.fn().mockReturnValue(of({ message: 'Notificaci├│n marcada como le├¡da' })),
-      markAllAsRead: jest.fn().mockReturnValue(of({ message: 'Todas las notificaciones marcadas como le├¡das' })),
+      markAsRead: jest.fn().mockReturnValue(of({ message: 'Notificación marcada como leída' })),
+      markAllAsRead: jest.fn().mockReturnValue(of({ message: 'Todas las notificaciones marcadas como leídas' })),
       _notifSignal,
       _unreadSignal,
       _loadingSignal,
@@ -112,9 +112,9 @@ describe('NotificationDashboardComponent', () => {
       expect(compiled.textContent).toContain('3 sin leer');
     });
 
-    it('should display "Marcar todas como le├¡das" button', () => {
+    it('should display "Marcar todas como leídas" button', () => {
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.textContent).toContain('Marcar todas como le├¡das');
+      expect(compiled.textContent).toContain('Marcar todas como leídas');
     });
   });
 
@@ -419,7 +419,7 @@ describe('NotificationDashboardComponent', () => {
       fixture.detectChanges();
 
       const pageInfo = fixture.nativeElement.querySelector('.page-info');
-      expect(pageInfo?.textContent).toContain('P├ígina 2');
+      expect(pageInfo?.textContent).toContain('Página 2');
     });
 
     it('should disable prev button on page 1', () => {
@@ -574,11 +574,11 @@ describe('NotificationDashboardComponent - tipos config', () => {
   const tipos = [
     { key: 'CASA_REGISTRADA', label: 'Casas', icon: '≡ƒÅá', color: '#22c55e' },
     { key: 'VISITA_PROGRAMADA', label: 'Visitas', icon: '≡ƒôà', color: '#3b82f6' },
-    { key: 'VISITA_COMPLETADA', label: 'Completadas', icon: 'Γ£à', color: '#10b981' },
+    { key: 'VISITA_COMPLETADA', label: 'Completadas', icon: '✅', color: '#10b981' },
     { key: 'PERSONA_REQUIERE_VISITA', label: 'Requiere Visita', icon: '≡ƒñ¥', color: '#f59e0b' },
-    { key: 'ASIGNACION_CREADA', label: 'Asignaci├│n Nueva', icon: '≡ƒÄñ', color: '#8b5cf6' },
-    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignaci├│n Actualizada', icon: '≡ƒöä', color: '#ec4899' },
-    { key: 'ASIGNACION_COMPLETADA', label: 'Asignaci├│n Completada', icon: '≡ƒÄ»', color: '#14b8a6' },
+    { key: 'ASIGNACION_CREADA', label: 'Asignación Nueva', icon: '≡ƒÄñ', color: '#8b5cf6' },
+    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignación Actualizada', icon: '≡ƒöä', color: '#ec4899' },
+    { key: 'ASIGNACION_COMPLETADA', label: 'Asignación Completada', icon: '≡ƒÄ»', color: '#14b8a6' },
   ];
 
   it('should have all required notification types defined', () => {

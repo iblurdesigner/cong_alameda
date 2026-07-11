@@ -12,8 +12,8 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
     <div class="login-container">
       <div class="login-card">
         <div class="login-header">
-          <h1>App Congregaci├│n Alameda</h1>
-          <p>Sistema de Gesti├│n del Superintendente de Servicio</p>
+          <h1>App Congregación Alameda</h1>
+          <p>Sistema de Gestión del Superintendente de Servicio</p>
         </div>
         
         <form (ngSubmit)="onSubmit()" class="login-form">
@@ -25,12 +25,12 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
 
           <div class="forgot-password">
             <button type="button" class="btn-link" (click)="goToRecovery()">
-              ┬┐Olvidaste tu contrase├▒a?
+              ¿Olvidaste tu contraseña?
             </button>
           </div>
           
           <div class="form-group">
-            <label for="email">Correo Electr├│nico</label>
+            <label for="email">Correo Electrónico</label>
             <input 
               type="email" 
               id="email" 
@@ -42,13 +42,13 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
           </div>
           
           <div class="form-group">
-            <label for="password">Contrase├▒a</label>
+            <label for="password">Contraseña</label>
             <input 
               type="password" 
               id="password" 
               name="password" 
               [(ngModel)]="password"
-              placeholder="Tu contrase├▒a"
+              placeholder="Tu contraseña"
               required
             />
           </div>
@@ -201,7 +201,7 @@ export class LoginComponent {
       },
       error: (err: { error?: { message?: string } }) => {
         this.loading.set(false);
-        this.error.set(err.error?.message || 'Credenciales inv├ílidas');
+        this.error.set(err.error?.message || 'Credenciales inválidas');
       }
     });
   }

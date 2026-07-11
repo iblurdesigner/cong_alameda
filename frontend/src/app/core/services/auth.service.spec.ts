@@ -24,7 +24,7 @@ describe('AuthService', () => {
 
   const mockUser: User = {
     id: '1',
-    nombre: 'Juan P├⌐rez',
+    nombre: 'Juan Pérez',
     email: 'juan@iglesia.org',
     telefono: '1234567890',
     rol: 'SUPERINTENDENTE',

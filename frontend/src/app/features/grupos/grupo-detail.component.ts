@@ -16,10 +16,10 @@ import { environment } from '../../../environments/environment';
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <a routerLink="/grupos" class="back-link">ΓåÉ Volver a Grupos</a>
+          <a routerLink="/grupos" class="back-link">← Volver a Grupos</a>
           @if (grupo()) {
             <h1>{{ grupo()!.nombre }}</h1>
-            <p>Grupo #{{ grupo()!.numero }} ΓÇó {{ grupo()!.territorios?.length || 0 }} territorios</p>
+            <p>Grupo #{{ grupo()!.numero }} • {{ grupo()!.territorios?.length || 0 }} territorios</p>
           }
         </div>
         @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && grupo()) {
@@ -56,7 +56,7 @@ import { environment } from '../../../environments/environment';
                 <div class="territorio-info">
                   <h4>{{ territorio.nombre }}</h4>
                   <p class="file-info">
-                    {{ territorio.nombre_original }} ΓÇó {{ formatSize(territorio.tamano) }}
+                    {{ territorio.nombre_original }} • {{ formatSize(territorio.tamano) }}
                   </p>
                   <p class="upload-info">
                     Subido por {{ territorio.subido_por }} el {{ formatDate(territorio.created_at) }}
@@ -94,7 +94,7 @@ import { environment } from '../../../environments/environment';
       }
     </div>
 
-    <!-- Modal de Previsualizaci├│n -->
+    <!-- Modal de Previsualización -->
     @if (previewTerritorio()) {
       <div class="modal-overlay" (click)="closePreview()">
         <div class="modal-content" (click)="$event.stopPropagation()">
@@ -109,7 +109,7 @@ import { environment } from '../../../environments/environment';
               >
                 <re-icon icon="link-12" size="18" weight="outline"></re-icon> Nueva pestaña
               </a>
-              <button class="modal-close" (click)="closePreview()">Γ£ò</button>
+              <button class="modal-close" (click)="closePreview()">✕</button>
             </div>
           </div>
           <div class="modal-body">
@@ -128,7 +128,7 @@ import { environment } from '../../../environments/environment';
                   (click)="openInNewTab(previewTerritorio()!)" 
                   class="btn-link"
                 >
-                  Abrir en nueva pesta├▒a
+                  Abrir en nueva pestaña
                 </a>
               </div>
             }
@@ -432,7 +432,7 @@ export class GrupoDetailComponent implements OnInit {
   }
   
   deleteTerritorio(territorio: Territorio) {
-    if (confirm(`┬┐Eliminar "${territorio.nombre}"?`)) {
+    if (confirm(`¿Eliminar "${territorio.nombre}"?`)) {
       this.territorioService.deleteTerritorio(territorio.id).subscribe({
         next: () => {
           const current = this.grupo();

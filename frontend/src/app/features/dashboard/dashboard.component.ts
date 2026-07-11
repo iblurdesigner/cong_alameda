@@ -71,7 +71,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
         </div>
         
         <div class="quick-actions">
-          <h2>Acciones R├ípidas</h2>
+          <h2>Acciones Rápidas</h2>
           <div class="actions-grid">
             <a routerLink="/casas/new" class="action-card">
               <re-icon icon="add-square2" size="24" weight="outline" class="action-icon"></re-icon>

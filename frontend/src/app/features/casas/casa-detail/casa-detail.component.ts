@@ -12,7 +12,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
   template: `
     <div class="page-container">
       <header class="page-header">
-        <a routerLink="/casas" class="back-link">ΓåÉ Volver a Casas</a>
+        <a routerLink="/casas" class="back-link">← Volver a Casas</a>
       </header>
       
       @if (loading()) {
@@ -22,7 +22,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
           <div class="main-content">
             <div class="card">
               <div class="card-header">
-                <h2>Informaci├│n de la Casa</h2>
+                <h2>Información de la Casa</h2>
                 <span class="badge" [ngClass]="getEstadoClass(casa()!.estado)">
                   {{ getEstadoLabel(casa()!.estado) }}
                 </span>
@@ -30,7 +30,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
               
               <div class="info-grid">
                 <div class="info-item">
-                  <label>Direcci├│n</label>
+                  <label>Dirección</label>
                   <span class="value">
                     {{ casa()!.calle_principal }} {{ casa()!.numeracion }}
                     @if (casa()!.calle_secundaria) {
@@ -82,7 +82,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                       <div class="visit-header">
                         <span class="visit-date">
                           @if (visita.estado === 'REALIZADA' && visita.fecha_realizada) {
-                            Γ£à {{ formatDate(visita.fecha_realizada) }}
+                            ✅ {{ formatDate(visita.fecha_realizada) }}
                           } @else {
                             <re-icon icon="calendar-12" size="18" weight="outline"></re-icon> {{ formatDate(visita.fecha_programada) }}
                           }
@@ -104,7 +104,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                         <p class="visit-obs">{{ visita.observaciones }}</p>
                       }
                       
-                      <span class="click-hint">Click para ver detalles ΓåÆ</span>
+                      <span class="click-hint">Click para ver detalles →</span>
                     </div>
                   }
                 </div>
@@ -114,7 +114,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
           
           <div class="actions-sidebar">
             <a [routerLink]="['/casas', casa()!.id, 'edit']" class="btn btn-primary btn-block">
-              Γ£Å Editar Casa
+              ✏ Editar Casa
             </a>
             <a [routerLink]="['/visitas']" [queryParams]="{casa_id: casa()!.id}" class="btn btn-outline btn-block">
               <re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Ver Visitas
@@ -130,12 +130,12 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
         <div class="modal-content" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>Detalle de la Visita</h2>
-            <button class="modal-close" (click)="closeModal()">Γ£ò</button>
+            <button class="modal-close" (click)="closeModal()">✕</button>
           </div>
           
           <div class="modal-body">
             <div class="detail-section">
-              <h3><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Programaci├│n</h3>
+              <h3><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Programación</h3>
               <div class="detail-row">
                 <span class="detail-label">Fecha Programada:</span>
                 <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_programada) }}</span>
@@ -150,9 +150,9 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
 
             @if (selectedVisit()!.fecha_realizada) {
               <div class="detail-section">
-                <h3>Γ£à Visita Realizada</h3>
+                <h3>✅ Visita Realizada</h3>
                 <div class="detail-row">
-                  <span class="detail-label">Fecha de Realizaci├│n:</span>
+                  <span class="detail-label">Fecha de Realización:</span>
                   <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_realizada!) }}</span>
                 </div>
               </div>
@@ -183,7 +183,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                 <div class="detail-row">
                   <span class="detail-label">Desea seguir recibiendo:</span>
                   <span class="detail-value" [class.text-success]="selectedVisit()!.desea_seguir_recibiendo" [class.text-danger]="!selectedVisit()!.desea_seguir_recibiendo">
-                    {{ selectedVisit()!.desea_seguir_recibiendo ? 'Γ£à S├¡' : 'Γ¥î No' }}
+                    {{ selectedVisit()!.desea_seguir_recibiendo ? '✅ Sí' : '❌ No' }}
                   </span>
                 </div>
               </div>

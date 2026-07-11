@@ -17,8 +17,8 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1><re-icon icon="smart-car2" size="24" weight="outline"></re-icon> Predicaci├│n Visita</h1>
-          <p class="header-subtitle">Personaliza la programaci├│n diaria para cada visita</p>
+          <h1><re-icon icon="smart-car2" size="24" weight="outline"></re-icon> Predicación Visita</h1>
+          <p class="header-subtitle">Personaliza la programación diaria para cada visita</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
@@ -27,19 +27,19 @@ import { AuthService } from '../../core/services/auth.service';
         }
       </header>
 
-      <!-- Selector de D├¡a para cargar plantilla -->
+      <!-- Selector de Día para cargar plantilla -->
       <div class="plantilla-section">
-        <h3><re-icon icon="import-12" size="18" weight="outline"></re-icon> Cargar desde D├¡a Predicaci├│n</h3>
+        <h3><re-icon icon="import-12" size="18" weight="outline"></re-icon> Cargar desde Día Predicación</h3>
         <div class="form-row">
           <div class="form-group">
-            <label for="dia_plantilla">Seleccionar D├¡a:</label>
+            <label for="dia_plantilla">Seleccionar Día:</label>
             <select id="dia_plantilla" [(ngModel)]="diaPlantilla" (change)="onDiaChange()">
               <option [value]="0">Lunes</option>
               <option [value]="1">Martes</option>
-              <option [value]="2">Mi├⌐rcoles</option>
+              <option [value]="2">Miércoles</option>
               <option [value]="3">Jueves</option>
               <option [value]="4">Viernes</option>
-              <option [value]="5">S├íbado</option>
+              <option [value]="5">Sábado</option>
               <option [value]="6">Domingo</option>
             </select>
           </div>
@@ -96,7 +96,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 @if (visita.lugar_direccion) {
                   <div class="info-row">
-                    <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Direcci├│n:</span>
+                    <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Dirección:</span>
                     <span class="value">{{ visita.lugar_direccion }}</span>
                   </div>
                 }
@@ -110,9 +110,9 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
 
               <div class="visita-actions">
-                <span class="btn-view" (click)="viewVisita(visita)">≡ƒæü∩╕Å Ver</span>
+                <span class="btn-view" (click)="viewVisita(visita)">≡ƒæü️ Ver</span>
 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                  <span class="btn-edit" (click)="editVisita(visita)">Γ£Å∩╕Å Editar</span>
+                  <span class="btn-edit" (click)="editVisita(visita)">✏️ Editar</span>
                 }
               </div>
             </div>
@@ -127,7 +127,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>{{ editing() ? 'Editar' : 'Nueva' }} Visita</h2>
-            <button class="btn-close" (click)="closeModal()">├ù</button>
+            <button class="btn-close" (click)="closeModal()">×</button>
           </div>
           <div class="modal-body">
             <div class="form-row">
@@ -136,14 +136,14 @@ import { AuthService } from '../../core/services/auth.service';
                 <input type="date" id="fecha" [(ngModel)]="formData.fecha" required />
               </div>
               <div class="form-group">
-                <label for="dia_semana">D├¡a *</label>
+                <label for="dia_semana">Día *</label>
                 <select id="dia_semana" [(ngModel)]="formData.dia_semana" required>
                   <option [value]="0">Lunes</option>
                   <option [value]="1">Martes</option>
-                  <option [value]="2">Mi├⌐rcoles</option>
+                  <option [value]="2">Miércoles</option>
                   <option [value]="3">Jueves</option>
                   <option [value]="4">Viernes</option>
-                  <option [value]="5">S├íbado</option>
+                  <option [value]="5">Sábado</option>
                   <option [value]="6">Domingo</option>
                 </select>
               </div>
@@ -160,14 +160,14 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
 
-            <h3 class="section-title">Lugar de Predicaci├│n</h3>
+            <h3 class="section-title">Lugar de Predicación</h3>
             <div class="form-group">
               <label for="lugar_nombre">Nombre del Lugar</label>
-              <input type="text" id="lugar_nombre" [(ngModel)]="formData.lugar_nombre" placeholder="Ej: Sal├│n del Reino" />
+              <input type="text" id="lugar_nombre" [(ngModel)]="formData.lugar_nombre" placeholder="Ej: Salón del Reino" />
             </div>
             <div class="form-group">
-              <label for="lugar_direccion">Direcci├│n *</label>
-              <input type="text" id="lugar_direccion" [(ngModel)]="formData.lugar_direccion" placeholder="Calle y n├║mero" />
+              <label for="lugar_direccion">Dirección *</label>
+              <input type="text" id="lugar_direccion" [(ngModel)]="formData.lugar_direccion" placeholder="Calle y número" />
             </div>
 
             <div class="form-row">
@@ -183,12 +183,12 @@ import { AuthService } from '../../core/services/auth.service';
 
             <div class="form-row">
               <div class="form-group">
-                <label for="lugar_codigo_postal">C├│digo Postal</label>
+                <label for="lugar_codigo_postal">Código Postal</label>
                 <input type="text" id="lugar_codigo_postal" [(ngModel)]="formData.lugar_codigo_postal" placeholder="Ej: C1428" />
               </div>
               <div class="form-group">
-                <label for="lugar_pais">Pa├¡s</label>
-                <input type="text" id="lugar_pais" [(ngModel)]="formData.lugar_pais" placeholder="Pa├¡s" />
+                <label for="lugar_pais">País</label>
+                <input type="text" id="lugar_pais" [(ngModel)]="formData.lugar_pais" placeholder="País" />
               </div>
             </div>
 
@@ -205,7 +205,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             @if (editing()) {
-              <button class="btn btn-danger" (click)="deleteVisita()">≡ƒùæ∩╕Å Eliminar</button>
+              <button class="btn btn-danger" (click)="deleteVisita()">≡ƒùæ️ Eliminar</button>
             }
             <div class="spacer"></div>
             <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
@@ -221,7 +221,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>Detalle de Visita</h2>
-            <button class="btn-close" (click)="closeViewModal()">├ù</button>
+            <button class="btn-close" (click)="closeViewModal()">×</button>
           </div>
           <div class="modal-body">
             @if (viewingVisita()!.fecha) {
@@ -232,7 +232,7 @@ import { AuthService } from '../../core/services/auth.service';
             }
             @if (viewingVisita()!.dia_semana_nombre) {
               <div class="info-row">
-                <span class="label">≡ƒôå D├¡a:</span>
+                <span class="label">≡ƒôå Día:</span>
                 <span class="value">{{ viewingVisita()!.dia_semana_nombre }}</span>
               </div>
             }
@@ -252,7 +252,7 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
             @if (viewingVisita()!.lugar_direccion) {
               <div class="info-row">
-                <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Direcci├│n:</span>
+                <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Dirección:</span>
                 <span class="value">{{ viewingVisita()!.lugar_direccion }}</span>
               </div>
               
@@ -285,7 +285,7 @@ import { AuthService } from '../../core/services/auth.service';
             }
             @if (viewingVisita()!.lugar_telefono) {
               <div class="info-row">
-                <span class="label">≡ƒô₧ Tel├⌐fono:</span>
+                <span class="label">≡ƒô₧ Teléfono:</span>
                 <span class="value">{{ viewingVisita()!.lugar_telefono }}</span>
               </div>
             }
@@ -304,7 +304,7 @@ import { AuthService } from '../../core/services/auth.service';
               <a [href]="getExactLocationUrl(viewingVisita()!)"
                  target="_blank"
                  class="btn btn-outline"
-                 title="Abrir ubicaci├│n exacta">
+                 title="Abrir ubicación exacta">
                 ≡ƒôì Ver Coordenadas
               </a>
             } @else if (viewingVisita()!.lugar_direccion) {
@@ -315,8 +315,8 @@ import { AuthService } from '../../core/services/auth.service';
                 ≡ƒöù Ver en Maps
               </a>
             } @else {
-              <button class="btn btn-outline" disabled title="No hay direcci├│n">
-                ≡ƒôì Sin direcci├│n
+              <button class="btn btn-outline" disabled title="No hay dirección">
+                ≡ƒôì Sin dirección
               </button>
             }
             <div class="spacer"></div>
@@ -461,7 +461,7 @@ authService = inject(AuthService);
   viewing = signal(false);
   viewingVisita = signal<ProgramaVisita | null>(null);
   
-  diaPlantilla = 2; // Mi├⌐rcoles por defecto
+  diaPlantilla = 2; // Miércoles por defecto
   fechaBusqueda = '';
 
   formData: {
@@ -498,7 +498,7 @@ authService = inject(AuthService);
 
   ngOnInit() {
     this.loadData();
-    // Cargar programas de pr├⌐dicaci├│n para la plantilla
+    // Cargar programas de prédicación para la plantilla
     this.programaService.loadProgramas().subscribe();
   }
 
@@ -519,12 +519,12 @@ authService = inject(AuthService);
       return;
     }
     
-    // Buscar programa de d├¡a predicacion para el d├¡a seleccionado
+    // Buscar programa de día predicacion para el día seleccionado
     const programas = this.programaService.programas();
     const progDia = programas.find(p => p.dia_semana === this.diaPlantilla);
     
     if (!progDia) {
-      alert('No hay programa configurado para ese d├¡a en D├¡a Predicaci├│n');
+      alert('No hay programa configurado para ese día en Día Predicación');
       return;
     }
 
@@ -558,7 +558,7 @@ authService = inject(AuthService);
       dia_semana: this.diaPlantilla,
       conductor: '',
       hora: '',
-      lugar_nombre: 'Sal├│n del Reino',
+      lugar_nombre: 'Salón del Reino',
       lugar_direccion: '',
       lugar_ciudad: '',
       lugar_provincia: '',
@@ -616,7 +616,7 @@ authService = inject(AuthService);
   }
 
   deleteVisita() {
-    if (confirm('┬┐Eliminar esta visita?')) {
+    if (confirm('¿Eliminar esta visita?')) {
       this.visitaService.deleteVisita(this.editingId()!).subscribe({
         next: () => { this.loadData(); this.closeModal(); }
       });
@@ -712,7 +712,7 @@ authService = inject(AuthService);
 openGoogleMaps() {
     const visita = this.viewingVisita();
     if (!visita?.lugar_direccion) {
-      alert('No hay direcci├│n disponible');
+      alert('No hay dirección disponible');
       return;
     }
     const url = this.getGoogleMapsUrl(visita.lugar_direccion);
@@ -725,10 +725,10 @@ openGoogleMaps() {
     const visita = this.viewingVisita();
     if (!visita) return '';
 
-    let message = '≡ƒôà Informaci├│n de Visita\n\n';
+    let message = '≡ƒôà Información de Visita\n\n';
 
     if (visita.dia_semana_nombre) {
-      message += `≡ƒôå D├¡a: ${visita.dia_semana_nombre}\n`;
+      message += `≡ƒôå Día: ${visita.dia_semana_nombre}\n`;
     }
     if (visita.fecha) {
       message += `≡ƒôà Fecha: ${visita.fecha}\n`;
@@ -744,7 +744,7 @@ openGoogleMaps() {
     }
     if (visita.lugar_direccion) {
       const direccion = this.buildFullAddress(visita.lugar_direccion);
-      message += `≡ƒÅá Direcci├│n: ${direccion}\n`;
+      message += `≡ƒÅá Dirección: ${direccion}\n`;
     }
 
     return message;
@@ -761,7 +761,7 @@ openGoogleMaps() {
   shareByWhatsApp() {
     const url = this.getWhatsAppUrl();
     if (!url) {
-      alert('No hay informaci├│n para compartir');
+      alert('No hay información para compartir');
       return;
     }
     window.open(url, '_blank');

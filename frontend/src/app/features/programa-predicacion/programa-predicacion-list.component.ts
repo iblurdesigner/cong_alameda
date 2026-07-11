@@ -16,8 +16,8 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1><re-icon icon="calendar-12" size="24" weight="outline"></re-icon> D├¡a Predicaci├│n</h1>
-          <p class="header-subtitle">Horario y territorios por d├¡a de la semana</p>
+          <h1><re-icon icon="calendar-12" size="24" weight="outline"></re-icon> Día Predicación</h1>
+          <p class="header-subtitle">Horario y territorios por día de la semana</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
@@ -31,7 +31,7 @@ import { AuthService } from '../../core/services/auth.service';
       } @else if (programas().length === 0) {
         <div class="empty-state">
           <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
-          <p>No hay programas de pr├⌐dicaci├│n registrados</p>
+          <p>No hay programas de prédicación registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="openCreateModal()">
               Crear Primer Programa
@@ -100,20 +100,20 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="modal-overlay" (click)="$event.stopPropagation()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>{{ editingPrograma() ? 'Editar' : 'Nuevo' }} D├¡a de Predicaci├│n</h2>
-            <button class="btn-close" (click)="closeModal()">├ù</button>
+            <h2>{{ editingPrograma() ? 'Editar' : 'Nuevo' }} Día de Predicación</h2>
+            <button class="btn-close" (click)="closeModal()">×</button>
           </div>
           <div class="modal-body">
             <div class="form-row">
               <div class="form-group">
-                <label for="dia_semana">D├¡a *</label>
+                <label for="dia_semana">Día *</label>
                 <select id="dia_semana" [(ngModel)]="formData.dia_semana" required>
                   <option [value]="0">Lunes</option>
                   <option [value]="1">Martes</option>
-                  <option [value]="2">Mi├⌐rcoles</option>
+                  <option [value]="2">Miércoles</option>
                   <option [value]="3">Jueves</option>
                   <option [value]="4">Viernes</option>
-                  <option [value]="5">S├íbado</option>
+                  <option [value]="5">Sábado</option>
                   <option [value]="6">Domingo</option>
                 </select>
               </div>
@@ -152,7 +152,7 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
             </div>
 
-            <h3 class="section-title">Lugar de Predicaci├│n</h3>
+            <h3 class="section-title">Lugar de Predicación</h3>
             
             <div class="form-group">
               <label for="lugar_nombre">Nombre del Lugar</label>
@@ -160,17 +160,17 @@ import { AuthService } from '../../core/services/auth.service';
                 type="text" 
                 id="lugar_nombre" 
                 [(ngModel)]="formData.lugar_nombre" 
-                placeholder="Ej: Sal├│n del Reino"
+                placeholder="Ej: Salón del Reino"
               />
             </div>
 
             <div class="form-group">
-              <label for="lugar_direccion">Direcci├│n</label>
+              <label for="lugar_direccion">Dirección</label>
               <input 
                 type="text" 
                 id="lugar_direccion" 
                 [(ngModel)]="formData.lugar_direccion" 
-                placeholder="Direcci├│n del lugar"
+                placeholder="Dirección del lugar"
               />
             </div>
 
@@ -196,12 +196,12 @@ import { AuthService } from '../../core/services/auth.service';
                 />
               </div>
               <div class="form-group">
-                <label for="lugar_telefono">Tel├⌐fono</label>
+                <label for="lugar_telefono">Teléfono</label>
                 <input 
                   type="tel" 
                   id="lugar_telefono" 
                   [(ngModel)]="formData.lugar_telefono" 
-                  placeholder="Tel├⌐fono de contacto"
+                  placeholder="Teléfono de contacto"
                 />
               </div>
             </div>
@@ -241,7 +241,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             @if (editingPrograma()) {
-              <button class="btn btn-danger" (click)="deletePrograma()">≡ƒùæ∩╕Å Eliminar</button>
+              <button class="btn btn-danger" (click)="deletePrograma()">≡ƒùæ️ Eliminar</button>
             }
             <div class="spacer"></div>
             <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
@@ -263,16 +263,16 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>≡ƒôà {{ viewingPrograma()?.dia_semana_nombre }}</h2>
-            <button class="btn-close" (click)="closeDetailModal()">├ù</button>
+            <button class="btn-close" (click)="closeDetailModal()">×</button>
           </div>
           <div class="modal-body">
             @if (viewingPrograma()) {
               <div class="detail-grid">
-                <!-- Fecha y D├¡a -->
+                <!-- Fecha y Día -->
                 <div class="detail-section">
-                  <h3 class="section-title">≡ƒôà Programaci├│n</h3>
+                  <h3 class="section-title">≡ƒôà Programación</h3>
                   <div class="detail-row">
-                    <span class="detail-label">D├¡a:</span>
+                    <span class="detail-label">Día:</span>
                     <span class="detail-value">{{ viewingPrograma()?.dia_semana_nombre }}</span>
                   </div>
                   @if (viewingPrograma()?.fecha) {
@@ -299,14 +299,14 @@ import { AuthService } from '../../core/services/auth.service';
 
                 <!-- Lugar -->
                 <div class="detail-section">
-                  <h3 class="section-title">≡ƒôì Lugar de Predicaci├│n</h3>
+                  <h3 class="section-title">≡ƒôì Lugar de Predicación</h3>
                   <div class="detail-row">
                     <span class="detail-label">Nombre:</span>
                     <span class="detail-value">{{ viewingPrograma()?.lugar_nombre || 'Sin asignar' }}</span>
                   </div>
                   @if (viewingPrograma()?.lugar_direccion) {
                     <div class="detail-row">
-                      <span class="detail-label">Direcci├│n:</span>
+                      <span class="detail-label">Dirección:</span>
                       <span class="detail-value">{{ viewingPrograma()?.lugar_direccion }}</span>
                     </div>
                   }
@@ -318,7 +318,7 @@ import { AuthService } from '../../core/services/auth.service';
                   }
                   @if (viewingPrograma()?.lugar_telefono) {
                     <div class="detail-row">
-                      <span class="detail-label">Tel├⌐fono:</span>
+                      <span class="detail-label">Teléfono:</span>
                       <span class="detail-value">{{ viewingPrograma()?.lugar_telefono }}</span>
                     </div>
                   }
@@ -343,7 +343,7 @@ import { AuthService } from '../../core/services/auth.service';
                       }
                     </div>
                   }
-                  <!-- Bot├│n Google Maps -->
+                  <!-- Botón Google Maps -->
                   @if (viewingPrograma()?.lugar_direccion) {
                     <div class="detail-row action-row">
                       @if (hasExactLocation(viewingPrograma())) {
@@ -378,7 +378,7 @@ import { AuthService } from '../../core/services/auth.service';
                 <!-- Territorios -->
                 @if (viewingPrograma()?.territorios && viewingPrograma()!.territorios!.length > 0) {
                   <div class="detail-section">
-                    <h3 class="section-title">≡ƒù║∩╕Å Territorios Asignados</h3>
+                    <h3 class="section-title">≡ƒù║️ Territorios Asignados</h3>
                     <div class="territorios-tags">
                       @for (t of viewingPrograma()?.territorios; track t.id) {
                         <span class="tag territorio-tag">{{ t.nombre }}</span>
@@ -402,7 +402,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="closeDetailModal()">Cerrar</button>
             @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-              <button class="btn btn-primary" (click)="closeDetailModal(); editPrograma(viewingPrograma()!)">Γ£Å∩╕Å Editar</button>
+              <button class="btn btn-primary" (click)="closeDetailModal(); editPrograma(viewingPrograma()!)">✏️ Editar</button>
             }
           </div>
         </div>
@@ -893,10 +893,10 @@ export class ProgramaPredicacionListComponent implements OnInit {
     const mapping: {[key: number]: number} = {
       1: 0, // Lunes
       2: 1, // Martes
-      3: 2, // Mi├⌐rcoles
+      3: 2, // Miércoles
       4: 3, // Jueves
       5: 4, // Viernes
-      6: 5, // S├íbado
+      6: 5, // Sábado
       0: 6  // Domingo
     };
     if (mapping[diaSemana] !== undefined) {
@@ -967,15 +967,15 @@ export class ProgramaPredicacionListComponent implements OnInit {
     const contacto = prog.lugar_contacto || '';
     const telefono = prog.lugar_telefono || '';
     
-    let mensaje = `≡ƒôà *${dia}* - Programa de Predicaci├│n\n\n`;
+    let mensaje = `≡ƒôà *${dia}* - Programa de Predicación\n\n`;
     mensaje += `ΓÅ░ Hora: ${hora}\n`;
     mensaje += `≡ƒôì Lugar: ${lugar}\n`;
-    if (direccion) mensaje += `≡ƒÅá Direcci├│n: ${direccion}\n`;
+    if (direccion) mensaje += `≡ƒÅá Dirección: ${direccion}\n`;
     if (contacto) mensaje += `≡ƒæñ Contacto: ${contacto}\n`;
-    if (telefono) mensaje += `≡ƒô₧ Tel├⌐fono: ${telefono}\n`;
+    if (telefono) mensaje += `≡ƒô₧ Teléfono: ${telefono}\n`;
     
     const mapsUrl = this.getGoogleMapsUrl(direccion);
-    if (mapsUrl) mensaje += `\n≡ƒôì Ubicaci├│n: ${mapsUrl}`;
+    if (mapsUrl) mensaje += `\n≡ƒôì Ubicación: ${mapsUrl}`;
     
     const encoded = encodeURIComponent(mensaje);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
@@ -990,7 +990,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
       conductor: '',
       hora_inicio: '',
       hora_fin: '',
-      lugar_nombre: 'Sal├│n del Reino',
+      lugar_nombre: 'Salón del Reino',
       lugar_direccion: '',
       lugar_ciudad: '',
       lugar_provincia: '',
@@ -1069,9 +1069,9 @@ export class ProgramaPredicacionListComponent implements OnInit {
       lugar_ubicacion: this.formData.lugar_ubicacion || '',
       lugar_contacto: this.formData.lugar_contacto,
       lugar_telefono: this.formData.lugar_telefono,
-      // Siempre incluir grupo_id (string vac├¡o = sin asignar)
+      // Siempre incluir grupo_id (string vacío = sin asignar)
       grupo_id: this.formData.grupo_id || null,
-      // Siempre incluir territorio_ids (array vac├¡o = limpiar territorios)
+      // Siempre incluir territorio_ids (array vacío = limpiar territorios)
       territorio_ids: this.formData.territorio_ids || [],
     };
 
@@ -1104,7 +1104,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
     const prog = this.editingPrograma();
     if (!prog) return;
     
-    if (confirm('┬┐Eliminar este programa de pr├⌐dicaci├│n?')) {
+    if (confirm('¿Eliminar este programa de prédicación?')) {
       this.programaService.deletePrograma(prog.id).subscribe({
         next: () => {
           this.loadData();

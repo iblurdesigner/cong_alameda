@@ -36,7 +36,7 @@ import { environment } from '../../../environments/environment';
         }
 
         <form (ngSubmit)="saveProfile()" class="profile-form">
-          <h2>Informaci├│n Personal</h2>
+          <h2>Información Personal</h2>
           
           <div class="form-group">
             <label for="nombre">Nombre Completo</label>
@@ -51,7 +51,7 @@ import { environment } from '../../../environments/environment';
           </div>
 
           <div class="form-group">
-            <label for="email">Correo Electr├│nico</label>
+            <label for="email">Correo Electrónico</label>
             <input 
               type="email" 
               id="email"
@@ -59,11 +59,11 @@ import { environment } from '../../../environments/environment';
               disabled
               class="input-disabled"
             >
-            <small class="help-text">El correo electr├│nico no se puede modificar</small>
+            <small class="help-text">El correo electrónico no se puede modificar</small>
           </div>
 
           <div class="form-group">
-            <label for="telefono">Tel├⌐fono Celular</label>
+            <label for="telefono">Teléfono Celular</label>
             <input 
               type="tel" 
               id="telefono"
@@ -71,7 +71,7 @@ import { environment } from '../../../environments/environment';
               name="telefono"
               placeholder="+593 99 123 4567"
             >
-            <small class="help-text">Este n├║mero se usar├í para enviar notificaciones por WhatsApp</small>
+            <small class="help-text">Este número se usará para enviar notificaciones por WhatsApp</small>
           </div>
 
           <div class="form-group">
@@ -82,7 +82,7 @@ import { environment } from '../../../environments/environment';
                 name="notificaciones_email"
               >
               <span class="checkbox-text">
-                <re-icon icon="call-12" size="18" weight="outline"></re-icon> Recibir notificaciones por correo electr├│nico
+                <re-icon icon="call-12" size="18" weight="outline"></re-icon> Recibir notificaciones por correo electrónico
               </span>
             </label>
           </div>
@@ -114,10 +114,10 @@ import { environment } from '../../../environments/environment';
 
       <!-- Info Card -->
       <div class="info-card">
-        <h3>Γä╣ Informaci├│n de tu Cuenta</h3>
+        <h3>Γä╣ Información de tu Cuenta</h3>
         <ul>
           <li><strong>Estado:</strong> {{ currentUser()?.activo ? 'Activa' : 'Inactiva' }}</li>
-          <li><strong>Tel├⌐fono validado:</strong> {{ currentUser()?.telefono_validado ? 'S├¡' : 'No' }}</li>
+          <li><strong>Teléfono validado:</strong> {{ currentUser()?.telefono_validado ? 'Sí' : 'No' }}</li>
           <li><strong>Rol:</strong> {{ formatRole(currentUser()?.rol || '') }}</li>
         </ul>
       </div>

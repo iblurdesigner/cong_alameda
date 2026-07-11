@@ -71,19 +71,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/territorios/territorio-list.component').then(m => m.TerritorioListComponent),
     canActivate: [authGuard]
   },
-  // ====== D├¡a Predicaci├│n (antes Semanas) ======
+  // ====== Día Predicación (antes Semanas) ======
   {
     path: 'dia-predicacion',
     loadComponent: () => import('./features/programa-predicacion/programa-predicacion-list.component').then(m => m.ProgramaPredicacionListComponent),
     canActivate: [authGuard]
   },
-  // ====== Predicaci├│n Visita ======
+  // ====== Predicación Visita ======
   {
     path: 'predicacion-visita',
     loadComponent: () => import('./features/programa-visita/programa-visita-list.component').then(m => m.ProgramaVisitaListComponent),
     canActivate: [authGuard]
   },
-  // Las siguientes rutas /semanas/:id son usadas por otros m├│dulos (asignaciones)
+  // Las siguientes rutas /semanas/:id son usadas por otros módulos (asignaciones)
   {
     path: 'semanas/:id',
     loadComponent: () => import('./features/semanas/semana-detail.component').then(m => m.SemanaDetailComponent),
@@ -100,7 +100,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/asignaciones/semana-editar.component').then(m => m.SemanaEditarComponent),
     canActivate: [authGuard]
   },
-  // ====== Backoffice: Gesti├│n de Usuarios ======
+  // ====== Backoffice: Gestión de Usuarios ======
   {
     path: 'usuarios',
     loadComponent: () => import('./features/admin/usuarios/usuarios-list.component').then(m => m.UsuariosListComponent),

@@ -13,7 +13,7 @@ import { ThemeService } from './core/services/theme.service';
   template: `
     @if (authService.isAuthenticated()) {
       <div class="app-layout">
-        <!-- Overlay para m├│vil -->
+        <!-- Overlay para móvil -->
         @if (sidebarOpen()) {
           <div class="overlay" (click)="closeSidebar()"></div>
         }
@@ -75,13 +75,13 @@ import { ThemeService } from './core/services/theme.service';
             <li>
               <a routerLink="/dia-predicacion" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <re-icon icon="calendar-12" size="18" weight="outline" class="icon"></re-icon>
-                D├¡a Predicaci├│n
+                Día Predicación
               </a>
             </li>
             <li>
               <a routerLink="/predicacion-visita" routerLinkActive="active" (click)="closeSidebarOnMobile()">
                 <re-icon icon="smart-car2" size="18" weight="outline" class="icon"></re-icon>
-                Predicaci├│n Visita
+                Predicación Visita
               </a>
             </li>
             <!-- Fase 3: Asignaciones Internas -->
@@ -97,7 +97,7 @@ import { ThemeService } from './core/services/theme.service';
             <!-- Backoffice - Solo SUPER_ADMIN -->
             @if (authService.isSuperAdmin()) {
               <li class="nav-section">
-                <span class="section-label">Administraci├│n</span>
+                <span class="section-label">Administración</span>
               </li>
               <li>
                 <a routerLink="/usuarios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
@@ -121,13 +121,13 @@ import { ThemeService } from './core/services/theme.service';
               <span class="theme-label">{{ themeService.isDark() ? 'Modo Claro' : 'Modo Oscuro' }}</span>
             </button>
             <button class="btn-logout" (click)="logout()">
-              Cerrar Sesi├│n
+              Cerrar Sesión
             </button>
           </div>
         </nav>
         <main class="main-content">
           <header class="mobile-header">
-            <button class="hamburger-btn" (click)="toggleSidebar()" aria-label="Men├║">
+            <button class="hamburger-btn" (click)="toggleSidebar()" aria-label="Menú">
               <span class="hamburger-icon" [class.open]="sidebarOpen()">
                 <span></span>
                 <span></span>
@@ -149,7 +149,7 @@ import { ThemeService } from './core/services/theme.service';
       min-height: 100vh;
     }
 
-    /* Overlay para m├│vil */
+    /* Overlay para móvil */
     .overlay {
       display: none;
       position: fixed;
@@ -328,7 +328,7 @@ import { ThemeService } from './core/services/theme.service';
       transition: margin-left 0.3s ease;
     }
 
-    /* Header m├│vil */
+    /* Header móvil */
     .mobile-header {
       display: none;
       align-items: center;
@@ -382,7 +382,7 @@ import { ThemeService } from './core/services/theme.service';
       color: var(--primary-color);
     }
 
-    /* Responsive - Tablet y m├│vil */
+    /* Responsive - Tablet y móvil */
     @media (max-width: 768px) {
       .overlay {
         display: block;
@@ -430,7 +430,7 @@ export class AppComponent {
   }
 
   closeSidebarOnMobile() {
-    // Cerrar sidebar al hacer click en m├│vil
+    // Cerrar sidebar al hacer click en móvil
     if (window.innerWidth <= 768) {
       this.sidebarOpen.set(false);
     }

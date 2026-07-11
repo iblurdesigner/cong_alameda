@@ -15,7 +15,7 @@ import { AuthService } from '../../core/services/auth.service';
       <header class="page-header">
         <div class="header-content">
           <h1>Semanas de Visita</h1>
-          <p class="header-subtitle">Programaci├│n semanal de territorios por d├¡a</p>
+          <p class="header-subtitle">Programación semanal de territorios por día</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
@@ -48,7 +48,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </span>
               </div>
               <a [routerLink]="['/semanas', semana.id]" class="btn btn-outline btn-sm btn-mobile-full">
-                Ver Detalle ΓåÆ
+                Ver Detalle →
               </a>
             </div>
           }
@@ -62,12 +62,12 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="modal" (click)="$event.stopPropagation()">
           <div class="modal-header">
             <h2>Nueva Semana de Visita</h2>
-            <button class="btn-close" (click)="closeModal()">├ù</button>
+            <button class="btn-close" (click)="closeModal()">×</button>
           </div>
           <div class="modal-body">
             <p class="modal-info">
-              La semana debe comenzar en Lunes y durar 7 d├¡as.
-              Al crear la semana se generar├ín autom├íticamente los 7 d├¡as.
+              La semana debe comenzar en Lunes y durar 7 días.
+              Al crear la semana se generarán automáticamente los 7 días.
             </p>
             <div class="form-group">
               <label for="nombre">Nombre de la Semana *</label>
@@ -90,9 +90,9 @@ import { AuthService } from '../../core/services/auth.service';
               @if (formData.fecha_inicio) {
                 <small class="date-hint" [class.invalid]="!isValidMonday()">
                   @if (isValidMonday()) {
-                    Γ£ô V├ílido: {{ getDayName(formData.fecha_inicio) }}
+                    ✓ Válido: {{ getDayName(formData.fecha_inicio) }}
                   } @else {
-                    Γ£ù La fecha debe ser un Lunes
+                    ✗ La fecha debe ser un Lunes
                   }
                 </small>
               }
@@ -300,7 +300,7 @@ export class SemanaListComponent implements OnInit {
   
   getDayName(dateStr: string): string {
     const date = new Date(dateStr);
-    const days = ['Domingo', 'Lunes', 'Martes', 'Mi├⌐rcoles', 'Jueves', 'Viernes', 'S├íbado'];
+    const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     return days[date.getDay()];
   }
   
