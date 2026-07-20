@@ -31,35 +31,42 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="resumen-lista">
         @for (tipo of tipos(); track tipo.id) {
           @if (getPersonasConAsignaciones(tipo.id); as personas) {
-            @if (personas.length > 0) {
-              <div class="tipo-seccion">
-                <h3 class="tipo-titulo">
+            <div class="tipo-seccion" [class.sin-asignar]="personas.length === 0">
+              <h3 class="tipo-titulo" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
                   <span class="icono">@if (tipo.icono) {
-                <re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon>
-              } @else {
-                <re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>
-              }</span>
+                    <re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon>
+                  } @else {
+                    <re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>
+                  }</span>
                   {{ getTipoNombre(tipo.nombre) }}
-                </h3>
-                
-                <div class="personas-list">
-                  @for (persona of personas; track persona.diaSemana + '-' + persona.userId + '-' + persona.grupoId) {
-                    <div class="persona-card">
-                      <span class="persona-nombre">{{ persona.nombre }}</span>
-                      <span class="persona-dia">{{ getDiaNombre(persona.diaSemana) }}</span>
-                      @if (persona.esGrupo) {
-                        <span class="grupo-badge">Grupo</span>
-                      }
-                      @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                        <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
-                          ✏
-                        </button>
-                      }
-                    </div>
-                  }
                 </div>
+                @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                  <button class="btn-back" style="padding:0.25rem 0.5rem; font-size:0.75rem;" (click)="openAssignModalByTipoAndDia(tipo.id, 3)">
+                    + Asignar
+                  </button>
+                }
+              </h3>
+              
+              <div class="personas-list">
+                @for (persona of personas; track persona.diaSemana + '-' + persona.userId + '-' + persona.grupoId) {
+                  <div class="persona-card">
+                    <span class="persona-nombre">{{ persona.nombre }}</span>
+                    <span class="persona-dia">{{ getDiaNombre(persona.diaSemana) }}</span>
+                    @if (persona.esGrupo) {
+                      <span class="grupo-badge">Grupo</span>
+                    }
+                    @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                      <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
+                        ✏
+                      </button>
+                    }
+                  </div>
+                } @empty {
+                  <span style="color:var(--text-secondary); font-style:italic; font-size:0.875rem;">Sin asignar</span>
+                }
               </div>
-            }
+            </div>
           }
         }
       </div>
@@ -100,6 +107,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               </div>
 
               @if (assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4') {
+                <!-- ONLY group selector for ASEO_SALON -->
                 <div class="form-group">
                   <label for="grupoSelect">Seleccionar Grupo:</label>
                   <select id="grupoSelect" [(ngModel)]="assignForm.grupo_id">
@@ -109,17 +117,18 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                     }
                   </select>
                 </div>
+              } @else {
+                <!-- ONLY person selector for other types -->
+                <div class="form-group">
+                  <label for="nuevaPersona">Seleccionar Persona:</label>
+                  <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
+                    <option value="">Seleccionar persona...</option>
+                    @for (user of users(); track user.id) {
+                      <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                    }
+                  </select>
+                </div>
               }
-              
-              <div class="form-group">
-                <label for="nuevaPersona">{{ assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4' ? 'O seleccionar Persona:' : 'Seleccionar Persona:' }}</label>
-                <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
-                  <option value="">Seleccionar persona...</option>
-                  @for (user of users(); track user.id) {
-                    <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
-                  }
-                </select>
-              </div>
 
               <div class="form-group">
                 <label for="observaciones">Observaciones:</label>
@@ -522,13 +531,18 @@ export class SemanaEditarComponent implements OnInit {
 
   getTipoNombre(nombre: string): string {
     const nombres: Record<string, string> = {
-      'Aseo Salon': 'Aseo Salon',
-      'Microfono': 'Microfono',
+      'Aseo Salon': 'Aseo del Salón',
+      'ASEO_SALON': 'Aseo del Salón',
+      'Microfono': 'Micrófono',
+      'MICROFONO': 'Micrófono',
       'Presidente': 'Presidente',
-      'Lectura': 'Lectura',
-      'Tesoro': 'Tesoro',
+      'PRESIDENTE': 'Presidente',
+      'Lectura': 'Lector',
       'LECTOR_ATALAYA': 'Lector Atalaya',
-      'PRESIDENTE': 'Presidente'
+      'Tesoro': 'Tesoro',
+      'PARQUEADERO': 'Parqueadero',
+      'PLATAFORMA': 'Plataforma',
+      'ACOMODADOR_SALON': 'Acomodador'
     };
     return nombres[nombre] || nombre;
   }
@@ -655,8 +669,9 @@ export class SemanaEditarComponent implements OnInit {
         semana_id: semana.id,
         tipo_asignacion_id: this.assignForm.tipo_id,
         user_id: this.assignForm.user_id,
+        grupo_id: this.assignForm.grupo_id || undefined,
         dia_semana: this.editingDiaSemana,
-        observaciones: this.assignForm.observaciones
+        observaciones: this.assignForm.observaciones || undefined
       }).subscribe(() => {
         this.closeAssignModal();
         this.loadData(semana.id);

@@ -80,6 +80,7 @@ export class AsignacionService {
     semana_id: string;
     tipo_asignacion_id: string;
     user_id: string;
+    grupo_id?: string;
     dia_semana: number;
     observaciones?: string;
   }) {
