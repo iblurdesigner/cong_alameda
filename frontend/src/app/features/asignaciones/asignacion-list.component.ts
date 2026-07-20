@@ -17,9 +17,7 @@ import { AuthService } from '../../core/services/auth.service';
           <p>Programa las asignaciones internas: acomodadores, parqueadero, micrófono, plataforma</p>
         </div>
         @if (authService.isSuperintendente()) {
-          <button class="btn btn-primary" (click)="openBulkModal()">
-            ✏️ Programar Semana
-          </button>
+          <button class="btn btn-primary" (click)="openBulkModal()">✏️ Programar Semana</button>
         }
       </header>
       
@@ -96,7 +94,7 @@ import { AuthService } from '../../core/services/auth.service';
       }
     </div>
 
-    <!-- Assign Modal -->
+    <!-- ASSIGN MODAL -->
     @if (showAssignModal) {
       <div class="modal-overlay" (click)="closeAssignModal()">
         <div class="modal" (click)="$event.stopPropagation()">
@@ -133,7 +131,7 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
     }
 
-    <!-- Bulk Assign Modal -->
+    <!-- BULK ASSIGN MODAL -->
     @if (showBulkModal) {
       <div class="modal-overlay" (click)="closeBulkModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
@@ -166,9 +164,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
-            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
-              Guardar Semana
-            </button>
+            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">Guardar Semana</button>
           </div>
         </div>
       </div>
