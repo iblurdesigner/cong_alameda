@@ -1,18 +1,20 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VisitaService, VisitaStats } from '../../core/services/visita.service';
-import { CasaService } from '../../core/services/casa.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="dashboard">
       <header class="page-header">
-        <h1>Dashboard</h1>
-        <p>Resumen del sistema</p>
+        <div class="header-content">
+          <h1>Dashboard</h1>
+          <p class="header-subtitle">Resumen del sistema</p>
+        </div>
       </header>
       
       @if (loading()) {
@@ -20,7 +22,7 @@ import { CasaService } from '../../core/services/casa.service';
       } @else if (stats()) {
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon">🏠</div>
+            <re-icon icon="home" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.total_casas }}</span>
               <span class="stat-label">Total Casas</span>
@@ -28,7 +30,7 @@ import { CasaService } from '../../core/services/casa.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">🚫</div>
+            <re-icon icon="forbidden-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_no_visitar }}</span>
               <span class="stat-label">No Visitar</span>
@@ -36,7 +38,7 @@ import { CasaService } from '../../core/services/casa.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">⏳</div>
+            <re-icon icon="clock-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_en_espera }}</span>
               <span class="stat-label">En Espera</span>
@@ -44,7 +46,7 @@ import { CasaService } from '../../core/services/casa.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">🤝</div>
+            <re-icon icon="help-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_recontactadas }}</span>
               <span class="stat-label">Recontactadas</span>
@@ -52,7 +54,7 @@ import { CasaService } from '../../core/services/casa.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">📅</div>
+            <re-icon icon="calendar-12" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.visitas_mes }}</span>
               <span class="stat-label">Visitas del Mes</span>
@@ -60,7 +62,7 @@ import { CasaService } from '../../core/services/casa.service';
           </div>
           
           <div class="stat-card stat-success">
-            <div class="stat-icon">✅</div>
+            <re-icon icon="check-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_activas }}</span>
               <span class="stat-label">Activas</span>
@@ -72,19 +74,19 @@ import { CasaService } from '../../core/services/casa.service';
           <h2>Acciones Rápidas</h2>
           <div class="actions-grid">
             <a routerLink="/casas/new" class="action-card">
-              <span class="action-icon">➕</span>
+              <re-icon icon="add-square2" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Registrar Casa</span>
             </a>
             <a routerLink="/casas" class="action-card">
-              <span class="action-icon">🏠</span>
+              <re-icon icon="home" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Ver Casas</span>
             </a>
             <a routerLink="/visitas" class="action-card">
-              <span class="action-icon">📅</span>
+              <re-icon icon="calendar-12" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Ver Visitas</span>
             </a>
             <a routerLink="/notificaciones" class="action-card">
-              <span class="action-icon">🔔</span>
+              <re-icon icon="bell-ring" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Notificaciones</span>
             </a>
           </div>
@@ -107,8 +109,9 @@ import { CasaService } from '../../core/services/casa.service';
         color: var(--text-primary);
       }
       
-      p {
+      .header-subtitle {
         color: var(--text-secondary);
+        margin-top: 0.25rem;
       }
     }
     
@@ -120,38 +123,42 @@ import { CasaService } from '../../core/services/casa.service';
     
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 1rem;
+      grid-template-columns: repeat(2, 1fr);
       margin-bottom: 2rem;
     }
     
     .stat-card {
       background: var(--surface-color);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
       box-shadow: var(--shadow-sm);
       border: 1px solid var(--border-color);
       
       .stat-icon {
-        font-size: 2rem;
+        font-size: 1.75rem;
+        flex-shrink: 0;
       }
       
       .stat-content {
         display: flex;
         flex-direction: column;
+        min-width: 0;
         
         .stat-value {
-          font-size: 1.75rem;
+          font-size: 1.5rem;
           font-weight: 700;
           color: var(--text-primary);
+          line-height: 1.2;
         }
         
         .stat-label {
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
+          white-space: nowrap;
         }
       }
       
@@ -171,21 +178,23 @@ import { CasaService } from '../../core/services/casa.service';
     
     .actions-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
     }
     
     .action-card {
       background: var(--surface-color);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
       text-decoration: none;
       border: 1px solid var(--border-color);
       transition: all 0.2s;
+      min-height: 100px;
+      justify-content: center;
       
       &:hover {
         border-color: var(--primary-color);
@@ -201,7 +210,25 @@ import { CasaService } from '../../core/services/casa.service';
         font-size: 0.875rem;
         font-weight: 500;
         color: var(--text-primary);
+        text-align: center;
       }
+    }
+
+    @media (max-width: 768px) {
+      .page-header h1 { font-size: 1.5rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .actions-grid { grid-template-columns: 1fr; }
+      .stat-card { padding: 0.875rem; }
+      .action-card { min-height: 90px; padding: 1rem; }
+    }
+
+    @media (min-width: 1024px) {
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (min-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(6, 1fr); }
+      .actions-grid { grid-template-columns: repeat(4, 1fr); }
     }
   `]
 })

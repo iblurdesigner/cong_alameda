@@ -1,20 +1,40 @@
 package handlers
 
 import (
+	"context"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
 	"cong-alameda-backend/internal/dto"
+	"cong-alameda-backend/internal/models"
 	"cong-alameda-backend/internal/services"
+	"cong-alameda-backend/pkg/jwt"
 )
 
-type AuthHandler struct {
-	userService *services.UserService
+// userService defines the interface for user operations used by AuthHandler.
+// The concrete *services.UserService satisfies this interface.
+type userService interface {
+	GetByEmail(ctx context.Context, email string) (*models.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+	Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.User, error)
+	Login(ctx context.Context, email, password string) (*services.LoginResult, error)
 }
 
-func NewAuthHandler(userService *services.UserService) *AuthHandler {
+type AuthHandler struct {
+	userService  userService
+	jwtMgr       *jwt.JWTManager
+	emailService services.EmailService
+	rateLimiter  *services.RateLimiter
+}
+
+func NewAuthHandler(userService userService, jwtMgr *jwt.JWTManager,
+	emailService services.EmailService, rateLimiter *services.RateLimiter) *AuthHandler {
 	return &AuthHandler{
-		userService: userService,
+		userService:  userService,
+		jwtMgr:       jwtMgr,
+		emailService: emailService,
+		rateLimiter:  rateLimiter,
 	}
 }
 
@@ -95,4 +115,96 @@ func (h *AuthHandler) GetCurrentUser(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(dto.ToUserResponse(user))
+}
+
+// RequestRecovery initiates a password recovery flow
+// POST /api/auth/recover-request
+func (h *AuthHandler) RequestRecovery(c *fiber.Ctx) error {
+	var req dto.RecoverRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Datos de solicitud inválidos",
+		})
+	}
+
+	if req.Email == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "validation_error",
+			Message: "Email es requerido",
+		})
+	}
+
+	// Rate limiting check
+	if !h.rateLimiter.Allow(req.Email) {
+		return c.Status(fiber.StatusTooManyRequests).JSON(dto.ErrorResponse{
+			Error:   "rate_limit",
+			Message: "Demasiadas solicitudes. Intente nuevamente en 5 minutos.",
+		})
+	}
+
+	// Attempt to find user — silently ignore errors to prevent email enumeration
+	user, err := h.userService.GetByEmail(c.Context(), req.Email)
+	if err == nil && user.Activo {
+		token, tokenErr := h.jwtMgr.GenerateResetToken(user.ID, user.Email)
+		if tokenErr == nil {
+			_ = h.emailService.SendPasswordReset(req.Email, token)
+		}
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.RecoverResponse{
+		Message: "Si el email está registrado, recibirás instrucciones",
+	})
+}
+
+// ResetPassword resets a user's password using a valid recovery token
+// POST /api/auth/recover-password
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var req dto.ResetPasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "bad_request",
+			Message: "Datos de solicitud inválidos",
+		})
+	}
+
+	// Validate password length
+	if len(req.Password) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "weak_password",
+			Message: "La contraseña debe tener al menos 6 caracteres",
+		})
+	}
+
+	// Validate reset token
+	claims, err := h.jwtMgr.ValidateResetToken(req.Token)
+	if err != nil {
+		switch err {
+		case jwt.ErrExpiredToken:
+			return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+				Error:   "token_expired",
+				Message: "El token de recuperación ha expirado",
+			})
+		default:
+			return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+				Error:   "invalid_token",
+				Message: "El token de recuperación es inválido",
+			})
+		}
+	}
+
+	// Update password (service hashes internally)
+	_, err = h.userService.Update(c.Context(), claims.UserID, map[string]interface{}{
+		"password": req.Password,
+	})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "internal_error",
+			Message: "Error interno del servidor",
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(dto.RecoverResponse{
+		Message: "Contraseña actualizada exitosamente",
+	})
 }
