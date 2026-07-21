@@ -65,6 +65,10 @@ func (s *UserService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, 
 	return s.userRepo.GetByID(ctx, id)
 }
 
+func (s *UserService) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	return s.userRepo.GetByEmail(ctx, email)
+}
+
 func (s *UserService) List(ctx context.Context, rol *models.Rol, activo *bool) ([]*models.User, error) {
 	return s.userRepo.List(ctx, rol, activo)
 }

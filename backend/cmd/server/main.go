@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -53,8 +54,12 @@ func main() {
 	visitaService := services.NewVisitaService(visitaRepo, casaRepo, userRepo, notifService)
 	userService := services.NewUserService(userRepo, jwtManager)
 
+	// Initialize email service and rate limiter
+	emailService := services.NewConsoleEmailService(cfg.FrontendURL)
+	rateLimiter := services.NewRateLimiter(5 * time.Minute)
+
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(userService)
+	authHandler := handlers.NewAuthHandler(userService, jwtManager, emailService, rateLimiter)
 	casaHandler := handlers.NewCasaHandler(casaService)
 	visitaHandler := handlers.NewVisitaHandler(visitaService)
 	notifHandler := handlers.NewNotificacionHandler(notifService)
@@ -87,6 +92,11 @@ func main() {
 
 	// Initialize Fase 3 handlers
 	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)
+
+	// Initialize ProgramaPredicacion repo, service, handler
+	programaRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
+	programaService := services.NewProgramaPredicacionService(programaRepo)
+	programaHandler := handlers.NewProgramaPredicacionHandler(programaService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
@@ -126,6 +136,8 @@ func main() {
 	// Auth routes (public)
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
+	auth.Post("/recover-request", authHandler.RequestRecovery)
+	auth.Post("/recover-password", authHandler.ResetPassword)
 
 	// Protected routes
 	protected := api.Group("", authMiddleware.Authenticate())
@@ -138,18 +150,18 @@ func main() {
 	casas.Get("/", casaHandler.List)
 	casas.Get("/sectores", casaHandler.GetSectores)
 	casas.Get("/:id", casaHandler.GetByID)
-	casas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), casaHandler.Create)
-	casas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), casaHandler.Update)
-	casas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), casaHandler.Delete)
+	casas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Create)
+	casas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Update)
+	casas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Delete)
 
 	// Visita routes
 	visitas := protected.Group("/visitas")
 	visitas.Get("/", visitaHandler.List)
 	visitas.Get("/stats", visitaHandler.GetStats)
 	visitas.Get("/:id", visitaHandler.GetByID)
-	visitas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), visitaHandler.Create)
+	visitas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Create)
 	visitas.Put("/:id", visitaHandler.Update)
-	visitas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), visitaHandler.Delete)
+	visitas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Delete)
 
 	// Notificacion routes
 	notificaciones := protected.Group("/notificaciones")
@@ -162,9 +174,9 @@ func main() {
 	users.Get("/", userHandler.List)
 	users.Get("/visitantes", userHandler.GetVisitantes)
 	users.Get("/:id", userHandler.GetByID)
-	users.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), userHandler.Create)
-	users.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), userHandler.Update)
-	users.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), userHandler.Delete)
+	users.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Create)
+	users.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Update)
+	users.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Delete)
 
 	// ====== FASE 2 ROUTES ======
 
@@ -172,30 +184,30 @@ func main() {
 	grupos := protected.Group("/grupos")
 	grupos.Get("/", grupoHandler.List)
 	grupos.Get("/:id", grupoHandler.GetByID)
-	grupos.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), grupoHandler.Create)
-	grupos.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), grupoHandler.Update)
-	grupos.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), grupoHandler.Delete)
+	grupos.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), grupoHandler.Create)
+	grupos.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), grupoHandler.Update)
+	grupos.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), grupoHandler.Delete)
 
 	// Territorio routes
 	territorios := protected.Group("/territorios")
 	territorios.Get("/", territorioHandler.List)
-	territorios.Post("/upload", authMiddleware.RequireRole("SUPERINTENDENTE"), territorioHandler.Upload)
+	territorios.Post("/upload", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), territorioHandler.Upload)
 	territorios.Get("/:id", territorioHandler.GetByID)
 	territorios.Get("/:id/descargar", territorioHandler.Download)
-	territorios.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), territorioHandler.Delete)
+	territorios.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), territorioHandler.Delete)
 
 	// Semana routes
 	semanas := protected.Group("/semanas")
 	semanas.Get("/", semanaHandler.List)
 	semanas.Get("/:id", semanaHandler.GetByID)
-	semanas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), semanaHandler.Create)
-	semanas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), semanaHandler.Update)
-	semanas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), semanaHandler.Delete)
+	semanas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Create)
+	semanas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Update)
+	semanas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Delete)
 	semanas.Get("/:id/dias", semanaHandler.GetDias)
 
 	// Dia routes
 	dias := protected.Group("/dias")
-	dias.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), semanaHandler.UpdateDia)
+	dias.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.UpdateDia)
 
 	// ====== FASE 3 ROUTES: Asignaciones Internas ======
 
@@ -207,10 +219,20 @@ func main() {
 	asignaciones := protected.Group("/asignaciones")
 	asignaciones.Get("/", asignacionHandler.GetByUser)
 	asignaciones.Get("/semana/:semanaId", asignacionHandler.GetBySemana)
-	asignaciones.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Create)
-	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.BulkCreate)
-	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Update)
-	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE"), asignacionHandler.Delete)
+	asignaciones.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Create)
+	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.BulkCreate)
+	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Update)
+	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Delete)
+
+	// ====== PROGRAMA PREDICACION ROUTES ======
+
+	// Programa Predicacion routes (any authenticated user, no role guard)
+	programas := protected.Group("/programas-predicacion")
+	programas.Get("/", programaHandler.List)
+	programas.Get("/:id", programaHandler.GetByID)
+	programas.Post("/", programaHandler.Create)
+	programas.Put("/:id", programaHandler.Update)
+	programas.Delete("/:id", programaHandler.Delete)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

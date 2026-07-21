@@ -3,13 +3,27 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { tap } from 'rxjs/operators';
 
+export interface CasaInfo {
+  calle_principal: string;
+  numeracion: string;
+  calle_secundaria?: string;
+  sector: string;
+  referencia?: string;
+  latitud?: number;
+  longitud?: number;
+  foto_url?: string;
+}
+
 export interface Visita {
   id: string;
   casa_id: string;
+  casa?: CasaInfo;
   fecha_programada: string;
   fecha_realizada?: string;
   visitante_1_id: string;
   visitante_2_id: string;
+  visitante_1_nombre?: string;
+  visitante_2_nombre?: string;
   observaciones?: string;
   desea_seguir_recibiendo?: boolean;
   estado: 'PROGRAMADA' | 'REALIZADA' | 'CANCELADA';

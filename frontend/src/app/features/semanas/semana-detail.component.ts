@@ -21,12 +21,12 @@ import { AuthService } from '../../core/services/auth.service';
             <p>{{ formatDate(semana()!.fecha_inicio) }} - {{ formatDate(semana()!.fecha_fin) }}</p>
           }
         </div>
-        @if (authService.isSuperintendente() && semana()) {
+        @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && semana()) {
           <button 
             class="btn btn-outline btn-sm btn-danger"
             (click)="confirmDelete()"
           >
-            🗑️ Eliminar Semana
+            ≡ƒùæ️ Eliminar Semana
           </button>
         }
       </header>
@@ -44,7 +44,7 @@ import { AuthService } from '../../core/services/auth.service';
               
               <div class="dia-content">
                 <div class="turno">
-                  <label>🌅 Mañana</label>
+                  <label>≡ƒîà Mañana</label>
                   @if (dia.territorio_manana) {
                     <div class="territorio-assigned">
                       <span>{{ dia.territorio_manana.nombre }}</span>
@@ -55,7 +55,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 
                 <div class="turno">
-                  <label>🌆 Tarde</label>
+                  <label>≡ƒîå Tarde</label>
                   @if (dia.territorio_tarde) {
                     <div class="territorio-assigned">
                       <span>{{ dia.territorio_tarde.nombre }}</span>
@@ -66,7 +66,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 
                 <div class="turno">
-                  <label>👥 Grupo</label>
+                  <label>≡ƒæÑ Grupo</label>
                   @if (dia.grupo_asignado) {
                     <div class="grupo-assigned">
                       <span>#{{ dia.grupo_asignado.numero }} {{ dia.grupo_asignado.nombre }}</span>
@@ -77,7 +77,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
               </div>
               
-              @if (authService.isSuperintendente()) {
+              @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                 <div class="dia-actions">
                   <button class="btn btn-outline btn-sm" (click)="editDia(dia)">
                     ✏️ Asignar Territorios
@@ -439,7 +439,7 @@ export class SemanaDetailComponent implements OnInit {
     const dia = this.editingDia();
     if (!dia) return;
     
-    const data: any = {};
+    const data: Partial<Dia> = {};
     if (this.editForm.territorio_manana_id) {
       data.territorio_manana_id = this.editForm.territorio_manana_id;
     }

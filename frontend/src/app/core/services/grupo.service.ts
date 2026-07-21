@@ -8,6 +8,10 @@ export interface Grupo {
   nombre: string;
   numero: number;
   descripcion?: string;
+  direccion?: string;
+  contacto?: string;
+  conductor?: string;
+  horario?: string;
   activo: boolean;
   territorio_count?: number;
   created_at?: string;

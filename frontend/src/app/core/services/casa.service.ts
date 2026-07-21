@@ -2,7 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { tap, catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { Visita } from './visita.service';
 
 export interface Casa {
   id: string;
@@ -15,6 +15,10 @@ export interface Casa {
   fecha_registro: string;
   persona_registra: string;
   estado: 'NO_VISITAR' | 'EN_ESPERA_VISITA' | 'RECONTACTADA' | 'ACTIVA';
+  latitud?: number;
+  longitud?: number;
+  foto_url?: string;
+  visitas?: Visita[];
 }
 
 export interface CasaListResponse {
@@ -25,9 +29,9 @@ export interface CasaListResponse {
 
 @Injectable({ providedIn: 'root' })
 export class CasaService {
-  private casasSignal = signal<Casa[]>([]);
+  casasSignal = signal<Casa[]>([]);
   private loadingSignal = signal(false);
-  private totalSignal = signal(0);
+  totalSignal = signal(0);
   private currentPageSignal = signal(1);
 
   casas = computed(() => this.casasSignal());
@@ -75,6 +79,12 @@ export class CasaService {
 
   deleteCasa(id: string) {
     return this.http.delete(`${environment.apiUrl}/casas/${id}`);
+  }
+
+  uploadFoto(casaId: string, file: File) {
+    const formData = new FormData();
+    formData.append('foto', file);
+    return this.http.post<Casa>(`${environment.apiUrl}/casas/${casaId}/foto`, formData);
   }
 
   getSectores() {

@@ -2,14 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 export interface User {
   id: string;
   nombre: string;
-  email: string;
-  rol: 'SUPER_ADMIN' | 'SUPERINTENDENTE' | 'ANCIANO' | 'VISITANTE';
   telefono?: string;
   telefono_validado: boolean;
+  email: string;
+  rol: 'SUPER_ADMIN' | 'SUPERINTENDENTE' | 'ANCIANO' | 'VISITANTE';
   activo: boolean;
   notificaciones_email: boolean;
   notificaciones_whatsapp: boolean;
@@ -30,10 +31,9 @@ export interface UpdateUserRequest {
 export class UserService {
   constructor(private http: HttpClient) {}
 
-  getUsers() {
-    return this.http.get<{data: User[]}>(`${environment.apiUrl}/users`).pipe(
-      map(res => res.data)
-    );
+  getUsers(): Observable<User[]> {
+    return this.http.get<{ data: User[] }>(`${environment.apiUrl}/users`)
+      .pipe(map(response => response.data));
   }
 
   updateUser(id: string, data: UpdateUserRequest) {
