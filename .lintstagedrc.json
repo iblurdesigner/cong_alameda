@@ -1,0 +1,5 @@
+{
+  "backend/**/*.go": ["gofumpt -l -w", "golangci-lint run"],
+  "frontend/**/*.ts": ["eslint --fix"],
+  "frontend/**/*.scss": ["stylelint --fix"]
+}

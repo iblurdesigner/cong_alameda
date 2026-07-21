@@ -49,9 +49,9 @@ testing:
       integration: false
       e2e: false
     coverage: "go test -cover ./..."
-    linter: ""
+    linter: "golangci-lint run"
     type_checker: "go vet ./..."
-    formatter: "go fmt ./..."
+    formatter: "gofumpt -d"
   frontend:
     runner: jest
     framework: Jest 30 + jest-preset-angular
@@ -60,6 +60,6 @@ testing:
       integration: false
       e2e: false
     coverage: "npm test -- --coverage"
-    linter: ""
+    linter: "eslint --fix"
     type_checker: "npx tsc --noEmit"
-    formatter: ""
+    formatter: "eslint --fix"
