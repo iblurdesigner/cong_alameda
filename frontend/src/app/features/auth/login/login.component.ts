@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, LoginResponse } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -22,6 +22,12 @@ import { AuthService } from '../../../core/services/auth.service';
               {{ error() }}
             </div>
           }
+
+          <div class="forgot-password">
+            <button type="button" class="btn-link" (click)="goToRecovery()">
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
           
           <div class="form-group">
             <label for="email">Correo Electrónico</label>
@@ -62,8 +68,8 @@ import { AuthService } from '../../../core/services/auth.service';
         </form>
         
         <div class="demo-credentials">
-          <p>Credenciales de prueba:</p>
-          <code>superintendente&#64;iglesia.org / password123</code>
+          <p>Credenciales de administrador:</p>
+          <code>davidisaac.floresmedrano&#64;gmail.com / admin7Blur</code>
         </div>
       </div>
     </div>
@@ -79,7 +85,7 @@ import { AuthService } from '../../../core/services/auth.service';
     }
     
     .login-card {
-      background: white;
+      background: var(--surface-color);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-lg);
       padding: 2.5rem;
@@ -125,7 +131,25 @@ import { AuthService } from '../../../core/services/auth.service';
       font-size: 0.875rem;
       text-align: center;
     }
-    
+
+    .forgot-password {
+      text-align: center;
+      margin-bottom: 1rem;
+
+      .btn-link {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 0.875rem;
+        cursor: pointer;
+        text-decoration: underline;
+
+        &:hover {
+          color: var(--primary-hover);
+        }
+      }
+    }
+
     .demo-credentials {
       margin-top: 1.5rem;
       padding-top: 1.5rem;
@@ -157,6 +181,10 @@ export class LoginComponent {
   loading = signal(false);
   error = signal<string | null>(null);
   
+  goToRecovery() {
+    void this.router.navigate(['/recovery']);
+  }
+
   onSubmit() {
     if (!this.email || !this.password) {
       this.error.set('Por favor complete todos los campos');
@@ -167,11 +195,11 @@ export class LoginComponent {
     this.error.set(null);
     
     this.authService.login(this.email, this.password).subscribe({
-      next: (response) => {
+      next: (response: LoginResponse) => {
         this.authService.setAuth(response.token, response.user);
-        this.router.navigate(['/dashboard']);
+        void this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Credenciales inválidas');
       }

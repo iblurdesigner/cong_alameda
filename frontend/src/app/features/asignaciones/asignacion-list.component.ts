@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AsignacionService, TipoAsignacion, Asignacion } from '../../core/services/asignacion.service';
 import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
+import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
 @Component({
   selector: 'app-asignacion-list',
@@ -17,9 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
           <p>Programa las asignaciones internas: acomodadores, parqueadero, micrófono, plataforma</p>
         </div>
         @if (authService.isSuperintendente()) {
-          <button class="btn btn-primary" (click)="openBulkModal()">
-            ✏️ Programar Semana
-          </button>
+          <button class="btn btn-primary" (click)="openBulkModal()">✏️ Programar Semana</button>
         }
       </header>
       
@@ -96,7 +95,7 @@ import { AuthService } from '../../core/services/auth.service';
       }
     </div>
 
-    <!-- Assign Modal -->
+    <!-- ASSIGN MODAL -->
     @if (showAssignModal) {
       <div class="modal-overlay" (click)="closeAssignModal()">
         <div class="modal" (click)="$event.stopPropagation()">
@@ -105,15 +104,29 @@ import { AuthService } from '../../core/services/auth.service';
             <button class="btn-close" (click)="closeAssignModal()">×</button>
           </div>
           <div class="modal-body">
-            <div class="form-group">
-              <label for="persona">Persona *</label>
-              <select id="persona" [(ngModel)]="assignForm.user_id">
-                <option value="">Seleccionar persona...</option>
-                @for (user of users(); track user.id) {
-                  <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
-                }
-              </select>
-            </div>
+            @if (assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4') {
+              <!-- ONLY group selector for ASEO_SALON -->
+              <div class="form-group">
+                <label for="grupoSelect">Grupo *</label>
+                <select id="grupoSelect" [(ngModel)]="assignForm.grupo_id">
+                  <option value="">Seleccionar grupo...</option>
+                  @for (grupo of grupos(); track grupo.id) {
+                    <option [value]="grupo.id">{{ grupo.nombre }} ({{ grupo.numero }})</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <!-- ONLY person selector for other types -->
+              <div class="form-group">
+                <label for="persona">Persona *</label>
+                <select id="persona" [(ngModel)]="assignForm.user_id">
+                  <option value="">Seleccionar persona...</option>
+                  @for (user of users(); track user.id) {
+                    <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                  }
+                </select>
+              </div>
+            }
             <div class="form-group">
               <label for="observaciones">Observaciones</label>
               <textarea id="observaciones" [(ngModel)]="assignForm.observaciones" rows="2"></textarea>
@@ -124,7 +137,7 @@ import { AuthService } from '../../core/services/auth.service';
             <button 
               class="btn btn-primary" 
               (click)="saveAsignacion()"
-              [disabled]="!assignForm.user_id"
+              [disabled]="!assignForm.user_id && !assignForm.grupo_id"
             >
               Asignar
             </button>
@@ -133,7 +146,7 @@ import { AuthService } from '../../core/services/auth.service';
       </div>
     }
 
-    <!-- Bulk Assign Modal -->
+    <!-- BULK ASSIGN MODAL -->
     @if (showBulkModal) {
       <div class="modal-overlay" (click)="closeBulkModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
@@ -166,9 +179,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
-            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
-              Guardar Semana
-            </button>
+            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">Guardar Semana</button>
           </div>
         </div>
       </div>
@@ -226,10 +237,12 @@ export class AsignacionListComponent implements OnInit {
   asignacionService = inject(AsignacionService);
   semanaService = inject(SemanaService);
   authService = inject(AuthService);
+  grupoService = inject(GrupoService);
   
   semanas = signal<Semana[]>([]);
   users = signal<any[]>([]);
   tipos = signal<TipoAsignacion[]>([]);
+  grupos = signal<Grupo[]>([]);
   semanaActual: any = null;
   
   selectedSemanaId = '';
@@ -239,7 +252,7 @@ export class AsignacionListComponent implements OnInit {
   editingDiaSemana = -1;
   editingAsignacion: Asignacion | null = null;
   
-  assignForm = { user_id: '', observaciones: '' };
+  assignForm = { user_id: '', grupo_id: '', tipo_id: '', observaciones: '' };
   bulkDias: { dia: number; nombre: string; asignaciones: Record<string, string> }[] = [];
   
   private asignacionMap = signal<Map<string, Asignacion>>(new Map());
@@ -248,6 +261,13 @@ export class AsignacionListComponent implements OnInit {
     this.loadSemanas();
     this.loadTipos();
     this.loadUsers();
+    this.loadGrupos();
+  }
+  
+  loadGrupos() {
+    this.grupoService.loadGrupos().subscribe({
+      next: (res: any) => this.grupos.set(res.data)
+    });
   }
   
   loadSemanas() {
@@ -317,7 +337,7 @@ export class AsignacionListComponent implements OnInit {
     this.editingTipo = tipo;
     this.editingDiaSemana = diaSemana;
     this.editingAsignacion = null;
-    this.assignForm = { user_id: '', observaciones: '' };
+    this.assignForm = { user_id: '', grupo_id: '', tipo_id: tipo.id, observaciones: '' };
     this.showAssignModal = true;
   }
   
@@ -325,7 +345,12 @@ export class AsignacionListComponent implements OnInit {
     this.editingTipo = tipo;
     this.editingDiaSemana = diaSemana;
     this.editingAsignacion = asignacion;
-    this.assignForm = { user_id: asignacion.user_id, observaciones: asignacion.observaciones || '' };
+    this.assignForm = {
+      user_id: asignacion.user_id || '',
+      grupo_id: asignacion.grupo_id || '',
+      tipo_id: tipo.id,
+      observaciones: asignacion.observaciones || ''
+    };
     this.showAssignModal = true;
   }
   
@@ -337,12 +362,13 @@ export class AsignacionListComponent implements OnInit {
   }
   
   saveAsignacion() {
-    if (!this.assignForm.user_id) return;
+    if (!this.assignForm.user_id && !this.assignForm.grupo_id) return;
     
     const asignacion = {
       semana_id: this.selectedSemanaId,
       tipo_asignacion_id: this.editingTipo!.id,
-      user_id: this.assignForm.user_id,
+      user_id: this.assignForm.user_id || undefined,
+      grupo_id: this.assignForm.grupo_id || undefined,
       dia_semana: this.editingDiaSemana,
       observaciones: this.assignForm.observaciones || undefined
     };
@@ -353,6 +379,13 @@ export class AsignacionListComponent implements OnInit {
         this.closeAssignModal();
       }
     });
+  }
+
+  onTipoChange() {
+    // Changing the assignment type must clear both person and group so a
+    // previously selected value from the other branch is never submitted.
+    this.assignForm.user_id = '';
+    this.assignForm.grupo_id = '';
   }
   
   openBulkModal() {

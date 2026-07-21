@@ -2,6 +2,7 @@
 :root {
   --primary-color: #2563eb;
   --primary-dark: #1d4ed8;
+  --primary-light: rgba(37, 99, 235, 0.1);
   --secondary-color: #64748b;
   --success-color: #10b981;
   --warning-color: #f59e0b;
@@ -18,12 +19,57 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  
+  // Calendar dot states
+  --dot-available: #94a3b8;
+  --dot-selected: #3b82f6;
+  --dot-assignments: #10b981;
+  --dot-weekend: #f59e0b;
+}
+
+// Dark mode variables
+[data-theme="dark"] {
+  --primary-color: #3b82f6;
+  --primary-dark: #2563eb;
+  --primary-light: rgba(59, 130, 246, 0.15);
+  --secondary-color: #94a3b8;
+  --success-color: #34d399;
+  --warning-color: #fbbf24;
+  --danger-color: #f87171;
+  --background-color: #0f172a;
+  --surface-color: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  
+  // Calendar dot states - optimized for dark mode
+  --dot-available: #475569;
+  --dot-selected: #60a5fa;
+  --dot-assignments: #34d399;
+  --dot-weekend: #fbbf24;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+// Global input styles for dark mode
+input, textarea, select {
+  color: var(--text-primary);
+  background: var(--surface-color);
+  
+  &::placeholder {
+    color: var(--text-secondary);
+  }
+}
+
+html {
+  transition: background-color 0.3s ease;
 }
 
 body {
@@ -34,6 +80,7 @@ body {
   background-color: var(--background-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 // Utility classes
@@ -122,7 +169,12 @@ body {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     background: var(--surface-color);
+    color: var(--text-primary);
     transition: border-color 0.2s, box-shadow 0.2s;
+    
+    &::placeholder {
+      color: var(--text-secondary);
+    }
     
     &:focus {
       outline: none;
@@ -194,6 +246,15 @@ body {
 
 .slide-in {
   animation: slideIn 0.3s ease-out;
+}
+
+// Reicon web component base style
+re-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
 }
 
 // Spinner
