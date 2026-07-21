@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService, LoginResponse } from '../../../core/services/auth.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -69,7 +69,7 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
         
         <div class="demo-credentials">
           <p>Credenciales de administrador:</p>
-          <code>davidisaac.floresmedrano&#64;gmail.com / admin7Blur</code>
+          <code>davidisaac.floresmedrano&#64;gmail.com / admin123</code>
         </div>
       </div>
     </div>
@@ -182,7 +182,7 @@ export class LoginComponent {
   error = signal<string | null>(null);
   
   goToRecovery() {
-    void this.router.navigate(['/recovery']);
+    this.router.navigate(['/recovery']);
   }
 
   onSubmit() {
@@ -195,11 +195,11 @@ export class LoginComponent {
     this.error.set(null);
     
     this.authService.login(this.email, this.password).subscribe({
-      next: (response: LoginResponse) => {
+      next: (response) => {
         this.authService.setAuth(response.token, response.user);
-        void this.router.navigate(['/dashboard']);
+        this.router.navigate(['/dashboard']);
       },
-      error: (err: { error?: { message?: string } }) => {
+      error: (err) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Credenciales inválidas');
       }

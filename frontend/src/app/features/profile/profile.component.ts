@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -9,7 +9,6 @@ import { environment } from '../../../environments/environment';
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <div class="profile-card">
@@ -82,7 +81,7 @@ import { environment } from '../../../environments/environment';
                 name="notificaciones_email"
               >
               <span class="checkbox-text">
-                <re-icon icon="call-12" size="18" weight="outline"></re-icon> Recibir notificaciones por correo electrónico
+                📧 Recibir notificaciones por correo electrónico
               </span>
             </label>
           </div>
@@ -95,7 +94,7 @@ import { environment } from '../../../environments/environment';
                 name="notificaciones_whatsapp"
               >
               <span class="checkbox-text">
-                <re-icon icon="call-12" size="18" weight="outline"></re-icon> Recibir notificaciones por WhatsApp
+                📱 Recibir notificaciones por WhatsApp
               </span>
             </label>
           </div>
@@ -114,7 +113,7 @@ import { environment } from '../../../environments/environment';
 
       <!-- Info Card -->
       <div class="info-card">
-        <h3>Γä╣ Información de tu Cuenta</h3>
+        <h3>ℹ️ Información de tu Cuenta</h3>
         <ul>
           <li><strong>Estado:</strong> {{ currentUser()?.activo ? 'Activa' : 'Inactiva' }}</li>
           <li><strong>Teléfono validado:</strong> {{ currentUser()?.telefono_validado ? 'Sí' : 'No' }}</li>
@@ -391,8 +390,8 @@ export class ProfileComponent implements OnInit {
   }
 
   loadCurrentUser() {
-    this.http.get<User>(`${environment.apiUrl}/auth/me`).subscribe({
-      next: (user: User) => {
+    this.http.get<any>(`${environment.apiUrl}/auth/me`).subscribe({
+      next: (user) => {
         this.formData = {
           nombre: user.nombre || '',
           telefono: user.telefono || '',
@@ -430,13 +429,13 @@ export class ProfileComponent implements OnInit {
     this.successMessage.set(null);
     this.errorMessage.set(null);
 
-    this.http.put<User>(`${environment.apiUrl}/auth/profile`, {
+    this.http.put<any>(`${environment.apiUrl}/auth/profile`, {
       nombre: this.formData.nombre,
       telefono: this.formData.telefono || null,
       notificaciones_email: this.formData.notificaciones_email,
       notificaciones_whatsapp: this.formData.notificaciones_whatsapp
     }).subscribe({
-      next: (user: User) => {
+      next: (user) => {
         // Update local storage with new user data
         const currentUser = this.authService.currentUser();
         if (currentUser) {

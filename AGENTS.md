@@ -1,4 +1,4 @@
-# AGENTS.md ΓÇö App Congregaci├│n Alameda
+# AGENTS.md — App Congregación Alameda
 
 ## Meta
 
@@ -11,51 +11,51 @@ Este archivo define las instrucciones persistentes para todos los agentes que tr
 ** Cualquier pedido de feature, cambio, refactor o bug fix DEBE pasar por el flujo completo de Spec-Driven Development (SDD).**
 
 No hay excepciones. Si un usuario pide:
-- "agregar autenticaci├│n"
+- "agregar autenticación"
 - "crear un componente para..."
 - "fixear el login"
 - "refactorizar el servicio de usuarios"
-- "agregar validaci├│n al formulario"
+- "agregar validación al formulario"
 
 **El flujo obligatorio es:**
 
 ```
-1. sdd-propose  ΓåÆ Crear propuesta de cambio (scope, intent, approach)
-2. sdd-spec    ΓåÆ Escribir especificaciones (requirements, scenarios)
-3. sdd-design  ΓåÆ Dise├▒o t├⌐cnico (architecture decisions)
-4. sdd-tasks   ΓåÆ Desglose en tareas (implementation checklist)
-5. sdd-apply   ΓåÆ Implementar c├│digo (follow specs)
-6. sdd-verify  ΓåÆ Validar contra specs
-7. sdd-archive ΓåÆ Archivar cambio completado
+1. sdd-propose  → Crear propuesta de cambio (scope, intent, approach)
+2. sdd-spec    → Escribir especificaciones (requirements, scenarios)
+3. sdd-design  → Diseño técnico (architecture decisions)
+4. sdd-tasks   → Desglose en tareas (implementation checklist)
+5. sdd-apply   → Implementar código (follow specs)
+6. sdd-verify  → Validar contra specs
+7. sdd-archive → Archivar cambio completado
 ```
 
-### C├│mo ejecutar el flujo
+### Cómo ejecutar el flujo
 
 Cuando detectes un pedido de cambio:
 
 1. **Primero**: Cargar las skills necesarias usando `skill(name: "sdd-XXX")` 
 2. **Segundo**: Invocar el subagente correspondiente via `task(subagent_type: "sdd-XXX", ...)` o ejecutar directamente
 3. **Tercero**: Ejecutar la skill completa y retornar el resultado
-4. **Cuarto**: Continuar a la siguiente fase autom├íticamente
+4. **Cuarto**: Continuar a la siguiente fase automáticamente
 
 ### Importancia del orden
 
-- **NUNCA** empezar a codear antes de tener specs (sdd-spec) y dise├▒o (sdd-design)
-- **NUNCA** saltarse sdd-tasks ΓÇö el desglose es obligatorio para trackear progreso
+- **NUNCA** empezar a codear antes de tener specs (sdd-spec) y diseño (sdd-design)
+- **NUNCA** saltarse sdd-tasks — el desglose es obligatorio para trackear progreso
 - **NUNCA** hacer sdd-apply sin haber completado sdd-spec primero
-- **NUNCA** omitir sdd-verify ΓÇö la validaci├│n es cr├¡tica
+- **NUNCA** omitir sdd-verify — la validación es crítica
 
 ---
 
 ## Stack Detectado
 
-- **Backend**: Go (Fiber), PostgreSQL, JWT auth
-- **Frontend**: Angular 21, SCSS, Jest testing
+- **Backend**: Go (Gin), PostgreSQL, JWT auth
+- **Frontend**: Angular 17+, SCSS, Jest testing
 - **DevOps**: Docker, Nginx
 
 ---
 
-## Convenciones de C├│digo
+## Convenciones de Código
 
 ### Go (Backend)
 - Estructura: `internal/`, `pkg/`, `cmd/`
@@ -69,16 +69,16 @@ Cuando detectes un pedido de cambio:
 
 ### Git
 - Commits: Conventional commits (`feat:`, `fix:`, `refactor:`, etc.)
-- Ramas: `dev` para trabajo, `main` para producci├│n
+- Ramas: `dev` para trabajo, `main` para producción
 
 ---
 
 ## Reglas Adicionales
 
-1. **Antes de escribir c├│digo**: Siempre cargar la skill relevante del proyecto (ej: `go-testing` para tests en Go, o la skill de frontend si corresponde)
-2. **Memoria**: Usar `mem_save()` para decisiones arquitect├│nicas importantes
-3. **Documentaci├│n**: NO crear archivos .md proactivamente ΓÇö solo cuando el usuario lo pida expl├¡citamente
-4. **Nunca**: hacer build despu├⌐s de cambios (el usuario lo hace manualmente si lo necesita)
+1. **Antes de escribir código**: Siempre cargar la skill relevante del proyecto (ej: `go-testing` para tests en Go, o la skill de frontend si corresponde)
+2. **Memoria**: Usar `mem_save()` para decisiones arquitectónicas importantes
+3. **Documentación**: NO crear archivos .md proactivamente — solo cuando el usuario lo pida explícitamente
+4. **Nunca**: hacer build después de cambios (el usuario lo hace manualmente si lo necesita)
 
 ---
 

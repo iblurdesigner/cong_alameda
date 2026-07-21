@@ -10,7 +10,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Gesti├│n de Usuarios</h1>
+        <h1>Gestión de Usuarios</h1>
         <p class="subtitle">Administra los usuarios del sistema</p>
       </div>
 
@@ -28,7 +28,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
             <tr>
               <th>Nombre</th>
               <th>Email</th>
-              <th>Tel├⌐fono</th>
+              <th>Teléfono</th>
               <th>Rol</th>
               <th>Estado</th>
               <th>Notificaciones</th>
@@ -44,10 +44,10 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                   @if (user.telefono) {
                     {{ user.telefono }}
                     @if (user.telefono_validado) {
-                      <span class="badge-valid">Γ£ô</span>
+                      <span class="badge-valid">✓</span>
                     }
                   } @else {
-                    <span class="text-muted">Sin tel├⌐fono</span>
+                    <span class="text-muted">Sin teléfono</span>
                   }
                 </td>
                 <td>
@@ -81,7 +81,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                         [checked]="user.notificaciones_email"
                         (change)="toggleNotificacion(user, 'email', $event)"
                       >
-                      ≡ƒôº Email
+                      📧 Email
                     </label>
                     <label class="checkbox-label">
                       <input 
@@ -89,7 +89,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                         [checked]="user.notificaciones_whatsapp"
                         (change)="toggleNotificacion(user, 'whatsapp', $event)"
                       >
-                      ≡ƒô▒ WhatsApp
+                      📱 WhatsApp
                     </label>
                   </div>
                 </td>
@@ -100,14 +100,14 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                       (click)="openEditModal(user)"
                       title="Editar usuario"
                     >
-                      Γ£Å∩╕Å
+                      ✏️
                     </button>
                     <button 
                       class="btn-delete"
                       (click)="deleteUser(user)"
                       title="Eliminar usuario"
                     >
-                      ≡ƒùæ∩╕Å
+                      🗑️
                     </button>
                   </div>
                 </td>
@@ -127,21 +127,21 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                 <div class="user-card-email">{{ user.email }}</div>
               </div>
               <div class="user-card-actions">
-                <button class="btn-edit" (click)="openEditModal(user)" title="Editar">Γ£Å∩╕Å</button>
-                <button class="btn-delete" (click)="deleteUser(user)" title="Eliminar">≡ƒùæ∩╕Å</button>
+                <button class="btn-edit" (click)="openEditModal(user)" title="Editar">✏️</button>
+                <button class="btn-delete" (click)="deleteUser(user)" title="Eliminar">🗑️</button>
               </div>
             </div>
             <div class="user-card-body">
               <div class="user-card-field">
-                <span class="user-card-label">Tel├⌐fono</span>
+                <span class="user-card-label">Teléfono</span>
                 <span class="user-card-value">
                   @if (user.telefono) {
                     {{ user.telefono }}
                     @if (user.telefono_validado) {
-                      <span class="badge-valid">Γ£ô</span>
+                      <span class="badge-valid">✓</span>
                     }
                   } @else {
-                    <span class="text-muted">Sin tel├⌐fono</span>
+                    <span class="text-muted">Sin teléfono</span>
                   }
                 </span>
               </div>
@@ -179,7 +179,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                       [checked]="user.notificaciones_email"
                       (change)="toggleNotificacion(user, 'email', $event)"
                     >
-                    ≡ƒôº Email
+                    📧 Email
                   </label>
                   <label class="checkbox-label">
                     <input 
@@ -187,7 +187,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                       [checked]="user.notificaciones_whatsapp"
                       (change)="toggleNotificacion(user, 'whatsapp', $event)"
                     >
-                    ≡ƒô▒ WhatsApp
+                    📱 WhatsApp
                   </label>
                 </div>
               </div>
@@ -202,13 +202,13 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
         </div>
       }
 
-      <!-- Modal de Edici├│n -->
+      <!-- Modal de Edición -->
       @if (editingUser()) {
-        <div class="modal-overlay">
-          <div class="modal-content">
+        <div class="modal-overlay" (click)="closeEditModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
             <div class="modal-header">
               <h2>Editar Usuario</h2>
-              <button class="btn-close" (click)="closeEditModal()">Γ£ò</button>
+              <button class="btn-close" (click)="closeEditModal()">✕</button>
             </div>
             
             <form (ngSubmit)="saveUser()" class="edit-form">
@@ -235,7 +235,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
               </div>
 
               <div class="form-group">
-                <label for="edit-telefono">Tel├⌐fono</label>
+                <label for="edit-telefono">Teléfono</label>
                 <input 
                   type="tel" 
                   id="edit-telefono"
@@ -252,7 +252,7 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
                     [(ngModel)]="editForm().telefono_validado"
                     name="telefono_validado"
                   >
-                  Tel├⌐fono validado
+                  Teléfono validado
                 </label>
               </div>
 
@@ -799,7 +799,7 @@ export class UsuariosListComponent implements OnInit {
         this.users.set(users);
         this.loading.set(false);
       },
-      error: () => {
+      error: (err) => {
         this.error.set('Error al cargar usuarios');
         this.loading.set(false);
       }
@@ -829,7 +829,6 @@ export class UsuariosListComponent implements OnInit {
 
     const update: UpdateUserRequest = {
       nombre: form.nombre,
-      email: form.email,
       telefono: form.telefono || undefined,
       telefono_validado: form.telefono_validado
     };
@@ -898,7 +897,7 @@ export class UsuariosListComponent implements OnInit {
   }
 
   deleteUser(user: User) {
-    if (!confirm(`┬┐Est├ís seguro de eliminar al usuario "${user.nombre}"?`)) {
+    if (!confirm(`¿Estás seguro de eliminar al usuario "${user.nombre}"?`)) {
       return;
     }
 

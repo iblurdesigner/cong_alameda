@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -10,7 +10,6 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-territorio-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -20,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showUploadModal = true">
-            <re-icon icon="add-square2" size="16" weight="outline" class="btn-icon-only"></re-icon>
+            <span class="btn-icon-only">➕</span>
             <span class="btn-text">Subir Territorio</span>
           </button>
         }
@@ -41,7 +40,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (territorioService.territorios().length === 0) {
         <div class="empty-state">
-          <re-icon icon="folder-open" size="48" weight="outline" class="empty-icon"></re-icon>
+          <div class="empty-icon">📁</div>
           <p>No hay territorios registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showUploadModal = true">
@@ -53,7 +52,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="territorios-grid">
           @for (territorio of territorioService.territorios(); track territorio.id) {
             <div class="territorio-card">
-              <re-icon icon="document-text2" size="32" weight="outline" class="territorio-icon"></re-icon>
+              <div class="territorio-icon">📄</div>
               <div class="territorio-info">
                 <h4 class="territorio-nombre">{{ territorio.nombre }}</h4>
                 <p class="meta">{{ territorio.nombre_original }} • {{ formatSize(territorio.tamano) }}</p>
@@ -64,7 +63,7 @@ import { AuthService } from '../../core/services/auth.service';
                   class="btn btn-primary btn-sm"
                   (click)="downloadTerritorio(territorio)"
                 >
-                  <re-icon icon="download-square" size="16" weight="outline"></re-icon> Descargar
+                  ⬇️ Descargar
                 </button>
                 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                   <button 
@@ -72,7 +71,7 @@ import { AuthService } from '../../core/services/auth.service';
                     (click)="deleteTerritorio(territorio)"
                     title="Eliminar"
                   >
-                    <re-icon icon="trush-square2" size="16" weight="outline"></re-icon>
+                    🗑️
                   </button>
                 }
               </div>
@@ -131,12 +130,12 @@ import { AuthService } from '../../core/services/auth.service';
                 />
                 @if (selectedFile) {
                   <div class="file-selected">
-                    <span>≡ƒôä {{ selectedFile.name }}</span>
+                    <span>📄 {{ selectedFile.name }}</span>
                     <span class="file-size">{{ formatSize(selectedFile.size) }}</span>
                   </div>
                 } @else {
                   <div class="dropzone-content">
-                    <re-icon icon="upload-square" size="32" weight="outline" class="dropzone-icon"></re-icon>
+                    <span class="dropzone-icon">📁</span>
                     <p>Arrastra el PDF aquí o haz clic para seleccionar</p>
                     <span class="dropzone-hint">Máximo 10MB, solo PDF</span>
                   </div>
@@ -501,7 +500,7 @@ export class TerritorioListComponent implements OnInit {
         this.closeUploadModal();
         this.uploading.set(false);
       },
-      error: (err: { error?: { error?: string } }) => {
+      error: (err) => {
         alert(err.error?.error || 'Error al subir el archivo');
         this.uploading.set(false);
       }

@@ -43,7 +43,7 @@ export class AuthService {
   private loadUser(): User | null {
     try {
       const userJson = localStorage.getItem(this.USER_KEY);
-      return userJson ? (JSON.parse(userJson) as User) : null;
+      return userJson ? JSON.parse(userJson) : null;
     } catch {
       // Handle corrupted localStorage data
       localStorage.removeItem(this.USER_KEY);
@@ -70,11 +70,11 @@ export class AuthService {
   }
 
   logout() {
-    console.log('[AuthService] ≡ƒÜ¿ logout() called! Token being cleared!');
+    console.log('[AuthService] 🚨 logout() called! Token being cleared!');
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.userSignal.set(null);
-    void this.router.navigate(['/']);
+    this.router.navigate(['/']);
   }
 
   isSuperintendente(): boolean {
@@ -98,7 +98,10 @@ export class AuthService {
   getUsers() {
     return this.http.get<{ data: User[] }>(`${environment.apiUrl}/users`)
       .pipe(
-        map(response => response.data)
+        // Handle both formats: { data: User[] } or User[]
+        // map response to extract data if wrapped
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        map((res: any) => res.data || res)
       );
   }
 }

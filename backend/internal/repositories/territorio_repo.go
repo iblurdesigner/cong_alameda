@@ -63,7 +63,8 @@ func (r *TerritorioRepository) ListByGrupo(ctx context.Context, grupoID *uuid.UU
 	}
 	defer rows.Close()
 
-	var territorios []*models.Territorio
+	// Initialize empty slice instead of nil
+	territorios := make([]*models.Territorio, 0)
 	for rows.Next() {
 		t := &models.Territorio{}
 		rows.Scan(&t.ID, &t.GrupoID, &t.Nombre, &t.ArchivoPDF, &t.NombreOriginal, &t.Tamano, &t.FechaSubida, &t.SubidoPor, &t.CreatedAt, &t.UpdatedAt)

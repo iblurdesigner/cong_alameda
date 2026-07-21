@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-
+import { tap } from 'rxjs/operators';
 
 export interface ProgramaVisita {
   id: string;
@@ -43,7 +43,12 @@ export class ProgramaVisitaService {
   constructor(private http: HttpClient) {}
 
   loadVisitas() {
-    return this.http.get<{ data: ProgramaVisita[] }>(`${this.apiUrl}/programas-visita`);
+    return this.http.get<{ data: ProgramaVisita[] }>(`${this.apiUrl}/programas-visita`)
+      .pipe(
+        tap(response => {
+          // Normalize each visita
+        })
+      );
   }
 
   getVisitasByFecha(fecha: string) {

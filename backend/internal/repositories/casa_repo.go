@@ -25,12 +25,14 @@ func NewCasaRepository(db *pgxpool.Pool) *CasaRepository {
 
 func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 	query := `
-		INSERT INTO casas (id, calle_principal, numeracion, calle_secundaria, sector, referencia, motivo_no_volver, fecha_registro, persona_registra, estado)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO casas (id, calle_principal, numeracion, calle_secundaria, sector, referencia, motivo_no_volver, fecha_registro, persona_registra, estado, latitud, longitud, foto_url)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		RETURNING created_at, updated_at
 	`
 
 	casa.ID = uuid.New()
+	// Convert enum to plain string to avoid String() method being called by driver
+	estadoStr := string(casa.Estado)
 	err := r.db.QueryRow(ctx, query,
 		casa.ID,
 		casa.CallePrincipal,
@@ -41,7 +43,10 @@ func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 		casa.MotivoNoVolver,
 		casa.FechaRegistro,
 		casa.PersonaRegistra,
-		casa.Estado,
+		estadoStr,
+		casa.Latitud,
+		casa.Longitud,
+		casa.FotoURL,
 	).Scan(&casa.CreatedAt, &casa.UpdatedAt)
 
 	if err != nil {
@@ -54,7 +59,7 @@ func (r *CasaRepository) Create(ctx context.Context, casa *models.Casa) error {
 func (r *CasaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Casa, error) {
 	query := `
 		SELECT id, calle_principal, numeracion, calle_secundaria, sector, referencia, 
-		       motivo_no_volver, fecha_registro, persona_registra, estado, created_at, updated_at
+		       motivo_no_volver, fecha_registro, persona_registra, estado, latitud, longitud, foto_url, created_at, updated_at
 		FROM casas
 		WHERE id = $1
 	`
@@ -71,6 +76,9 @@ func (r *CasaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Cas
 		&casa.FechaRegistro,
 		&casa.PersonaRegistra,
 		&casa.Estado,
+		&casa.Latitud,
+		&casa.Longitud,
+		&casa.FotoURL,
 		&casa.CreatedAt,
 		&casa.UpdatedAt,
 	)
@@ -129,7 +137,7 @@ func (r *CasaRepository) List(ctx context.Context, sector, estado, search string
 	// Get paginated results
 	selectQuery := fmt.Sprintf(`
 		SELECT id, calle_principal, numeracion, calle_secundaria, sector, referencia, 
-		       motivo_no_volver, fecha_registro, persona_registra, estado, created_at, updated_at
+		       motivo_no_volver, fecha_registro, persona_registra, estado, latitud, longitud, foto_url, created_at, updated_at
 		%s
 		ORDER BY fecha_registro DESC
 		LIMIT $%d OFFSET $%d
@@ -156,6 +164,9 @@ func (r *CasaRepository) List(ctx context.Context, sector, estado, search string
 			&casa.FechaRegistro,
 			&casa.PersonaRegistra,
 			&casa.Estado,
+			&casa.Latitud,
+			&casa.Longitud,
+			&casa.FotoURL,
 			&casa.CreatedAt,
 			&casa.UpdatedAt,
 		)
@@ -169,11 +180,14 @@ func (r *CasaRepository) List(ctx context.Context, sector, estado, search string
 }
 
 func (r *CasaRepository) Update(ctx context.Context, id uuid.UUID, casa *models.Casa) (*models.Casa, error) {
+	// Convert enum to plain string to avoid String() method being called by driver
+	estadoStr := string(casa.Estado)
+
 	query := `
 		UPDATE casas 
 		SET calle_principal = $1, numeracion = $2, calle_secundaria = $3, sector = $4, 
-		    referencia = $5, motivo_no_volver = $6, estado = $7
-		WHERE id = $8
+		    referencia = $5, motivo_no_volver = $6, estado = $7, latitud = $8, longitud = $9, foto_url = $10
+		WHERE id = $11
 		RETURNING created_at, updated_at
 	`
 
@@ -184,7 +198,10 @@ func (r *CasaRepository) Update(ctx context.Context, id uuid.UUID, casa *models.
 		casa.Sector,
 		casa.Referencia,
 		casa.MotivoNoVolver,
-		casa.Estado,
+		estadoStr,
+		casa.Latitud,
+		casa.Longitud,
+		casa.FotoURL,
 		id,
 	).Scan(&casa.CreatedAt, &casa.UpdatedAt)
 
@@ -211,6 +228,19 @@ func (r *CasaRepository) UpdateEstado(ctx context.Context, id uuid.UUID, estado 
 	}
 
 	return nil
+}
+
+func (r *CasaRepository) UpdateFotoURL(ctx context.Context, id uuid.UUID, fotoURL string) (*models.Casa, error) {
+	query := `UPDATE casas SET foto_url = $1 WHERE id = $2 RETURNING created_at, updated_at`
+	casa := &models.Casa{ID: id, FotoURL: &fotoURL}
+	err := r.db.QueryRow(ctx, query, fotoURL, id).Scan(&casa.CreatedAt, &casa.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrCasaNotFound
+		}
+		return nil, fmt.Errorf("error updating casa foto_url: %w", err)
+	}
+	return casa, nil
 }
 
 func (r *CasaRepository) Delete(ctx context.Context, id uuid.UUID) error {

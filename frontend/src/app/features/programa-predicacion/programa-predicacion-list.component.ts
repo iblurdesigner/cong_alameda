@@ -1,8 +1,8 @@
-﻿import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ProgramaPredicacionService, ProgramaPredicacion, TerritorioSimple } from '../../core/services/programa-predicacion.service';
+import { ProgramaPredicacionService, ProgramaPredicacion } from '../../core/services/programa-predicacion.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 import { TerritorioService, Territorio } from '../../core/services/territorio.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -11,17 +11,16 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-programa-predicacion-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1><re-icon icon="calendar-12" size="24" weight="outline"></re-icon> Día Predicación</h1>
+          <h1>📅 Día Predicación</h1>
           <p class="header-subtitle">Horario y territorios por día de la semana</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
-            <re-icon icon="add-square2" size="16" weight="outline"></re-icon> Nueva Fecha
+            ➕ Nueva Fecha
           </button>
         }
       </header>
@@ -30,7 +29,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (programas().length === 0) {
         <div class="empty-state">
-          <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
+          <div class="empty-icon">📅</div>
           <p>No hay programas de prédicación registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="openCreateModal()">
@@ -55,25 +54,25 @@ import { AuthService } from '../../core/services/auth.service';
                   
                   <div class="dia-content">
                     <div class="info-row">
-                      <span class="label"><re-icon icon="user-circle" size="14" weight="outline"></re-icon> Conductor:</span>
+                      <span class="label">🎤 Conductor:</span>
                       <span class="value">{{ prog.conductor || 'Sin asignar' }}</span>
                     </div>
                     
                     <div class="info-row">
-                      <span class="label"><re-icon icon="map-point" size="14" weight="outline"></re-icon> Lugar:</span>
+                      <span class="label">📍 Lugar:</span>
                       <span class="value">{{ prog.lugar_nombre || 'Sin asignar' }}</span>
                     </div>
                     
                     @if (prog.territorios && prog.territorios.length > 0) {
                       <div class="info-row territorio">
-                        <span class="label"><re-icon icon="folder-open" size="14" weight="outline"></re-icon> Territorios:</span>
+                        <span class="label">🗺️ Territorios:</span>
                         <span class="value">{{ prog.territorios.map(t => t.nombre).join(', ') }}</span>
                       </div>
                     }
                     
                     @if (prog.grupo) {
                       <div class="info-row grupo">
-                        <span class="label"><re-icon icon="crown-12" size="14" weight="outline"></re-icon> Grupo:</span>
+                        <span class="label">👥 Grupo:</span>
                         <span class="value">#{{ prog.grupo.numero }} {{ prog.grupo.nombre }}</span>
                       </div>
                     }
@@ -81,10 +80,10 @@ import { AuthService } from '../../core/services/auth.service';
                   
                   <div class="dia-actions">
                     <button class="btn-icon" (click)="viewPrograma(prog)" title="Ver Detalles">
-                      <re-icon icon="eye-open" size="16" weight="outline"></re-icon> Ver
+                      👁️ Ver
                     </button>
                     @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                      <span class="btn-edit" (click)="editPrograma(prog)"><re-icon icon="edit-22" size="16" weight="outline"></re-icon> Editar</span>
+                      <span class="btn-edit" (click)="editPrograma(prog)">✏️ Editar</span>
                     }
                   </div>
                 </div>
@@ -241,7 +240,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             @if (editingPrograma()) {
-              <button class="btn btn-danger" (click)="deletePrograma()">≡ƒùæ️ Eliminar</button>
+              <button class="btn btn-danger" (click)="deletePrograma()">🗑️ Eliminar</button>
             }
             <div class="spacer"></div>
             <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
@@ -262,7 +261,7 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="modal-overlay" (click)="$event.stopPropagation()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
           <div class="modal-header">
-            <h2>≡ƒôà {{ viewingPrograma()?.dia_semana_nombre }}</h2>
+            <h2>📅 {{ viewingPrograma()?.dia_semana_nombre }}</h2>
             <button class="btn-close" (click)="closeDetailModal()">×</button>
           </div>
           <div class="modal-body">
@@ -270,7 +269,7 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="detail-grid">
                 <!-- Fecha y Día -->
                 <div class="detail-section">
-                  <h3 class="section-title">≡ƒôà Programación</h3>
+                  <h3 class="section-title">📅 Programación</h3>
                   <div class="detail-row">
                     <span class="detail-label">Día:</span>
                     <span class="detail-value">{{ viewingPrograma()?.dia_semana_nombre }}</span>
@@ -291,7 +290,7 @@ import { AuthService } from '../../core/services/auth.service';
 
                 <!-- Conductor -->
                 <div class="detail-section">
-                  <h3 class="section-title">≡ƒÄñ Conductor</h3>
+                  <h3 class="section-title">🎤 Conductor</h3>
                   <div class="detail-row">
                     <span class="detail-value large">{{ viewingPrograma()?.conductor || 'Sin asignar' }}</span>
                   </div>
@@ -299,7 +298,7 @@ import { AuthService } from '../../core/services/auth.service';
 
                 <!-- Lugar -->
                 <div class="detail-section">
-                  <h3 class="section-title">≡ƒôì Lugar de Predicación</h3>
+                  <h3 class="section-title">📍 Lugar de Predicación</h3>
                   <div class="detail-row">
                     <span class="detail-label">Nombre:</span>
                     <span class="detail-value">{{ viewingPrograma()?.lugar_nombre || 'Sin asignar' }}</span>
@@ -337,7 +336,7 @@ import { AuthService } from '../../core/services/auth.service';
                       } @else {
                         <div class="map-placeholder">
                           <a [href]="getExactLocationUrl(viewingPrograma()!)" target="_blank" class="btn-maps">
-                            ≡ƒôì Ver Coordenadas
+                            📍 Ver Coordenadas
                           </a>
                         </div>
                       }
@@ -353,7 +352,7 @@ import { AuthService } from '../../core/services/auth.service';
                           rel="noopener noreferrer"
                           class="btn-maps"
                         >
-                          ≡ƒôì Ver Coordenadas
+                          📍 Ver Coordenadas
                         </a>
                       } @else {
                         <a 
@@ -362,14 +361,14 @@ import { AuthService } from '../../core/services/auth.service';
                           rel="noopener noreferrer"
                           class="btn-maps"
                         >
-                          ≡ƒôì Ver en Google Maps
+                          📍 Ver en Google Maps
                         </a>
                       }
                       <button 
                         class="btn-whatsapp" 
                         (click)="shareByWhatsApp(viewingPrograma()!); closeDetailModal()"
                       >
-                        ≡ƒô▒ Compartir por WhatsApp
+                        📱 Compartir por WhatsApp
                       </button>
                     </div>
                   }
@@ -378,7 +377,7 @@ import { AuthService } from '../../core/services/auth.service';
                 <!-- Territorios -->
                 @if (viewingPrograma()?.territorios && viewingPrograma()!.territorios!.length > 0) {
                   <div class="detail-section">
-                    <h3 class="section-title">≡ƒù║️ Territorios Asignados</h3>
+                    <h3 class="section-title">🗺️ Territorios Asignados</h3>
                     <div class="territorios-tags">
                       @for (t of viewingPrograma()?.territorios; track t.id) {
                         <span class="tag territorio-tag">{{ t.nombre }}</span>
@@ -390,7 +389,7 @@ import { AuthService } from '../../core/services/auth.service';
                 <!-- Grupo -->
                 @if (viewingPrograma()?.grupo) {
                   <div class="detail-section">
-                    <h3 class="section-title">≡ƒæÑ Grupo</h3>
+                    <h3 class="section-title">👥 Grupo</h3>
                     <div class="detail-row">
                       <span class="detail-value large">#{{ viewingPrograma()?.grupo?.numero }} - {{ viewingPrograma()?.grupo?.nombre }}</span>
                     </div>
@@ -796,25 +795,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   viewingPrograma = signal<ProgramaPredicacion | null>(null);
   editingPrograma = signal<ProgramaPredicacion | null>(null);
   
-  formData: {
-    nombre: string;
-    fecha: string;
-    dia_semana: number;
-    conductor: string;
-    hora_inicio: string;
-    hora_fin: string;
-    lugar_nombre: string;
-    lugar_direccion: string;
-    lugar_ciudad: string;
-    lugar_provincia: string;
-    lugar_codigo_postal: string;
-    lugar_pais: string;
-    lugar_ubicacion: string;
-    lugar_contacto: string;
-    lugar_telefono: string;
-    grupo_id: string;
-    territorio_ids: string[];
-  } = {
+  formData: any = {
     nombre: '',
     fecha: '',
     dia_semana: 0,
@@ -845,11 +826,11 @@ export class ProgramaPredicacionListComponent implements OnInit {
     });
     
     this.grupoService.loadGrupos().subscribe({
-      next: (res: { data: Grupo[] }) => this.grupos.set(res.data)
+      next: (res) => this.grupos.set(res.data)
     });
     
     this.territorioService.loadTerritorios().subscribe({
-      next: (res: { data: Territorio[] }) => this.territorios.set(res.data)
+      next: (res) => this.territorios.set(res.data)
     });
   }
   
@@ -921,11 +902,11 @@ export class ProgramaPredicacionListComponent implements OnInit {
   
   hasExactLocation(prog: ProgramaPredicacion | null): boolean {
     if (!prog) return false;
-    return !!prog.lugar_ubicacion;
+    return !!(prog as any).lugar_ubicacion;
   }
   
   getExactLocationUrl(prog: ProgramaPredicacion): string {
-    const coords = prog.lugar_ubicacion;
+    const coords = (prog as any).lugar_ubicacion;
     if (coords) {
       return `https://www.google.com/maps?q=${encodeURIComponent(coords)}&z=17`;
     }
@@ -934,7 +915,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   
   getGoogleMapsEmbedUrl(prog: ProgramaPredicacion): SafeResourceUrl {
     // Priority: coordenadas > address
-    const coords = prog.lugar_ubicacion;
+    const coords = (prog as any).lugar_ubicacion;
     
     // If coordinates, use them directly
     if (coords && coords.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(coords.trim())) {
@@ -943,14 +924,14 @@ export class ProgramaPredicacionListComponent implements OnInit {
     }
     
     // Fallback to address fields
-    if (!prog?.lugar_direccion) return '';
+    if (!prog?.lugar_direccion) return '' as SafeResourceUrl;
     
     const parts: string[] = [];
     if (prog.lugar_direccion) parts.push(prog.lugar_direccion);
-    if (prog.lugar_ciudad) parts.push(prog.lugar_ciudad);
-    if (prog.lugar_provincia) parts.push(prog.lugar_provincia);
-    if (prog.lugar_codigo_postal) parts.push(prog.lugar_codigo_postal);
-    if (prog.lugar_pais) parts.push(prog.lugar_pais);
+    if ((prog as any).lugar_ciudad) parts.push((prog as any).lugar_ciudad);
+    if ((prog as any).lugar_provincia) parts.push((prog as any).lugar_provincia);
+    if ((prog as any).lugar_codigo_postal) parts.push((prog as any).lugar_codigo_postal);
+    if ((prog as any).lugar_pais) parts.push((prog as any).lugar_pais);
     
     const fullAddress = parts.length > 0 ? parts.join(', ') : prog.lugar_direccion;
     const encoded = encodeURIComponent(fullAddress);
@@ -967,15 +948,15 @@ export class ProgramaPredicacionListComponent implements OnInit {
     const contacto = prog.lugar_contacto || '';
     const telefono = prog.lugar_telefono || '';
     
-    let mensaje = `≡ƒôà *${dia}* - Programa de Predicación\n\n`;
-    mensaje += `ΓÅ░ Hora: ${hora}\n`;
-    mensaje += `≡ƒôì Lugar: ${lugar}\n`;
-    if (direccion) mensaje += `≡ƒÅá Dirección: ${direccion}\n`;
-    if (contacto) mensaje += `≡ƒæñ Contacto: ${contacto}\n`;
-    if (telefono) mensaje += `≡ƒô₧ Teléfono: ${telefono}\n`;
+    let mensaje = `📅 *${dia}* - Programa de Predicación\n\n`;
+    mensaje += `⏰ Hora: ${hora}\n`;
+    mensaje += `📍 Lugar: ${lugar}\n`;
+    if (direccion) mensaje += `🏠 Dirección: ${direccion}\n`;
+    if (contacto) mensaje += `👤 Contacto: ${contacto}\n`;
+    if (telefono) mensaje += `📞 Teléfono: ${telefono}\n`;
     
     const mapsUrl = this.getGoogleMapsUrl(direccion);
-    if (mapsUrl) mensaje += `\n≡ƒôì Ubicación: ${mapsUrl}`;
+    if (mapsUrl) mensaje += `\n📍 Ubicación: ${mapsUrl}`;
     
     const encoded = encodeURIComponent(mensaje);
     window.open(`https://wa.me/?text=${encoded}`, '_blank');
@@ -989,14 +970,8 @@ export class ProgramaPredicacionListComponent implements OnInit {
       dia_semana: 0,
       conductor: '',
       hora_inicio: '',
-      hora_fin: '',
       lugar_nombre: 'Salón del Reino',
       lugar_direccion: '',
-      lugar_ciudad: '',
-      lugar_provincia: '',
-      lugar_codigo_postal: '',
-      lugar_pais: '',
-      lugar_ubicacion: '',
       lugar_contacto: '',
       lugar_telefono: '',
       grupo_id: '',
@@ -1031,18 +1006,13 @@ export class ProgramaPredicacionListComponent implements OnInit {
       dia_semana: prog.dia_semana,
       conductor: prog.conductor,
       hora_inicio: prog.hora_inicio,
-      hora_fin: prog.hora_fin || '',
       lugar_nombre: prog.lugar_nombre,
       lugar_direccion: prog.lugar_direccion,
-      lugar_ciudad: prog.lugar_ciudad || '',
-      lugar_provincia: prog.lugar_provincia || '',
-      lugar_codigo_postal: prog.lugar_codigo_postal || '',
-      lugar_pais: prog.lugar_pais || '',
       lugar_ubicacion: prog.lugar_ubicacion || '',
       lugar_contacto: prog.lugar_contacto,
       lugar_telefono: prog.lugar_telefono,
       grupo_id: prog.grupo?.id || '',
-      territorio_ids: territorios.map((t: TerritorioSimple) => t.id)
+      territorio_ids: territorios.map((t: any) => t.id)
     };
     console.log('[editPrograma] formData:', JSON.stringify(this.formData));
     this.showModal.set(true);
@@ -1054,7 +1024,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   }
   
   savePrograma() {
-    const data: Partial<ProgramaPredicacion> & { grupo_id: string | null; territorio_ids: string[] } = {
+    const data: any = {
       nombre: this.formData.nombre || `Programa ${this.formData.fecha}`,
       fecha: this.formData.fecha,
       dia_semana: this.formData.dia_semana,

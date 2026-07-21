@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CasaService, Casa } from '../../../core/services/casa.service';
@@ -8,7 +8,6 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
   selector: 'app-casa-detail',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -84,7 +83,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                           @if (visita.estado === 'REALIZADA' && visita.fecha_realizada) {
                             ✅ {{ formatDate(visita.fecha_realizada) }}
                           } @else {
-                            <re-icon icon="calendar-12" size="18" weight="outline"></re-icon> {{ formatDate(visita.fecha_programada) }}
+                            📅 {{ formatDate(visita.fecha_programada) }}
                           }
                         </span>
                         <span class="badge" [ngClass]="getVisitaEstadoClass(visita.estado)">
@@ -94,7 +93,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
                       
                       @if (visita.visitante_1_nombre || visita.visitante_2_nombre) {
                         <p class="visit-visitors">
-                          <re-icon icon="user-circle" size="18" weight="outline"></re-icon> {{ [visita.visitante_1_nombre, visita.visitante_2_nombre].filter(n => n).join(', ') }}
+                          👥 {{ [visita.visitante_1_nombre, visita.visitante_2_nombre].filter(n => n).join(', ') }}
                         </p>
                       }
                       
@@ -114,10 +113,10 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
           
           <div class="actions-sidebar">
             <a [routerLink]="['/casas', casa()!.id, 'edit']" class="btn btn-primary btn-block">
-              ✏ Editar Casa
+              ✏️ Editar Casa
             </a>
             <a [routerLink]="['/visitas']" [queryParams]="{casa_id: casa()!.id}" class="btn btn-outline btn-block">
-              <re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Ver Visitas
+              📅 Ver Visitas
             </a>
           </div>
         </div>
@@ -135,7 +134,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
           
           <div class="modal-body">
             <div class="detail-section">
-              <h3><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> Programación</h3>
+              <h3>📅 Programación</h3>
               <div class="detail-row">
                 <span class="detail-label">Fecha Programada:</span>
                 <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_programada) }}</span>
@@ -159,7 +158,7 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
             }
 
             <div class="detail-section">
-              <h3><re-icon icon="user-circle" size="18" weight="outline"></re-icon> Visitantes</h3>
+              <h3>👥 Visitantes</h3>
               <div class="detail-row">
                 <span class="detail-label">Visitante 1:</span>
                 <span class="detail-value">{{ selectedVisit()!.visitante_1_nombre || 'No asignado' }}</span>
@@ -172,14 +171,14 @@ import { VisitaService, Visita } from '../../../core/services/visita.service';
 
             @if (selectedVisit()!.observaciones) {
               <div class="detail-section">
-                <h3><re-icon icon="note-text2" size="18" weight="outline"></re-icon> Observaciones</h3>
+                <h3>📝 Observaciones</h3>
                 <div class="observaciones-box">{{ selectedVisit()!.observaciones }}</div>
               </div>
             }
 
             @if (selectedVisit()!.desea_seguir_recibiendo !== undefined) {
               <div class="detail-section">
-                <h3><re-icon icon="bell-ring" size="18" weight="outline"></re-icon> Respuesta del Habitante</h3>
+                <h3>📢 Respuesta del Habitante</h3>
                 <div class="detail-row">
                   <span class="detail-label">Desea seguir recibiendo:</span>
                   <span class="detail-value" [class.text-success]="selectedVisit()!.desea_seguir_recibiendo" [class.text-danger]="!selectedVisit()!.desea_seguir_recibiendo">
@@ -368,7 +367,7 @@ export class CasaDetailComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
-        void this.router.navigate(['/casas']);
+        this.router.navigate(['/casas']);
       }
     });
   }

@@ -20,7 +20,8 @@ func NewSemanaHandler(semanaService *services.SemanaService) *SemanaHandler {
 }
 
 func (h *SemanaHandler) List(c *fiber.Ctx) error {
-	semanas, err := h.semanaService.List(c.Context())
+	includeArchived := c.Query("include_archived", "false") == "true"
+	semanas, err := h.semanaService.List(c.Context(), includeArchived)
 	if err != nil {
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
 	}
@@ -138,6 +139,27 @@ func (h *SemanaHandler) UpdateDia(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(dia)
+}
+
+func (h *SemanaHandler) Archive(c *fiber.Ctx) error {
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_id"})
+	}
+
+	var req struct {
+		Archivado bool `json:"archivado"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(dto.ErrorResponse{Error: "bad_request"})
+	}
+
+	err = h.semanaService.Archive(c.Context(), id, req.Archivado)
+	if err != nil {
+		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
+	}
+
+	return c.JSON(fiber.Map{"message": "Semana archivada"})
 }
 
 func parseDate(s string) (time.Time, error) {

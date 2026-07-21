@@ -30,13 +30,25 @@ func (r *VisitaRepository) Create(ctx context.Context, visita *models.Visita) er
 	`
 
 	visita.ID = uuid.New()
+	// Convert enum to plain string to avoid String() method being called by driver
+	estadoStr := string(visita.Estado)
+
+	// Convert uuid.Nil to nil pointer for nullable foreign keys
+	var v1, v2 *uuid.UUID
+	if visita.Visitante1ID != uuid.Nil {
+		v1 = &visita.Visitante1ID
+	}
+	if visita.Visitante2ID != uuid.Nil {
+		v2 = &visita.Visitante2ID
+	}
+
 	err := r.db.QueryRow(ctx, query,
 		visita.ID,
 		visita.CasaID,
 		visita.FechaProgramada,
-		visita.Visitante1ID,
-		visita.Visitante2ID,
-		visita.Estado,
+		v1,
+		v2,
+		estadoStr,
 	).Scan(&visita.CreatedAt, &visita.UpdatedAt)
 
 	if err != nil {

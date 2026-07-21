@@ -25,13 +25,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8081:8080"
+    env_file:
+      - ./backend/.env
     environment:
-      DATABASE_URL: postgres://app:${DB_PASSWORD:-password123}@db:5432/cong_alameda?sslmode=disable
-      JWT_SECRET: ${JWT_SECRET:-your-super-secret-key-change-in-production}
-      JWT_EXPIRY_HOURS: "24"
-      PORT: "8080"
-      ENV: "development"
-      FRONTEND_URL: "http://localhost:4200"
+      DATABASE_URL: postgres://app:password123@db:5432/cong_alameda?sslmode=disable
+    volumes:
+      - ./uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy

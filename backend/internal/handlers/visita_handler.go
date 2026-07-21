@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,11 +16,15 @@ import (
 
 type VisitaHandler struct {
 	visitaService *services.VisitaService
+	casaService   *services.CasaService
+	userService   *services.UserService
 }
 
-func NewVisitaHandler(visitaService *services.VisitaService) *VisitaHandler {
+func NewVisitaHandler(visitaService *services.VisitaService, casaService *services.CasaService, userService *services.UserService) *VisitaHandler {
 	return &VisitaHandler{
 		visitaService: visitaService,
+		casaService:   casaService,
+		userService:   userService,
 	}
 }
 
@@ -51,7 +56,32 @@ func (h *VisitaHandler) List(c *fiber.Ctx) error {
 	// Convert to response DTOs
 	data := make([]dto.VisitaResponse, 0, len(visitas))
 	for _, v := range visitas {
-		data = append(data, h.visitaToResponse(v))
+		resp := h.visitaToResponse(v)
+		// Fetch casa info
+		if casa, err := h.casaService.GetByID(c.Context(), v.CasaID); err == nil && casa != nil {
+			resp.Casa = &dto.CasaInfo{
+				CallePrincipal:  casa.CallePrincipal,
+				Numeracion:      casa.Numeracion,
+				CalleSecundaria: casa.CalleSecundaria,
+				Sector:          casa.Sector,
+				Referencia:      casa.Referencia,
+				Latitud:        casa.Latitud,
+				Longitud:       casa.Longitud,
+				FotoURL:       casa.FotoURL,
+			}
+		}
+		// Fetch visitor names
+		if v.Visitante1ID != uuid.Nil {
+			if user, err := h.userService.GetByID(c.Context(), v.Visitante1ID); err == nil && user != nil {
+				resp.Visitante1Nombre = &user.Nombre
+			}
+		}
+		if v.Visitante2ID != uuid.Nil {
+			if user, err := h.userService.GetByID(c.Context(), v.Visitante2ID); err == nil && user != nil {
+				resp.Visitante2Nombre = &user.Nombre
+			}
+		}
+		data = append(data, resp)
 	}
 
 	return c.JSON(dto.VisitaListResponse{
@@ -182,6 +212,44 @@ func (h *VisitaHandler) Create(c *fiber.Ctx) error {
 		}
 	}
 
+	// Send notification emails (async)
+	go func() {
+		// Get casa info
+		casa, err := h.casaService.GetByID(c.Context(), result.CasaID)
+		if err != nil {
+			log.Printf("[NOTIFICATION] Could not get casa for visit notification: %v", err)
+			return
+		}
+
+		// Build address from casa fields
+		direccion := casa.CallePrincipal + " " + casa.Numeracion
+		if casa.CalleSecundaria != nil && *casa.CalleSecundaria != "" {
+			direccion += " y " + *casa.CalleSecundaria
+		}
+		direccion += ", " + casa.Sector
+
+		// Send to both visitors
+		visitorIDs := []uuid.UUID{result.Visitante1ID, result.Visitante2ID}
+		fecha := result.FechaProgramada.Format("02/01/2006")
+
+		for _, vid := range visitorIDs {
+			user, err := h.userService.GetByID(c.Context(), vid)
+			if err != nil || user == nil {
+				log.Printf("[NOTIFICATION] Could not get visitor %s: %v", vid, err)
+				continue
+			}
+
+			obs := ""
+			if result.Observaciones != nil {
+				obs = *result.Observaciones
+			}
+
+			if err := services.GetNotificationService().SendVisitScheduledNotification(user, direccion, fecha, obs); err != nil {
+				log.Printf("[NOTIFICATION] Failed to send visit notification to %s: %v", user.Email, err)
+			}
+		}
+	}()
+
 	return c.Status(fiber.StatusCreated).JSON(h.visitaToResponse(result))
 }
 
@@ -221,6 +289,12 @@ func (h *VisitaHandler) Update(c *fiber.Ctx) error {
 	if req.Estado != nil {
 		updates["estado"] = *req.Estado
 	}
+	if req.Visitante1ID != nil {
+		updates["visitante_1_id"] = *req.Visitante1ID
+	}
+	if req.Visitante2ID != nil {
+		updates["visitante_2_id"] = *req.Visitante2ID
+	}
 
 	result, err := h.visitaService.Update(c.Context(), id, updates)
 	if err != nil {
@@ -236,7 +310,36 @@ func (h *VisitaHandler) Update(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(h.visitaToResponse(result))
+	// Build response with casa info and visitor names
+	resp := h.visitaToResponse(result)
+
+	// Fetch casa info
+	if casa, err := h.casaService.GetByID(c.Context(), result.CasaID); err == nil && casa != nil {
+		resp.Casa = &dto.CasaInfo{
+			CallePrincipal:  casa.CallePrincipal,
+			Numeracion:      casa.Numeracion,
+			CalleSecundaria: casa.CalleSecundaria,
+			Sector:          casa.Sector,
+			Referencia:      casa.Referencia,
+			Latitud:        casa.Latitud,
+			Longitud:       casa.Longitud,
+			FotoURL:       casa.FotoURL,
+		}
+	}
+
+	// Fetch visitor names
+	if result.Visitante1ID != uuid.Nil {
+		if user, err := h.userService.GetByID(c.Context(), result.Visitante1ID); err == nil && user != nil {
+			resp.Visitante1Nombre = &user.Nombre
+		}
+	}
+	if result.Visitante2ID != uuid.Nil {
+		if user, err := h.userService.GetByID(c.Context(), result.Visitante2ID); err == nil && user != nil {
+			resp.Visitante2Nombre = &user.Nombre
+		}
+	}
+
+	return c.JSON(resp)
 }
 
 // Delete removes a visita
