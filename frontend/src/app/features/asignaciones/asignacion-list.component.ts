@@ -18,9 +18,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           <p>Programa las asignaciones internas: acomodadores, parqueadero, micrófono, plataforma</p>
         </div>
         @if (authService.isSuperintendente()) {
-          <button class="btn btn-primary" (click)="openBulkModal()">
-            ✏️ Programar Semana
-          </button>
+          <button class="btn btn-primary" (click)="openBulkModal()">✏️ Programar Semana</button>
         }
       </header>
       
@@ -97,7 +95,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       }
     </div>
 
-    <!-- Assign Modal -->
+    <!-- ASSIGN MODAL -->
     @if (showAssignModal) {
       <div class="modal-overlay" (click)="closeAssignModal()">
         <div class="modal" (click)="$event.stopPropagation()">
@@ -148,7 +146,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       </div>
     }
 
-    <!-- Bulk Assign Modal -->
+    <!-- BULK ASSIGN MODAL -->
     @if (showBulkModal) {
       <div class="modal-overlay" (click)="closeBulkModal()">
         <div class="modal modal-lg" (click)="$event.stopPropagation()">
@@ -181,9 +179,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="closeBulkModal()">Cancelar</button>
-            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">
-              Guardar Semana
-            </button>
+            <button class="btn btn-primary" (click)="saveBulkAsignaciones()">Guardar Semana</button>
           </div>
         </div>
       </div>
