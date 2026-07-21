@@ -48,6 +48,10 @@ func (h *GrupoHandler) Create(c *fiber.Ctx) error {
 		Nombre      string  `json:"nombre"`
 		Numero      int     `json:"numero"`
 		Descripcion *string `json:"descripcion"`
+		Direccion   *string `json:"direccion"`
+		Contacto    *string `json:"contacto"`
+		Conductor   *string `json:"conductor"`
+		Horario     *string `json:"horario"`
 	}
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "bad_request"})
@@ -57,6 +61,10 @@ func (h *GrupoHandler) Create(c *fiber.Ctx) error {
 		Nombre:      req.Nombre,
 		Numero:      req.Numero,
 		Descripcion: req.Descripcion,
+		Direccion:   req.Direccion,
+		Contacto:    req.Contacto,
+		Conductor:   req.Conductor,
+		Horario:     req.Horario,
 	}
 
 	if err := h.grupoService.Create(c.Context(), grupo); err != nil {
@@ -75,6 +83,10 @@ func (h *GrupoHandler) Update(c *fiber.Ctx) error {
 	var req struct {
 		Nombre      *string `json:"nombre"`
 		Descripcion *string `json:"descripcion"`
+		Direccion   *string `json:"direccion"`
+		Contacto    *string `json:"contacto"`
+		Conductor   *string `json:"conductor"`
+		Horario     *string `json:"horario"`
 		Activo      *bool   `json:"activo"`
 	}
 	if err := c.BodyParser(&req); err != nil {
@@ -87,6 +99,18 @@ func (h *GrupoHandler) Update(c *fiber.Ctx) error {
 	}
 	if req.Descripcion != nil {
 		updates["descripcion"] = *req.Descripcion
+	}
+	if req.Direccion != nil {
+		updates["direccion"] = *req.Direccion
+	}
+	if req.Contacto != nil {
+		updates["contacto"] = *req.Contacto
+	}
+	if req.Conductor != nil {
+		updates["conductor"] = *req.Conductor
+	}
+	if req.Horario != nil {
+		updates["horario"] = *req.Horario
 	}
 	if req.Activo != nil {
 		updates["activo"] = *req.Activo

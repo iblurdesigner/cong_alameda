@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,14 +46,32 @@ func (s *CasaService) Create(ctx context.Context, casa *models.Casa) (*models.Ca
 	// Check for duplicates
 	isDup, err := s.casaRepo.CheckDuplicateAddress(ctx, casa.CallePrincipal, casa.Numeracion)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error checking duplicate: %w", err)
 	}
 	if isDup {
 		return nil, ErrDuplicateCasa
 	}
 
 	if err := s.casaRepo.Create(ctx, casa); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error creating casa in repo: %w", err)
+	}
+
+	fmt.Printf("Casa created: %s %s (ID: %s)\n", casa.CallePrincipal, casa.Numeracion, casa.ID)
+
+	// Create automatic visit for 1 year from now
+	visitaProgramada := time.Now().AddDate(1, 0, 0)
+	visita := &models.Visita{
+		CasaID:          casa.ID,
+		FechaProgramada: visitaProgramada,
+		Visitante1ID:    uuid.Nil,
+		Visitante2ID:    uuid.Nil,
+		Estado:          models.VisitaEstadoProgramada,
+	}
+
+	if err := s.visitaRepo.Create(ctx, visita); err != nil {
+		fmt.Printf("Error creating auto-visita: %v\n", err)
+	} else {
+		fmt.Printf("Auto-visita created: %s\n", visita.ID)
 	}
 
 	// Notify ancianos when a new casa is registered
@@ -127,6 +146,10 @@ func (s *CasaService) Update(ctx context.Context, id uuid.UUID, casa *models.Cas
 
 func (s *CasaService) UpdateEstado(ctx context.Context, id uuid.UUID, estado models.CasaEstado) error {
 	return s.casaRepo.UpdateEstado(ctx, id, estado)
+}
+
+func (s *CasaService) UpdateFotoURL(ctx context.Context, id uuid.UUID, fotoURL string) (*models.Casa, error) {
+	return s.casaRepo.UpdateFotoURL(ctx, id, fotoURL)
 }
 
 func (s *CasaService) Delete(ctx context.Context, id uuid.UUID) error {

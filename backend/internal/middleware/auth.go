@@ -47,8 +47,8 @@ func (m *AuthMiddleware) Authenticate() fiber.Handler {
 			})
 		}
 
-		// Store claims in context
-		c.Locals("user_id", claims.UserID)
+		// Store claims in context (convert UUID to string)
+		c.Locals("user_id", claims.UserID.String())
 		c.Locals("user_email", claims.Email)
 		c.Locals("user_rol", claims.Rol)
 

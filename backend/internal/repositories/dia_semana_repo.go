@@ -53,10 +53,17 @@ func (r *DiaSemanaRepository) GetByID(ctx context.Context, id uuid.UUID) (*model
 }
 
 func (r *DiaSemanaRepository) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.DiaSemana, error) {
+	if len(updates) == 0 {
+		return r.GetByID(ctx, id)
+	}
+
 	setClauses := ""
 	args := []interface{}{}
 	argNum := 1
 	for col, val := range updates {
+		if val == nil {
+			continue // skip nil values (don't update to NULL via this path)
+		}
 		if setClauses != "" {
 			setClauses += ", "
 		}
@@ -64,6 +71,11 @@ func (r *DiaSemanaRepository) Update(ctx context.Context, id uuid.UUID, updates 
 		args = append(args, val)
 		argNum++
 	}
+
+	if setClauses == "" {
+		return r.GetByID(ctx, id)
+	}
+
 	query := fmt.Sprintf(`UPDATE dias_semana SET %s WHERE id = $%d RETURNING id, semana_id, dia_semana, territorio_manana_id, territorio_tarde_id, grupo_asignado_id, created_at, updated_at`, setClauses, argNum)
 	args = append(args, id)
 	d := &models.DiaSemana{}

@@ -15,7 +15,8 @@ INSERT INTO tipo_asignacion (nombre, descripcion, icono) VALUES
     ('ACOMODADOR_SALON', 'Acomodador del salón de reuniones', '🪑'),
     ('PARQUEADERO', 'Encargado del parqueadero', '🚗'),
     ('MICROFONO', 'Encargado de microfonía', '🎤'),
-    ('PLATAFORMA', 'Encargado de plataforma/presentación', '📺')
+    ('PLATAFORMA', 'Encargado de plataforma/presentación', '📺'),
+    ('ASEO_SALON', 'Grupo encargado del aseo del salón', '🧹')
 ON CONFLICT (nombre) DO NOTHING;
 
 -- Tabla de asignaciones semanales
@@ -24,16 +25,22 @@ CREATE TABLE IF NOT EXISTS asignacion_semanal (
     semana_id UUID REFERENCES semanas_visita(id) ON DELETE CASCADE,
     tipo_asignacion_id UUID REFERENCES tipo_asignacion(id),
     user_id UUID REFERENCES users(id),
+    grupo_id UUID REFERENCES grupos(id),
     dia_semana INT NOT NULL CHECK (dia_semana >= 0 AND dia_semana <= 6),
     observaciones TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(semana_id, tipo_asignacion_id, dia_semana)
+    UNIQUE(semana_id, tipo_asignacion_id, dia_semana),
+    CONSTRAINT chk_user_or_grupo CHECK (
+        (user_id IS NOT NULL AND grupo_id IS NULL) OR
+        (user_id IS NULL AND grupo_id IS NOT NULL)
+    )
 );
 
 -- Índices
 CREATE INDEX IF NOT EXISTS idx_asignacion_semanal_semana ON asignacion_semanal(semana_id);
 CREATE INDEX IF NOT EXISTS idx_asignacion_semanal_user ON asignacion_semanal(user_id);
+CREATE INDEX IF NOT EXISTS idx_asignacion_semanal_grupo ON asignacion_semanal(grupo_id);
 CREATE INDEX IF NOT EXISTS idx_asignacion_semanal_dia ON asignacion_semanal(dia_semana);
 
 -- Tabla de configuración de notificación WhatsApp

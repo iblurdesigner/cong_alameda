@@ -57,19 +57,36 @@ type CreateCasaRequest struct {
 	Numeracion      string  `json:"numeracion"`
 	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
 	Sector          string  `json:"sector"`
-	Referencia      *string `json:"referencia,omitempty"`
-	MotivoNoVolver  string  `json:"motivo_no_volver"`
-	PersonaRegistra string  `json:"persona_registra"`
+	Referencia      *string  `json:"referencia,omitempty"`
+	MotivoNoVolver  *string  `json:"motivo_no_volver,omitempty"`
+	PersonaRegistra string   `json:"persona_registra"`
+	Latitud         *float64 `json:"latitud,omitempty"`
+	Longitud        *float64 `json:"longitud,omitempty"`
+	FotoURL         *string  `json:"foto_url,omitempty"`
 }
 
 type UpdateCasaRequest struct {
-	CallePrincipal  *string `json:"calle_principal,omitempty"`
-	Numeracion      *string `json:"numeracion,omitempty"`
-	CalleSecundaria *string `json:"calle_secundaria,omitempty"`
-	Sector          *string `json:"sector,omitempty"`
-	Referencia      *string `json:"referencia,omitempty"`
-	MotivoNoVolver  *string `json:"motivo_no_volver,omitempty"`
-	Estado          *string `json:"estado,omitempty"`
+	CallePrincipal  *string  `json:"calle_principal,omitempty"`
+	Numeracion      *string  `json:"numeracion,omitempty"`
+	CalleSecundaria *string  `json:"calle_secundaria,omitempty"`
+	Sector          *string  `json:"sector,omitempty"`
+	Referencia      *string  `json:"referencia,omitempty"`
+	MotivoNoVolver  *string  `json:"motivo_no_volver,omitempty"`
+	Estado          *string  `json:"estado,omitempty"`
+	Latitud         *float64 `json:"latitud,omitempty"`
+	Longitud        *float64 `json:"longitud,omitempty"`
+	FotoURL         *string  `json:"foto_url,omitempty"`
+}
+
+type CasaInfo struct {
+	CallePrincipal  string    `json:"calle_principal"`
+	Numeracion      string    `json:"numeracion"`
+	CalleSecundaria *string   `json:"calle_secundaria,omitempty"`
+	Sector          string    `json:"sector"`
+	Referencia      *string   `json:"referencia,omitempty"`
+	Latitud         *float64  `json:"latitud,omitempty"`
+	Longitud        *float64  `json:"longitud,omitempty"`
+	FotoURL        *string   `json:"foto_url,omitempty"`
 }
 
 type CasaResponse struct {
@@ -83,6 +100,9 @@ type CasaResponse struct {
 	FechaRegistro   string    `json:"fecha_registro"`
 	PersonaRegistra string    `json:"persona_registra"`
 	Estado          string    `json:"estado"`
+	Latitud         *float64  `json:"latitud,omitempty"`
+	Longitud        *float64  `json:"longitud,omitempty"`
+	FotoURL         *string   `json:"foto_url,omitempty"`
 }
 
 type CasaListResponse struct {
@@ -114,23 +134,28 @@ type CreateVisitaRequest struct {
 }
 
 type UpdateVisitaRequest struct {
-	FechaRealizada        *string `json:"fecha_realizada,omitempty"`
-	Observaciones         *string `json:"observaciones,omitempty"`
-	DeseaSeguirRecibiendo *bool   `json:"desea_seguir_recibiendo,omitempty"`
-	Estado                *string `json:"estado,omitempty"`
+	FechaRealizada        *string    `json:"fecha_realizada,omitempty"`
+	Observaciones         *string    `json:"observaciones,omitempty"`
+	DeseaSeguirRecibiendo *bool      `json:"desea_seguir_recibiendo,omitempty"`
+	Estado                *string    `json:"estado,omitempty"`
+	Visitante1ID          *uuid.UUID `json:"visitante_1_id,omitempty"`
+	Visitante2ID          *uuid.UUID `json:"visitante_2_id,omitempty"`
 }
 
 type VisitaResponse struct {
-	ID                    uuid.UUID `json:"id"`
-	CasaID                uuid.UUID `json:"casa_id"`
-	FechaProgramada       string    `json:"fecha_programada"`
-	FechaRealizada        *string   `json:"fecha_realizada,omitempty"`
-	Visitante1ID          uuid.UUID `json:"visitante_1_id"`
-	Visitante2ID          uuid.UUID `json:"visitante_2_id"`
-	Observaciones         *string   `json:"observaciones,omitempty"`
-	DeseaSeguirRecibiendo *bool     `json:"desea_seguir_recibiendo,omitempty"`
-	Estado                string    `json:"estado"`
-	CreatedAt             string    `json:"created_at"`
+	ID                    uuid.UUID  `json:"id"`
+	CasaID                uuid.UUID  `json:"casa_id"`
+	FechaProgramada       string     `json:"fecha_programada"`
+	FechaRealizada        *string    `json:"fecha_realizada,omitempty"`
+	Visitante1ID          uuid.UUID  `json:"visitante_1_id"`
+	Visitante2ID          uuid.UUID  `json:"visitante_2_id"`
+	Observaciones         *string    `json:"observaciones,omitempty"`
+	DeseaSeguirRecibiendo *bool      `json:"desea_seguir_recibiendo,omitempty"`
+	Estado                string     `json:"estado"`
+	Visitante1Nombre      *string    `json:"visitante_1_nombre,omitempty"`
+	Visitante2Nombre      *string    `json:"visitante_2_nombre,omitempty"`
+	Casa                  *CasaInfo  `json:"casa,omitempty"`
+	CreatedAt             string     `json:"created_at"`
 }
 
 type VisitaDetailResponse struct {
@@ -225,6 +250,9 @@ func ToCasaResponse(c *models.Casa) CasaResponse {
 		FechaRegistro:   c.FechaRegistro.Format("2006-01-02T15:04:05Z07:00"),
 		PersonaRegistra: c.PersonaRegistra,
 		Estado:          string(c.Estado),
+		Latitud:         c.Latitud,
+		Longitud:        c.Longitud,
+		FotoURL:         c.FotoURL,
 	}
 }
 

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
@@ -9,7 +9,6 @@ import { UserService, User } from '../../../core/services/user.service';
   selector: 'app-visita-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -32,7 +31,7 @@ import { UserService, User } from '../../../core/services/user.service';
         <div class="loading">Cargando...</div>
       } @else if (visitas().length === 0) {
         <div class="empty-state">
-          <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
+          <div class="empty-icon">📅</div>
           <p>No hay visitas registradas</p>
         </div>
       } @else {
@@ -48,7 +47,7 @@ import { UserService, User } from '../../../core/services/user.service';
               
               @if (visita.casa) {
                 <div class="visita-address">
-                  ≡ƒôì {{ visita.casa.calle_principal }} {{ visita.casa.numeracion }}
+                  📍 {{ visita.casa.calle_principal }} {{ visita.casa.numeracion }}
                   @if (visita.casa.calle_secundaria) {
                     , {{ visita.casa.calle_secundaria }}
                   }
@@ -59,11 +58,11 @@ import { UserService, User } from '../../../core/services/user.service';
                   <img [src]="visita.casa.foto_url" alt="Foto casa" class="casa-thumbnail" />
                 } @else {
                   <div class="casa-no-foto">
-                    <span>≡ƒô╖ Sin foto</span>
+                    <span>📷 Sin foto</span>
                   </div>
                 }
                 @if (visita.casa.referencia) {
-                  <p class="visita-ref">≡ƒô¥ {{ visita.casa.referencia }}</p>
+                  <p class="visita-ref">📝 {{ visita.casa.referencia }}</p>
                 }
                 
                 <!-- Mapa embebido si hay coordenadas -->
@@ -79,7 +78,7 @@ import { UserService, User } from '../../../core/services/user.service';
                       referrerpolicy="no-referrer-when-downgrade">
                     </iframe>
                     <a [href]="getExactLocationUrl(visita.casa)" target="_blank" class="btn-maps">
-                      ≡ƒôì Ver en Google Maps
+                      📍 Ver en Google Maps
                     </a>
                   </div>
                 }
@@ -99,7 +98,7 @@ import { UserService, User } from '../../../core/services/user.service';
                 </p>
               }
 
-              <button class="btn-ver" (click)="openDetail(visita)">≡ƒæü️ Ver</button>
+              <button class="btn-ver" (click)="openDetail(visita)">👁️ Ver</button>
             </div>
           }
         </div>
@@ -119,14 +118,14 @@ import { UserService, User } from '../../../core/services/user.service';
             <!-- Info de la Casa -->
             @if (selectedVisit()!.casa) {
               <div class="detail-section">
-                <h3>≡ƒÅá Información de la Casa</h3>
+                <h3>🏠 Información de la Casa</h3>
                 <!-- Foto de la casa -->
                 <div class="detail-foto-container">
                   @if (selectedVisit()!.casa!.foto_url) {
                     <img [src]="selectedVisit()!.casa!.foto_url" alt="Foto casa" class="detail-foto" />
                   } @else {
                     <div class="detail-foto-placeholder">
-                      <re-icon icon="home" size="32" weight="outline" class="placeholder-icon"></re-icon>
+                      <span class="placeholder-icon">🏠</span>
                       <span class="placeholder-text">Sin foto</span>
                     </div>
                   }
@@ -162,7 +161,7 @@ import { UserService, User } from '../../../core/services/user.service';
                       referrerpolicy="no-referrer-when-downgrade">
                     </iframe>
                     <a [href]="getExactLocationUrl(selectedVisit()!.casa!)" target="_blank" class="btn-maps">
-                      ≡ƒôì Ver en Google Maps
+                      📍 Ver en Google Maps
                     </a>
                   </div>
                 }
@@ -171,7 +170,7 @@ import { UserService, User } from '../../../core/services/user.service';
 
             <!-- Programación -->
             <div class="detail-section">
-              <h3>≡ƒôà Programación</h3>
+              <h3>📅 Programación</h3>
               <div class="detail-row">
                 <span class="detail-label">Fecha programada:</span>
                 <span class="detail-value">{{ formatDate(selectedVisit()!.fecha_programada) }}</span>
@@ -212,7 +211,7 @@ import { UserService, User } from '../../../core/services/user.service';
 
             <!-- Asignación de Visitantes -->
             <div class="detail-section">
-              <h3>≡ƒæÑ Asignar Visitantes</h3>
+              <h3>👥 Asignar Visitantes</h3>
               <div class="form-group">
                 <label>Visitante 1:</label>
                 <select [(ngModel)]="visitante1Id" class="form-select">
@@ -237,7 +236,7 @@ import { UserService, User } from '../../../core/services/user.service';
           <div class="modal-footer">
             <button class="btn-secondary" (click)="closeModal()">Cancelar</button>
             <button class="btn-primary" (click)="saveVisitantes()" [disabled]="saving()">
-              {{ saving() ? 'Guardando...' : '≡ƒÆ╛ Guardar' }}
+              {{ saving() ? 'Guardando...' : '💾 Guardar' }}
             </button>
           </div>
         </div>
@@ -249,7 +248,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .page-header { margin-bottom: 1.5rem; h1 { font-size: 1.75rem; font-weight: 700; } .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; } }
     .filters-bar { margin-bottom: 1.5rem; .filter-select { padding: 0.625rem 2rem 0.625rem 0.875rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--surface-color); color: var(--text-primary); font-size: 1rem; min-height: 44px; width: 100%; max-width: 300px; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; } }
     .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
-    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; .empty-icon { display: inline-flex; align-items: center; opacity: 0.5; } }
+    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem; .empty-icon { font-size: 3rem; opacity: 0.5; } }
     .visitas-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
     .visita-card { background: var(--surface-color); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1rem; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05); &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); } }
     .visita-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
@@ -279,7 +278,7 @@ import { UserService, User } from '../../../core/services/user.service';
     .detail-value { font-size: 0.875rem; color: var(--text-primary); font-weight: 500; }
     .detail-foto { width: 100%; max-height: 250px; object-fit: cover; border-radius: var(--radius-md); margin-bottom: 0.75rem; }
     .detail-foto-container { margin-bottom: 0.75rem; }
-    .detail-foto-placeholder { width: 100%; height: 150px; background: var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); .placeholder-icon { display: inline-flex; align-items: center; opacity: 0.5; } .placeholder-text { font-size: 0.875rem; } }
+    .detail-foto-placeholder { width: 100%; height: 150px; background: var(--border-color); border-radius: var(--radius-md); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem; color: var(--text-secondary); .placeholder-icon { font-size: 2rem; opacity: 0.5; } .placeholder-text { font-size: 0.875rem; } }
     .detail-map { margin-top: 0.75rem; .btn-maps { display: block; text-align: center; padding: 0.375rem 0.75rem; background: var(--primary-light); color: var(--primary-color); border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 500; margin-top: 0.375rem; text-decoration: none; &:hover { background: var(--primary-color); color: white; } } }
     .form-group { margin-bottom: 1rem; label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.375rem; color: var(--text-primary); } }
     .form-select, .form-input, .form-textarea { width: 100%; padding: 0.625rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.875rem; background: var(--surface-color); color: var(--text-primary); min-height: 44px; }
@@ -317,13 +316,13 @@ export class VisitaListComponent implements OnInit {
   
   loadVisitas() {
     this.visitaService.loadVisitas({ estado: this.estadoFilter || undefined }).subscribe({
-      next: (res: { data: Visita[] }) => this.visitas.set(res.data)
+      next: (res) => this.visitas.set(res.data)
     });
   }
   
   loadUsers() {
     this.userService.getUsers().subscribe({
-      next: (users: User[]) => this.users.set(users)
+      next: (users) => this.users.set(users)
     });
   }
   
@@ -365,10 +364,10 @@ export class VisitaListComponent implements OnInit {
     
     this.saving.set(true);
     
-    const updates: Partial<Visita> = {};
+    const updates: any = {};
     
     if (this.estado && this.estado !== visita.estado) {
-      updates.estado = this.estado as Visita['estado'];
+      updates.estado = this.estado;
     }
     if (this.visitante1Id) {
       updates.visitante_1_id = this.visitante1Id;
@@ -392,7 +391,7 @@ export class VisitaListComponent implements OnInit {
     }
     
     this.visitaService.updateVisita(visita.id, updates).subscribe({
-      next: (updated: Visita) => {
+      next: (updated) => {
         this.visitas.update(visitas => 
           visitas.map(v => v.id === visita.id ? updated : v)
         );
@@ -439,6 +438,6 @@ export class VisitaListComponent implements OnInit {
       const url = `https://www.google.com/maps?q=${encodeURIComponent(coords)}&output=embed&z=16`;
       return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
-    return '';
+    return '' as SafeResourceUrl;
   }
 }

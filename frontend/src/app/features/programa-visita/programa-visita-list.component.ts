@@ -1,35 +1,34 @@
-﻿import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ProgramaVisitaService, ProgramaVisita } from '../../core/services/programa-visita.service';
 import { ProgramaPredicacionService } from '../../core/services/programa-predicacion.service';
-import { GrupoService } from '../../core/services/grupo.service';
-import { TerritorioService } from '../../core/services/territorio.service';
+import { GrupoService, Grupo } from '../../core/services/grupo.service';
+import { TerritorioService, Territorio } from '../../core/services/territorio.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-programa-visita-list',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
         <div class="header-content">
-          <h1><re-icon icon="smart-car2" size="24" weight="outline"></re-icon> Predicación Visita</h1>
+          <h1>🚗 Predicación Visita</h1>
           <p class="header-subtitle">Personaliza la programación diaria para cada visita</p>
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary" (click)="openCreateModal()">
-            <re-icon icon="add-square2" size="16" weight="outline"></re-icon> Nueva Visita
+            ➕ Nueva Visita
           </button>
         }
       </header>
 
       <!-- Selector de Día para cargar plantilla -->
       <div class="plantilla-section">
-        <h3><re-icon icon="import-12" size="18" weight="outline"></re-icon> Cargar desde Día Predicación</h3>
+        <h3>📋 Cargar desde Día Predicación</h3>
         <div class="form-row">
           <div class="form-group">
             <label for="dia_plantilla">Seleccionar Día:</label>
@@ -48,7 +47,7 @@ import { AuthService } from '../../core/services/auth.service';
             <input type="date" id="fecha_visita" [(ngModel)]="fechaBusqueda" />
           </div>
           <button class="btn btn-outline" (click)="cargarPlantilla()">
-            <re-icon icon="import-12" size="16" weight="outline"></re-icon> Cargar Plantilla
+            📥 Cargar Plantilla
           </button>
         </div>
       </div>
@@ -57,7 +56,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (visitas().length === 0) {
         <div class="empty-state">
-          <re-icon icon="smart-car2" size="48" weight="outline" class="empty-icon"></re-icon>
+          <div class="empty-icon">🚗</div>
           <p>No hay programas de visita registrados</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="openCreateModal()">
@@ -76,33 +75,33 @@ import { AuthService } from '../../core/services/auth.service';
               <div class="visita-content">
                 @if (visita.fecha) {
                   <div class="info-row">
-                    <span class="label"><re-icon icon="calendar-12" size="14" weight="outline"></re-icon> Fecha:</span>
+                    <span class="label">📅 Fecha:</span>
                     <span class="value">{{ visita.fecha }}</span>
                   </div>
                 }
                 @if (visita.hora) {
                   <div class="info-row">
-                    <span class="label"><re-icon icon="clock-circle" size="14" weight="outline"></re-icon> Hora:</span>
+                    <span class="label">⏰ Hora:</span>
                     <span class="value">{{ visita.hora }}</span>
                   </div>
                 }
                 <div class="info-row">
-                  <span class="label"><re-icon icon="user-circle" size="14" weight="outline"></re-icon> Conductor:</span>
+                  <span class="label">🎤 Conductor:</span>
                   <span class="value">{{ visita.conductor || 'Sin asignar' }}</span>
                 </div>
                 <div class="info-row">
-                  <span class="label"><re-icon icon="map-point" size="14" weight="outline"></re-icon> Lugar:</span>
+                  <span class="label">📍 Lugar:</span>
                   <span class="value">{{ visita.lugar_nombre || 'Sin asignar' }}</span>
                 </div>
                 @if (visita.lugar_direccion) {
                   <div class="info-row">
-                    <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Dirección:</span>
+                    <span class="label">🏠 Dirección:</span>
                     <span class="value">{{ visita.lugar_direccion }}</span>
                   </div>
                 }
                 @if (visita.observaciones) {
                   <div class="observaciones">
-                    <span class="label">≡ƒô¥ Notas:</span>
+                    <span class="label">📝 Notas:</span>
                     <p>{{ visita.observaciones }}</p>
                   </div>
                 }
@@ -110,7 +109,7 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
 
               <div class="visita-actions">
-                <span class="btn-view" (click)="viewVisita(visita)">≡ƒæü️ Ver</span>
+                <span class="btn-view" (click)="viewVisita(visita)">👁️ Ver</span>
 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                   <span class="btn-edit" (click)="editVisita(visita)">✏️ Editar</span>
                 }
@@ -205,7 +204,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <div class="modal-footer">
             @if (editing()) {
-              <button class="btn btn-danger" (click)="deleteVisita()">≡ƒùæ️ Eliminar</button>
+              <button class="btn btn-danger" (click)="deleteVisita()">🗑️ Eliminar</button>
             }
             <div class="spacer"></div>
             <button class="btn btn-outline" (click)="closeModal()">Cancelar</button>
@@ -226,33 +225,33 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="modal-body">
             @if (viewingVisita()!.fecha) {
               <div class="info-row">
-                <span class="label"><re-icon icon="calendar-12" size="14" weight="outline"></re-icon> Fecha:</span>
+                <span class="label">📅 Fecha:</span>
                 <span class="value">{{ viewingVisita()!.fecha }}</span>
               </div>
             }
             @if (viewingVisita()!.dia_semana_nombre) {
               <div class="info-row">
-                <span class="label">≡ƒôå Día:</span>
+                <span class="label">📆 Día:</span>
                 <span class="value">{{ viewingVisita()!.dia_semana_nombre }}</span>
               </div>
             }
             @if (viewingVisita()!.hora) {
               <div class="info-row">
-                <span class="label"><re-icon icon="clock-circle" size="14" weight="outline"></re-icon> Hora:</span>
+                <span class="label">⏰ Hora:</span>
                 <span class="value">{{ viewingVisita()!.hora }}</span>
               </div>
             }
             <div class="info-row">
-              <span class="label"><re-icon icon="user-circle" size="14" weight="outline"></re-icon> Conductor:</span>
+              <span class="label">🎤 Conductor:</span>
               <span class="value">{{ viewingVisita()!.conductor || 'Sin asignar' }}</span>
             </div>
             <div class="info-row">
-              <span class="label"><re-icon icon="map-point" size="14" weight="outline"></re-icon> Lugar:</span>
+              <span class="label">📍 Lugar:</span>
               <span class="value">{{ viewingVisita()!.lugar_nombre || 'Sin asignar' }}</span>
             </div>
             @if (viewingVisita()!.lugar_direccion) {
               <div class="info-row">
-                <span class="label"><re-icon icon="home" size="14" weight="outline"></re-icon> Dirección:</span>
+                <span class="label">🏠 Dirección:</span>
                 <span class="value">{{ viewingVisita()!.lugar_direccion }}</span>
               </div>
               
@@ -271,7 +270,7 @@ import { AuthService } from '../../core/services/auth.service';
                 } @else if (hasExactLocation(viewingVisita()!)) {
                   <div class="map-placeholder">
                     <a [href]="getExactLocationUrl(viewingVisita()!)" target="_blank" class="btn-maps">
-                      ≡ƒôì Ver Coordenadas
+                      📍 Ver Coordenadas
                     </a>
                   </div>
                 }
@@ -279,44 +278,44 @@ import { AuthService } from '../../core/services/auth.service';
             }
             @if (viewingVisita()!.lugar_contacto) {
               <div class="info-row">
-                <span class="label">≡ƒæñ Contacto:</span>
+                <span class="label">👤 Contacto:</span>
                 <span class="value">{{ viewingVisita()!.lugar_contacto }}</span>
               </div>
             }
             @if (viewingVisita()!.lugar_telefono) {
               <div class="info-row">
-                <span class="label">≡ƒô₧ Teléfono:</span>
+                <span class="label">📞 Teléfono:</span>
                 <span class="value">{{ viewingVisita()!.lugar_telefono }}</span>
               </div>
             }
             @if (viewingVisita()!.observaciones) {
               <div class="info-row observaciones">
-                <span class="label">≡ƒô¥ Observaciones:</span>
+                <span class="label">📝 Observaciones:</span>
                 <p>{{ viewingVisita()!.observaciones }}</p>
               </div>
             }
           </div>
           <div class="modal-footer">
             <button class="btn btn-outline" (click)="shareByWhatsApp()">
-              ≡ƒôñ Compartir
+              📤 Compartir
             </button>
             @if (hasExactLocation(viewingVisita()!)) {
               <a [href]="getExactLocationUrl(viewingVisita()!)"
                  target="_blank"
                  class="btn btn-outline"
                  title="Abrir ubicación exacta">
-                ≡ƒôì Ver Coordenadas
+                📍 Ver Coordenadas
               </a>
             } @else if (viewingVisita()!.lugar_direccion) {
               <a [href]="getGoogleMapsUrl(viewingVisita()!.lugar_direccion)"
                  target="_blank"
                  class="btn btn-outline"
                  title="Abrir en Google Maps">
-                ≡ƒöù Ver en Maps
+                🔗 Ver en Maps
               </a>
             } @else {
               <button class="btn btn-outline" disabled title="No hay dirección">
-                ≡ƒôì Sin dirección
+                📍 Sin dirección
               </button>
             }
             <div class="spacer"></div>
@@ -464,22 +463,7 @@ authService = inject(AuthService);
   diaPlantilla = 2; // Miércoles por defecto
   fechaBusqueda = '';
 
-  formData: {
-    programa_predicacion_id: string;
-    fecha: string;
-    dia_semana: number;
-    conductor: string;
-    hora: string;
-    lugar_nombre: string;
-    lugar_direccion: string;
-    lugar_ciudad: string;
-    lugar_provincia: string;
-    lugar_codigo_postal: string;
-    lugar_pais: string;
-    lugar_ubicacion: string;
-    observaciones: string;
-    visited: boolean;
-  } = {
+  formData: any = {
     programa_predicacion_id: '',
     fecha: '',
     dia_semana: 0,
@@ -541,7 +525,7 @@ authService = inject(AuthService);
       lugar_provincia: progDia.lugar_provincia || '',
       lugar_codigo_postal: progDia.lugar_codigo_postal || '',
       lugar_pais: progDia.lugar_pais || 'Argentina',
-      lugar_ubicacion: progDia.lugar_ubicacion || '',
+      lugar_ubicacion: (progDia as any).lugar_ubicacion || '',
       observaciones: '',
       visited: false
     };
@@ -574,22 +558,7 @@ authService = inject(AuthService);
   }
 
   editVisita(visita: ProgramaVisita) {
-    this.formData = {
-      programa_predicacion_id: visita.programa_predicacion_id || '',
-      fecha: visita.fecha,
-      dia_semana: visita.dia_semana,
-      conductor: visita.conductor || '',
-      hora: visita.hora || '',
-      lugar_nombre: visita.lugar_nombre || '',
-      lugar_direccion: visita.lugar_direccion || '',
-      lugar_ciudad: visita.lugar_ciudad || '',
-      lugar_provincia: visita.lugar_provincia || '',
-      lugar_codigo_postal: visita.lugar_codigo_postal || '',
-      lugar_pais: visita.lugar_pais || '',
-      lugar_ubicacion: visita.lugar_ubicacion || '',
-      observaciones: visita.observaciones || '',
-      visited: visita.visited
-    };
+    this.formData = { ...visita };
     this.editing.set(true);
     this.editingId.set(visita.id);
     this.showModal.set(true);
@@ -679,7 +648,7 @@ authService = inject(AuthService);
     }
     
     // Fallback to address fields
-    if (!visita?.lugar_direccion) return '';
+    if (!visita?.lugar_direccion) return '' as SafeResourceUrl;
     
     const parts: string[] = [];
     if (visita.lugar_direccion) parts.push(visita.lugar_direccion);
@@ -725,26 +694,26 @@ openGoogleMaps() {
     const visita = this.viewingVisita();
     if (!visita) return '';
 
-    let message = '≡ƒôà Información de Visita\n\n';
+    let message = '📅 Información de Visita\n\n';
 
     if (visita.dia_semana_nombre) {
-      message += `≡ƒôå Día: ${visita.dia_semana_nombre}\n`;
+      message += `📆 Día: ${visita.dia_semana_nombre}\n`;
     }
     if (visita.fecha) {
-      message += `≡ƒôà Fecha: ${visita.fecha}\n`;
+      message += `📅 Fecha: ${visita.fecha}\n`;
     }
     if (visita.hora) {
-      message += `ΓÅ░ Hora: ${visita.hora}\n`;
+      message += `⏰ Hora: ${visita.hora}\n`;
     }
     if (visita.conductor) {
-      message += `≡ƒÄñ Conductor: ${visita.conductor}\n`;
+      message += `🎤 Conductor: ${visita.conductor}\n`;
     }
     if (visita.lugar_nombre) {
-      message += `≡ƒôì Lugar: ${visita.lugar_nombre}\n`;
+      message += `📍 Lugar: ${visita.lugar_nombre}\n`;
     }
     if (visita.lugar_direccion) {
       const direccion = this.buildFullAddress(visita.lugar_direccion);
-      message += `≡ƒÅá Dirección: ${direccion}\n`;
+      message += `🏠 Dirección: ${direccion}\n`;
     }
 
     return message;

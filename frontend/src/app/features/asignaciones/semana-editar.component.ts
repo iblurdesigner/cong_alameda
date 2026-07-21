@@ -1,17 +1,16 @@
-import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { AsignacionService, TipoAsignacion, Asignacion } from '../../core/services/asignacion.service';
+import { AsignacionService, TipoAsignacion, Asignacion, SemanaConAsignaciones } from '../../core/services/asignacion.service';
 import { SemanaService, Semana } from '../../core/services/semana.service';
-import { AuthService, User } from '../../core/services/auth.service';
+import { AuthService } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 
 @Component({
   selector: 'app-semana-editar',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="semana-editar-page">
       <!-- Header -->
@@ -21,7 +20,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             ← Volver
           </button>
           <div class="title-section">
-            <h1><re-icon icon="calendar-12" size="18" weight="outline"></re-icon> {{ semana()?.nombre || 'Semana' }}</h1>
+            <h1>📅 {{ semana()?.nombre || 'Semana' }}</h1>
             <p class="date-range">{{ formatDateRange() }}</p>
           </div>
         </div>
@@ -31,42 +30,31 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       <div class="resumen-lista">
         @for (tipo of tipos(); track tipo.id) {
           @if (getPersonasConAsignaciones(tipo.id); as personas) {
-            <div class="tipo-seccion" [class.sin-asignar]="personas.length === 0">
-              <h3 class="tipo-titulo" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <div style="display:flex; align-items:center; gap:0.5rem;">
-                  <span class="icono">@if (tipo.icono) {
-                    <re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon>
-                  } @else {
-                    <re-icon icon="clipboard-list" size="18" weight="outline"></re-icon>
-                  }</span>
+            @if (personas.length > 0) {
+              <div class="tipo-seccion">
+                <h3 class="tipo-titulo">
+                  <span class="icono">{{ tipo.icono || '📋' }}</span>
                   {{ getTipoNombre(tipo.nombre) }}
+                </h3>
+                
+                <div class="personas-list">
+                  @for (persona of personas; track persona.diaSemana + '-' + persona.userId + '-' + persona.grupoId) {
+                    <div class="persona-card">
+                      <span class="persona-nombre">{{ persona.nombre }}</span>
+                      <span class="persona-dia">{{ getDiaNombre(persona.diaSemana) }}</span>
+                      @if (persona.esGrupo) {
+                        <span class="grupo-badge">Grupo</span>
+                      }
+                      @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                        <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
+                          ✏️
+                        </button>
+                      }
+                    </div>
+                  }
                 </div>
-                @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                  <button class="btn-back" style="padding:0.25rem 0.5rem; font-size:0.75rem;" (click)="openAssignModalByTipoAndDia(tipo.id, 3)">
-                    + Asignar
-                  </button>
-                }
-              </h3>
-              
-              <div class="personas-list">
-                @for (persona of personas; track persona.diaSemana + '-' + persona.userId + '-' + persona.grupoId) {
-                  <div class="persona-card">
-                    <span class="persona-nombre">{{ persona.nombre }}</span>
-                    <span class="persona-dia">{{ getDiaNombre(persona.diaSemana) }}</span>
-                    @if (persona.esGrupo) {
-                      <span class="grupo-badge">Grupo</span>
-                    }
-                    @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                      <button class="btn-edit" (click)="editAsignacionDirecta(persona.asignacionId, tipo.id, persona.diaSemana)">
-                        ✏
-                      </button>
-                    }
-                  </div>
-                } @empty {
-                  <span style="color:var(--text-secondary); font-style:italic; font-size:0.875rem;">Sin asignar</span>
-                }
               </div>
-            </div>
+            }
           }
         }
       </div>
@@ -76,13 +64,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
         <div class="modal-overlay" (click)="closeAssignModal()">
           <div class="modal" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h2>
-              @if (assignForm.isEditing) {
-              <re-icon icon="edit-22" size="18" weight="outline"></re-icon> Editar Asignación
-            } @else {
-              Agregar Persona
-            }
-            </h2>
+              <h2>{{ assignForm.isEditing ? '✏️ Editar Asignación' : 'Agregar Persona' }}</h2>
               <button class="btn-close" (click)="closeAssignModal()">×</button>
             </div>
             <div class="modal-body">
@@ -101,13 +83,12 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 <label for="tipoAsignacion">Tipo de Asignación *</label>
                 <select id="tipoAsignacion" [(ngModel)]="assignForm.tipo_id" disabled>
                   @for (tipo of tipos(); track tipo.id) {
-                    <option [value]="tipo.id"><re-icon [attr.icon]="tipo.icono" size="18" weight="outline"></re-icon> {{ getTipoNombre(tipo.nombre) }}</option>
+                    <option [value]="tipo.id">{{ tipo.icono }} {{ getTipoNombre(tipo.nombre) }}</option>
                   }
                 </select>
               </div>
 
               @if (assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4') {
-                <!-- ONLY group selector for ASEO_SALON -->
                 <div class="form-group">
                   <label for="grupoSelect">Seleccionar Grupo:</label>
                   <select id="grupoSelect" [(ngModel)]="assignForm.grupo_id">
@@ -117,18 +98,17 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                     }
                   </select>
                 </div>
-              } @else {
-                <!-- ONLY person selector for other types -->
-                <div class="form-group">
-                  <label for="nuevaPersona">Seleccionar Persona:</label>
-                  <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
-                    <option value="">Seleccionar persona...</option>
-                    @for (user of users(); track user.id) {
-                      <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
-                    }
-                  </select>
-                </div>
               }
+              
+              <div class="form-group">
+                <label for="nuevaPersona">{{ assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4' ? 'O seleccionar Persona:' : 'Seleccionar Persona:' }}</label>
+                <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
+                  <option value="">Seleccionar persona...</option>
+                  @for (user of users(); track user.id) {
+                    <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                  }
+                </select>
+              </div>
 
               <div class="form-group">
                 <label for="observaciones">Observaciones:</label>
@@ -138,7 +118,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             </div>
             <div class="modal-footer">
               @if (assignForm.isEditing) {
-                <button class="btn btn-danger" (click)="deleteAsignacion()"><re-icon icon="trush-square2" size="18" weight="outline"></re-icon> Eliminar</button>
+                <button class="btn btn-danger" (click)="deleteAsignacion()">🗑️ Eliminar</button>
               }
               <button class="btn btn-outline" (click)="closeAssignModal()">Cancelar</button>
               <button 
@@ -146,11 +126,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 (click)="saveAsignacion()"
                 [disabled]="!assignForm.user_id && !assignForm.grupo_id"
               >
-                @if (assignForm.isEditing) {
-                <re-icon icon="note-text2" size="18" weight="outline"></re-icon> Guardar Cambios
-              } @else {
-                <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Agregar
-              }
+                {{ assignForm.isEditing ? '💾 Guardar Cambios' : '➕ Agregar' }}
               </button>
             </div>
           </div>
@@ -410,7 +386,7 @@ export class SemanaEditarComponent implements OnInit {
 
   semana = signal<Semana | null>(null);
   tipos = signal<TipoAsignacion[]>([]);
-  users = signal<User[]>([]);
+  users = signal<any[]>([]);
   grupos = signal<Grupo[]>([]);
   asignaciones = signal<Asignacion[]>([]);
   
@@ -438,7 +414,7 @@ export class SemanaEditarComponent implements OnInit {
         this.semana.set(semana);
         this.generateWeekDays(semana);
       },
-      error: (err: { status?: number }) => {
+      error: (err) => {
         console.error('Error cargando semana:', err);
         // Si es 401, no navegar al login - solo mostrar error
         if (err.status === 401) {
@@ -453,7 +429,7 @@ export class SemanaEditarComponent implements OnInit {
         console.log('Asignaciones cargadas:', data);
         this.asignaciones.set(data.asignaciones || []);
       },
-      error: (err: { status?: number }) => {
+      error: (err) => {
         console.error('Error cargando asignaciones:', err);
         if (err.status === 401) {
           console.warn('Token inválido o expirado');
@@ -466,7 +442,7 @@ export class SemanaEditarComponent implements OnInit {
       next: () => {
         this.tipos.set(this.asignacionService.tipos());
       },
-      error: (err: { status?: number }) => {
+      error: (err) => {
         console.error('Error cargando tipos:', err);
         if (err.status === 401) {
           console.warn('Token inválido o expirado');
@@ -478,7 +454,7 @@ export class SemanaEditarComponent implements OnInit {
     this.loadUsersAndGrupos();
   }
 
-  generateWeekDays(semana: Semana) {
+  generateWeekDays(semana: any) {
     const inicio = new Date(semana.fecha_inicio);
     this.weekDays = [];
     for (let i = 0; i < 7; i++) {
@@ -501,17 +477,17 @@ export class SemanaEditarComponent implements OnInit {
   loadUsersAndGrupos() {
     // Load ALL users from the users endpoint
     this.authService.getUsers().subscribe({
-      next: (res: User[] | { data: User[] }) => {
-        this.users.set(Array.isArray(res) ? res : res.data);
+      next: (res: any) => {
+        this.users.set(res.data || res);
       },
-      error: (err: { status?: number }) => {
+      error: (err) => {
         console.error('Error loading users:', err);
         // Fallback: try loading from existing asignaciones
         this.asignacionService.loadAsignaciones().subscribe(() => {
           const allAsigs = this.asignacionService.asignaciones();
-          const uniqueUsers = new Map<string, User>();
+          const uniqueUsers = new Map();
           allAsigs.forEach(a => {
-            if (a.user) uniqueUsers.set(a.user.id, a.user as unknown as User);
+            if (a.user) uniqueUsers.set(a.user.id, a.user);
           });
           this.users.set(Array.from(uniqueUsers.values()));
         });
@@ -531,18 +507,13 @@ export class SemanaEditarComponent implements OnInit {
 
   getTipoNombre(nombre: string): string {
     const nombres: Record<string, string> = {
-      'Aseo Salon': 'Aseo del Salón',
-      'ASEO_SALON': 'Aseo del Salón',
-      'Microfono': 'Micrófono',
-      'MICROFONO': 'Micrófono',
+      'Aseo Salon': 'Aseo Salon',
+      'Microfono': 'Microfono',
       'Presidente': 'Presidente',
-      'PRESIDENTE': 'Presidente',
-      'Lectura': 'Lector',
-      'LECTOR_ATALAYA': 'Lector Atalaya',
+      'Lectura': 'Lectura',
       'Tesoro': 'Tesoro',
-      'PARQUEADERO': 'Parqueadero',
-      'PLATAFORMA': 'Plataforma',
-      'ACOMODADOR_SALON': 'Acomodador'
+      'LECTOR_ATALAYA': 'Lector Atalaya',
+      'PRESIDENTE': 'Presidente'
     };
     return nombres[nombre] || nombre;
   }
@@ -621,7 +592,7 @@ export class SemanaEditarComponent implements OnInit {
   }
 
   goBack() {
-    void this.router.navigate(['/asignaciones']);
+    this.router.navigate(['/asignaciones']);
   }
 
   openAssignModal(tipo: TipoAsignacion, diaSemana: number) {
@@ -669,9 +640,8 @@ export class SemanaEditarComponent implements OnInit {
         semana_id: semana.id,
         tipo_asignacion_id: this.assignForm.tipo_id,
         user_id: this.assignForm.user_id,
-        grupo_id: this.assignForm.grupo_id || undefined,
         dia_semana: this.editingDiaSemana,
-        observaciones: this.assignForm.observaciones || undefined
+        observaciones: this.assignForm.observaciones
       }).subscribe(() => {
         this.closeAssignModal();
         this.loadData(semana.id);

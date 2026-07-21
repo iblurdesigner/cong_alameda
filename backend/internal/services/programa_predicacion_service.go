@@ -2,228 +2,210 @@ package services
 
 import (
 	"context"
-	"errors"
+	"log"
 	"time"
 
-	"cong-alameda-backend/internal/dto"
-	"cong-alameda-backend/internal/models"
 	"github.com/google/uuid"
+
+	"cong-alameda-backend/internal/models"
+	"cong-alameda-backend/internal/repositories"
 )
 
-var (
-	ErrProgramaNotFound  = errors.New("programa de predicación no encontrado")
-	ErrDuplicatePrograma = errors.New("ya existe un programa en esta fecha y hora")
-)
-
-// programaPredicacionRepo defines the interface for programa predicacion repository operations.
-// The concrete *repositories.ProgramaPredicacionRepository satisfies this interface.
-type programaPredicacionRepo interface {
-	Create(ctx context.Context, programa *models.ProgramaPredicacion) error
-	GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error)
-	List(ctx context.Context) ([]*models.ProgramaPredicacion, error)
-	Update(ctx context.Context, id uuid.UUID, programa *models.ProgramaPredicacion) error
-	Delete(ctx context.Context, id uuid.UUID) error
-	SyncTerritorios(ctx context.Context, programaID uuid.UUID, territorioIDs []uuid.UUID) error
-	GetTerritoriosByProgramaID(ctx context.Context, programaID uuid.UUID) ([]uuid.UUID, error)
-	ExistsByFechaHora(ctx context.Context, fecha string, horaInicio string, excludeID *uuid.UUID) (bool, error)
-}
-
-// ProgramaPredicacionService implements business logic for preaching program management.
 type ProgramaPredicacionService struct {
-	repo programaPredicacionRepo
+	repo           *repositories.ProgramaPredicacionRepository
+	grupoRepo      *repositories.GrupoRepository
+	territorioRepo *repositories.TerritorioRepository
 }
 
-// NewProgramaPredicacionService creates a new ProgramaPredicacionService.
-func NewProgramaPredicacionService(repo programaPredicacionRepo) *ProgramaPredicacionService {
-	return &ProgramaPredicacionService{repo: repo}
+func NewProgramaPredicacionService(
+	repo *repositories.ProgramaPredicacionRepository,
+	grupoRepo *repositories.GrupoRepository,
+	territorioRepo *repositories.TerritorioRepository,
+) *ProgramaPredicacionService {
+	return &ProgramaPredicacionService{
+		repo:           repo,
+		grupoRepo:      grupoRepo,
+		territorioRepo: territorioRepo,
+	}
 }
 
-// Create creates a new preaching program after checking for duplicate fecha+hora_inicio.
-func (s *ProgramaPredicacionService) Create(ctx context.Context, req *dto.CreateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-	exists, err := s.repo.ExistsByFechaHora(ctx, req.Fecha, req.HoraInicio, nil)
+func (s *ProgramaPredicacionService) Create(
+	ctx context.Context,
+	nombre, fecha string,
+	diaSemana int,
+	conductor, horaInicio, horaFin string,
+	lugarNombre, lugarDireccion, lugarCiudad, lugarProvincia, lugarCodigoPostal, lugarPais, lugarContacto, lugarTelefono string,
+	grupoID *uuid.UUID,
+) (*models.ProgramaPredicacion, error) {
+	log.Printf("=== Create in Service ===")
+	log.Printf("nombre=%s, fecha=%s, diaSemana=%d, conductor=%s, horaInicio=%s, horaFin=%s",
+		nombre, fecha, diaSemana, conductor, horaInicio, horaFin)
+	log.Printf("lugarNombre=%s, lugarDireccion=%s", lugarNombre, lugarDireccion)
+	log.Printf("grupoID=%v", grupoID)
+
+	// Get default lugar for this day if not provided
+	defaultLugar := models.DefaultLugaresPredicacion[diaSemana]
+	if lugarNombre == "" {
+		lugarNombre = defaultLugar["nombre"]
+	}
+	if lugarDireccion == "" {
+		lugarDireccion = defaultLugar["direccion"]
+	}
+	if lugarCiudad == "" {
+		lugarCiudad = defaultLugar["ciudad"]
+	}
+	if lugarProvincia == "" {
+		lugarProvincia = defaultLugar["provincia"]
+	}
+	if lugarPais == "" {
+		lugarPais = "Argentina"
+	}
+	if lugarContacto == "" {
+		lugarContacto = defaultLugar["contacto"]
+	}
+	if lugarTelefono == "" {
+		lugarTelefono = defaultLugar["telefono"]
+	}
+	if horaInicio == "" {
+		horaInicio = "09:00"
+	}
+	if horaFin == "" {
+		horaFin = "11:00"
+	}
+
+	p := &models.ProgramaPredicacion{
+		ID:                uuid.New(),
+		Nombre:            nombre,
+		Fecha:             fecha,
+		DiaSemana:         diaSemana,
+		Conductor:         conductor,
+		HoraInicio:        horaInicio,
+		HoraFin:           horaFin,
+		LugarNombre:       lugarNombre,
+		LugarDireccion:    lugarDireccion,
+		LugarCiudad:       lugarCiudad,
+		LugarProvincia:    lugarProvincia,
+		LugarCodigoPostal: lugarCodigoPostal,
+		LugarPais:         lugarPais,
+		LugarContacto:     lugarContacto,
+		LugarTelefono:     lugarTelefono,
+		GrupoID:           grupoID,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+	}
+
+	if err := s.repo.Create(ctx, p); err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func (s *ProgramaPredicacionService) GetAll(ctx context.Context) ([]*models.ProgramaPredicacionDetail, error) {
+	programas, err := s.repo.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if exists {
-		return nil, ErrDuplicatePrograma
-	}
 
-	fecha, err := time.Parse("2006-01-02", req.Fecha)
-	if err != nil {
-		return nil, errors.New("formato de fecha inválido: use YYYY-MM-DD")
-	}
+	// Enrich with related entities
+	var result []*models.ProgramaPredicacionDetail
+	for _, p := range programas {
+		detail := &models.ProgramaPredicacionDetail{ProgramaPredicacion: *p}
 
-	programa := &models.ProgramaPredicacion{
-		Nombre:           req.Nombre,
-		Fecha:            fecha,
-		DiaSemana:        req.DiaSemana,
-		DiaSemanaNombre:  req.DiaSemanaNombre,
-		Conductor:        req.Conductor,
-		HoraInicio:       req.HoraInicio,
-		HoraFin:          req.HoraFin,
-		LugarNombre:      req.LugarNombre,
-		LugarDireccion:   req.LugarDireccion,
-		LugarCiudad:      req.LugarCiudad,
-		LugarProvincia:   req.LugarProvincia,
-		LugarCodigoPostal: req.LugarCodigoPostal,
-		LugarPais:        req.LugarPais,
-		LugarUbicacion:   req.LugarUbicacion,
-		LugarContacto:    req.LugarContacto,
-		LugarTelefono:    req.LugarTelefono,
-		GrupoID:          req.GrupoID,
-	}
-
-	if err := s.repo.Create(ctx, programa); err != nil {
-		return nil, err
-	}
-
-	if len(req.Territorios) > 0 {
-		if err := s.repo.SyncTerritorios(ctx, programa.ID, req.Territorios); err != nil {
-			return nil, err
-		}
-	}
-
-	return programa, nil
-}
-
-// GetByID returns a single program with its territorio assignments.
-func (s *ProgramaPredicacionService) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacionResponse, error) {
-	programa, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, ErrProgramaNotFound
-	}
-
-	resp := dto.ToProgramaPredicacionResponse(programa)
-
-	territorioIDs, err := s.repo.GetTerritoriosByProgramaID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	for _, tid := range territorioIDs {
-		resp.Territorios = append(resp.Territorios, models.TerritorioSimple{ID: tid})
-	}
-
-	return &resp, nil
-}
-
-// List returns all programs with their territorio assignments.
-func (s *ProgramaPredicacionService) List(ctx context.Context) ([]*models.ProgramaPredicacionResponse, error) {
-	programas, err := s.repo.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	responses := make([]*models.ProgramaPredicacionResponse, len(programas))
-	for i, p := range programas {
-		resp := dto.ToProgramaPredicacionResponse(p)
-
-		territorioIDs, err := s.repo.GetTerritoriosByProgramaID(ctx, p.ID)
-		if err != nil {
-			return nil, err
-		}
-		for _, tid := range territorioIDs {
-			resp.Territorios = append(resp.Territorios, models.TerritorioSimple{ID: tid})
+		// Load grupo if exists
+		if p.GrupoID != nil {
+			grupo, err := s.grupoRepo.GetByID(ctx, *p.GrupoID)
+			if err == nil {
+				detail.Grupo = grupo
+			}
 		}
 
-		responses[i] = &resp
-	}
-
-	return responses, nil
-}
-
-// Update updates an existing program after checking for duplicates.
-func (s *ProgramaPredicacionService) Update(ctx context.Context, id uuid.UUID, req *dto.UpdateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-	existing, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, ErrProgramaNotFound
-	}
-
-	// Check duplicate fecha+hora_inicio only if both are provided
-	if req.Fecha != nil && req.HoraInicio != nil {
-		exists, err := s.repo.ExistsByFechaHora(ctx, *req.Fecha, *req.HoraInicio, &id)
-		if err != nil {
-			return nil, err
-		}
-		if exists {
-			return nil, ErrDuplicatePrograma
-		}
-	}
-
-	// Apply partial updates
-	if req.Nombre != nil {
-		existing.Nombre = *req.Nombre
-	}
-	if req.Fecha != nil {
-		f, err := time.Parse("2006-01-02", *req.Fecha)
+		// Load territorios
+		territorios, err := s.repo.GetTerritorios(ctx, p.ID)
 		if err == nil {
-			existing.Fecha = f
+			detail.Territorios = territorios
 		}
-	}
-	if req.DiaSemana != nil {
-		existing.DiaSemana = *req.DiaSemana
-	}
-	if req.DiaSemanaNombre != nil {
-		existing.DiaSemanaNombre = *req.DiaSemanaNombre
-	}
-	if req.Conductor != nil {
-		existing.Conductor = *req.Conductor
-	}
-	if req.HoraInicio != nil {
-		existing.HoraInicio = *req.HoraInicio
-	}
-	if req.HoraFin != nil {
-		existing.HoraFin = req.HoraFin
-	}
-	if req.LugarNombre != nil {
-		existing.LugarNombre = req.LugarNombre
-	}
-	if req.LugarDireccion != nil {
-		existing.LugarDireccion = req.LugarDireccion
-	}
-	if req.LugarCiudad != nil {
-		existing.LugarCiudad = req.LugarCiudad
-	}
-	if req.LugarProvincia != nil {
-		existing.LugarProvincia = req.LugarProvincia
-	}
-	if req.LugarCodigoPostal != nil {
-		existing.LugarCodigoPostal = req.LugarCodigoPostal
-	}
-	if req.LugarPais != nil {
-		existing.LugarPais = req.LugarPais
-	}
-	if req.LugarUbicacion != nil {
-		existing.LugarUbicacion = req.LugarUbicacion
-	}
-	if req.LugarContacto != nil {
-		existing.LugarContacto = req.LugarContacto
-	}
-	if req.LugarTelefono != nil {
-		existing.LugarTelefono = req.LugarTelefono
-	}
-	if req.GrupoID != nil {
-		existing.GrupoID = req.GrupoID
+
+		result = append(result, detail)
 	}
 
-	if err := s.repo.Update(ctx, id, existing); err != nil {
+	return result, nil
+}
+
+func (s *ProgramaPredicacionService) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacionDetail, error) {
+	p, err := s.repo.GetByID(ctx, id)
+	if err != nil {
 		return nil, err
 	}
 
-	// Sync territorios if the field was provided (even if empty — to clear them)
-	if req.Territorios != nil {
-		if err := s.repo.SyncTerritorios(ctx, id, req.Territorios); err != nil {
+	detail := &models.ProgramaPredicacionDetail{ProgramaPredicacion: *p}
+
+	// Load grupo if exists
+	if p.GrupoID != nil {
+		grupo, err := s.grupoRepo.GetByID(ctx, *p.GrupoID)
+		if err == nil {
+			detail.Grupo = grupo
+		}
+	}
+
+	// Load territorios
+	territorios, err := s.repo.GetTerritorios(ctx, p.ID)
+	if err == nil {
+		detail.Territorios = territorios
+	}
+
+	return detail, nil
+}
+
+func (s *ProgramaPredicacionService) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaPredicacionDetail, error) {
+	log.Printf("[Service Update] id=%s updates keys: %v", id, func() []string {
+		keys := make([]string, 0, len(updates))
+		for k := range updates {
+			keys = append(keys, k)
+		}
+		return keys
+	}())
+
+	// Handle territorios update separately (nil = no cambiar, []string{} = limpiar)
+	if territorios, ok := updates["territorio_ids"]; ok {
+		if ids, ok := territorios.([]string); ok {
+			var uuids []uuid.UUID
+			for _, idStr := range ids {
+				if parsed, err := uuid.Parse(idStr); err == nil {
+					uuids = append(uuids, parsed)
+				}
+			}
+			log.Printf("[Service Update] setting territorios: %v", uuids)
+			if err := s.repo.SetTerritorios(ctx, id, uuids); err != nil {
+				return nil, err
+			}
+		}
+		// Remove from updates to avoid trying to set it in the main table
+		delete(updates, "territorio_ids")
+	}
+
+	// Si no hay más campos aparte de territorio_ids, saltar el Update
+	if len(updates) > 0 {
+		_, err := s.repo.Update(ctx, id, updates)
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	return existing, nil
+	return s.GetByID(ctx, id)
 }
 
-// Delete removes a program. Returns ErrProgramaNotFound if the ID does not exist.
 func (s *ProgramaPredicacionService) Delete(ctx context.Context, id uuid.UUID) error {
-	_, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		return ErrProgramaNotFound
-	}
 	return s.repo.Delete(ctx, id)
+}
+
+func (s *ProgramaPredicacionService) SetTerritorios(ctx context.Context, programaID uuid.UUID, territorioIDs []string) error {
+	// Convert string IDs to UUID
+	var uuids []uuid.UUID
+	for _, idStr := range territorioIDs {
+		if parsed, err := uuid.Parse(idStr); err == nil {
+			uuids = append(uuids, parsed)
+		}
+	}
+	return s.repo.SetTerritorios(ctx, programaID, uuids)
 }

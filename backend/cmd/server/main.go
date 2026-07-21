@@ -54,15 +54,26 @@ func main() {
 	visitaService := services.NewVisitaService(visitaRepo, casaRepo, userRepo, notifService)
 	userService := services.NewUserService(userRepo, jwtManager)
 
-	// Initialize email service and rate limiter
+	// Initialize email service, rate limiter, and notification service
 	emailService := services.NewConsoleEmailService(cfg.FrontendURL)
 	rateLimiter := services.NewRateLimiter(5 * time.Minute)
 
+	emailConfig := services.EmailConfig{
+		SMTPHost:     cfg.SMTPHost,
+		SMTPPort:     cfg.SMTPPort,
+		SMTPUsername: cfg.SMTPUsername,
+		SMTPPassword: cfg.SMTPPassword,
+		FromEmail:    cfg.FromEmail,
+		FromName:     cfg.FromName,
+		Enabled:      cfg.SMTPEnabled,
+	}
+	services.InitNotificationService(emailConfig)
+
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(userService, jwtManager, emailService, rateLimiter)
-	casaHandler := handlers.NewCasaHandler(casaService)
-	visitaHandler := handlers.NewVisitaHandler(visitaService)
-	notifHandler := handlers.NewNotificacionHandler(notifService)
+	casaHandler := handlers.NewCasaHandler(casaService, userService)
+	visitaHandler := handlers.NewVisitaHandler(visitaService, casaService, userService)
+	notifHandler := handlers.NewNotificacionHandler(notifService, userService, casaService)
 	userHandler := handlers.NewUserHandler(userService)
 
 	// ====== FASE 2: Grupos, Territorios, Semanas ======
@@ -94,9 +105,14 @@ func main() {
 	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)
 
 	// Initialize ProgramaPredicacion repo, service, handler
-	programaRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
-	programaService := services.NewProgramaPredicacionService(programaRepo)
-	programaHandler := handlers.NewProgramaPredicacionHandler(programaService)
+	programaPredicacionRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
+	programaPredicacionService := services.NewProgramaPredicacionService(programaPredicacionRepo, grupoRepo, territorioRepo)
+	programaPredicacionHandler := handlers.NewProgramaPredicacionHandler(programaPredicacionService)
+
+	// Initialize ProgramaVisita repo, service, handler
+	programaVisitaRepo := repositories.NewProgramaVisitaRepository(db.Pool)
+	programaVisitaService := services.NewProgramaVisitaService(programaVisitaRepo, programaPredicacionRepo, grupoRepo, territorioRepo)
+	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
@@ -152,6 +168,7 @@ func main() {
 	casas.Get("/:id", casaHandler.GetByID)
 	casas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Create)
 	casas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Update)
+	casas.Post("/:id/foto", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.UploadFoto)
 	casas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Delete)
 
 	// Visita routes
@@ -160,7 +177,7 @@ func main() {
 	visitas.Get("/stats", visitaHandler.GetStats)
 	visitas.Get("/:id", visitaHandler.GetByID)
 	visitas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Create)
-	visitas.Put("/:id", visitaHandler.Update)
+	visitas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Update)
 	visitas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Delete)
 
 	// Notificacion routes
@@ -226,13 +243,22 @@ func main() {
 
 	// ====== PROGRAMA PREDICACION ROUTES ======
 
-	// Programa Predicacion routes (any authenticated user, no role guard)
+	// Programa de Predicación routes
 	programas := protected.Group("/programas-predicacion")
-	programas.Get("/", programaHandler.List)
-	programas.Get("/:id", programaHandler.GetByID)
-	programas.Post("/", programaHandler.Create)
-	programas.Put("/:id", programaHandler.Update)
-	programas.Delete("/:id", programaHandler.Delete)
+	programas.Get("/", programaPredicacionHandler.List)
+	programas.Get("/:id", programaPredicacionHandler.GetByID)
+	programas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Create)
+	programas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Update)
+	programas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaPredicacionHandler.Delete)
+
+	// Programa de Visita routes
+	visitasGroup := protected.Group("/programas-visita")
+	visitasGroup.Get("/", programaVisitaHandler.List)
+	visitasGroup.Get("/by-fecha", programaVisitaHandler.GetByFecha)
+	visitasGroup.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.Create)
+	visitasGroup.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.Update)
+	visitasGroup.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaVisitaHandler.Delete)
+	visitasGroup.Put("/:id/visited", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.SetVisited)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

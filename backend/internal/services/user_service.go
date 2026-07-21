@@ -106,6 +106,20 @@ func (s *UserService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.userRepo.Delete(ctx, id)
 }
 
+func (s *UserService) GetByEmailForRecovery(ctx context.Context, email string) (*models.User, error) {
+	return s.userRepo.GetByEmail(ctx, email)
+}
+
+func (s *UserService) UpdatePassword(ctx context.Context, email, password string) error {
+	hashedPassword, err := repositories.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	return s.userRepo.UpdateByEmail(ctx, email, map[string]interface{}{
+		"password": hashedPassword,
+	})
+}
+
 func (s *UserService) ValidateToken(tokenString string) (*jwt.Claims, error) {
 	return s.jwtMgr.ValidateToken(tokenString)
 }

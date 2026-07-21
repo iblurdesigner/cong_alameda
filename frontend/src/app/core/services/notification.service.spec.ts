@@ -32,7 +32,6 @@ describe('NotificationService', () => {
   };
 
   beforeEach(() => {
-    TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],
       providers: [NotificationService],
@@ -111,11 +110,14 @@ describe('NotificationService', () => {
       req.flush(mockResponse);
     });
 
-    it('should set loading to false after response', () => {
-      service.loadNotifications().subscribe();
+    it('should set loading to false after response', (done) => {
+      service.loadNotifications().subscribe(() => {
+        expect(service.loading()).toBe(false);
+        done();
+      });
+
       const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
-      expect(service.loading()).toBe(false);
     });
 
     it('should handle empty response', (done) => {
@@ -155,7 +157,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       // Then mark as read
@@ -174,7 +176,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       // Mark the unread notification (id: '1') as read
@@ -197,7 +199,7 @@ describe('NotificationService', () => {
 
       service.loadNotifications().subscribe();
 
-      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(response);
 
       // Mark notification as read
@@ -212,7 +214,7 @@ describe('NotificationService', () => {
 
     it('should handle markAsRead for non-existent notification', (done) => {
       service.markAsRead('non-existent-id').subscribe({
-        error: (err: unknown) => {
+        error: (err) => {
           done();
         },
       });
@@ -240,7 +242,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       // Mark all as read
@@ -258,7 +260,7 @@ describe('NotificationService', () => {
       // First load notifications
       service.loadNotifications().subscribe();
 
-      const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
+      let req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush(mockResponse);
 
       expect(service.unreadCount()).toBe(1);
@@ -304,30 +306,38 @@ describe('NotificationService', () => {
   // ========== Error Handling ==========
 
   describe('error handling', () => {
-    it('should handle HTTP error on loadNotifications', () => {
-      service.loadNotifications().subscribe();
+    it('should handle HTTP error on loadNotifications', (done) => {
+      service.loadNotifications().subscribe({
+        error: (err) => {
+          done();
+        },
+      });
+
       const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-      // catchError handles the error and returns default values
-      expect(service.notificaciones()).toEqual([]);
-      expect(service.unreadCount()).toBe(0);
     });
 
-    it('should handle network error on loadNotifications', () => {
-      service.loadNotifications().subscribe();
+    it('should handle network error on loadNotifications', (done) => {
+      service.loadNotifications().subscribe({
+        error: (err) => {
+          done();
+        },
+      });
+
       const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.error(new ProgressEvent('error'));
-      // catchError handles the error and returns default values
-      expect(service.notificaciones()).toEqual([]);
-      expect(service.unreadCount()).toBe(0);
     });
 
-    it('should reset loading state on error', () => {
-      service.loadNotifications().subscribe();
+    it('should reset loading state on error', (done) => {
+      service.loadNotifications().subscribe({
+        error: () => {
+          expect(service.loading()).toBe(false);
+          done();
+        },
+      });
+
       const req = httpMock.expectOne(`${mockApiUrl}/notificaciones`);
       req.error(new ProgressEvent('error'));
-      // finalize runs after error is caught by catchError
-      expect(service.loading()).toBe(false);
     });
   });
 

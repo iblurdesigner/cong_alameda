@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -15,11 +17,13 @@ import (
 
 type CasaHandler struct {
 	casaService *services.CasaService
+	userService *services.UserService
 }
 
-func NewCasaHandler(casaService *services.CasaService) *CasaHandler {
+func NewCasaHandler(casaService *services.CasaService, userService *services.UserService) *CasaHandler {
 	return &CasaHandler{
 		casaService: casaService,
+		userService: userService,
 	}
 }
 
@@ -81,10 +85,25 @@ func (h *CasaHandler) GetByID(c *fiber.Ctx) error {
 		})
 	}
 
-	// Convert visitas
+	// Convert visitas with visitor names
 	visitas := make([]dto.VisitaResponse, 0, len(detail.Visitas))
 	for _, v := range detail.Visitas {
-		visitas = append(visitas, h.visitaToResponse(&v))
+		resp := h.visitaToResponse(&v)
+
+		// Fetch visitor 1 name
+		if v.Visitante1ID != uuid.Nil {
+			if user, err := h.userService.GetByID(c.Context(), v.Visitante1ID); err == nil && user != nil {
+				resp.Visitante1Nombre = &user.Nombre
+			}
+		}
+		// Fetch visitor 2 name
+		if v.Visitante2ID != uuid.Nil {
+			if user, err := h.userService.GetByID(c.Context(), v.Visitante2ID); err == nil && user != nil {
+				resp.Visitante2Nombre = &user.Nombre
+			}
+		}
+
+		visitas = append(visitas, resp)
 	}
 
 	return c.JSON(dto.CasaDetailResponse{
@@ -125,10 +144,10 @@ func (h *CasaHandler) Create(c *fiber.Ctx) error {
 	}
 
 	// Validation
-	if req.CallePrincipal == "" || req.Numeracion == "" || req.Sector == "" || req.MotivoNoVolver == "" {
+	if req.CallePrincipal == "" || req.Numeracion == "" || req.Sector == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
 			Error:   "validation_error",
-			Message: "Campos requeridos: calle_principal, numeracion, sector, motivo_no_volver",
+			Message: "Campos requeridos: calle_principal, numeracion, sector",
 		})
 	}
 
@@ -138,8 +157,24 @@ func (h *CasaHandler) Create(c *fiber.Ctx) error {
 		CalleSecundaria: req.CalleSecundaria,
 		Sector:          req.Sector,
 		Referencia:      req.Referencia,
-		MotivoNoVolver:  req.MotivoNoVolver,
-		PersonaRegistra: req.PersonaRegistra,
+		Latitud:        req.Latitud,
+		Longitud:       req.Longitud,
+		FotoURL:        req.FotoURL,
+	}
+	if req.MotivoNoVolver != nil {
+		casa.MotivoNoVolver = *req.MotivoNoVolver
+	}
+
+	// Get current user from auth middleware
+	if userEmail, ok := c.Locals("user_email").(string); ok && userEmail != "" {
+		casa.PersonaRegistra = userEmail
+	} else if req.PersonaRegistra != "" {
+		casa.PersonaRegistra = req.PersonaRegistra
+	}
+
+	// Fallback if still empty
+	if casa.PersonaRegistra == "" {
+		casa.PersonaRegistra = "Sistema"
 	}
 
 	result, err := h.casaService.Create(c.Context(), casa)
@@ -200,6 +235,15 @@ func (h *CasaHandler) Update(c *fiber.Ctx) error {
 	}
 	if req.Estado != nil {
 		casa.Estado = models.CasaEstado(*req.Estado)
+	}
+	if req.Latitud != nil {
+		casa.Latitud = req.Latitud
+	}
+	if req.Longitud != nil {
+		casa.Longitud = req.Longitud
+	}
+	if req.FotoURL != nil {
+		casa.FotoURL = req.FotoURL
 	}
 
 	result, err := h.casaService.Update(c.Context(), id, casa)
@@ -273,4 +317,74 @@ func parseInt(s string, defaultVal int) int {
 		return defaultVal
 	}
 	return val
+}
+
+// UploadFoto handles photo upload for a casa
+// POST /api/casas/:id/foto
+func (h *CasaHandler) UploadFoto(c *fiber.Ctx) error {
+	idStr := c.Params("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_id",
+			Message: "ID de casa inválido",
+		})
+	}
+
+	file, err := c.FormFile("foto")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "no_file",
+			Message: "No se proporcionó archivo",
+		})
+	}
+
+	// Validate file type
+	ext := ""
+	switch file.Header.Get("Content-Type") {
+	case "image/jpeg", "image/jpg":
+		ext = ".jpg"
+	case "image/png":
+		ext = ".png"
+	case "image/webp":
+		ext = ".webp"
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(dto.ErrorResponse{
+			Error:   "invalid_type",
+			Message: "Solo se permiten imágenes JPEG, PNG o WebP",
+		})
+	}
+
+	// Create upload directory
+	uploadDir := "./uploads/casas"
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   " mkdir_error",
+			Message: "Error al crear directorio",
+		})
+	}
+
+	// Generate filename
+	filename := fmt.Sprintf("%s%s", id.String(), ext)
+	filepath := fmt.Sprintf("%s/%s", uploadDir, filename)
+
+	// Save file
+	if err := c.SaveFile(file, filepath); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "save_error",
+			Message: "Error al guardar archivo",
+		})
+	}
+
+	// Update casa with foto_url
+	fotoURL := fmt.Sprintf("/uploads/casas/%s", filename)
+	casa, err := h.casaService.UpdateFotoURL(c.Context(), id, fotoURL)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(dto.ErrorResponse{
+			Error:   "update_error",
+			Message: "Error al actualizar la casa",
+		})
+	}
+
+	return c.JSON(dto.ToCasaResponse(casa))
 }

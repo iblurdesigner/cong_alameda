@@ -289,6 +289,37 @@ func CheckPassword(password, hash string) bool {
 	return err == nil
 }
 
+func (r *UserRepository) UpdateByEmail(ctx context.Context, email string, updates map[string]interface{}) error {
+	query := "UPDATE users SET "
+	args := []interface{}{}
+	argNum := 1
+	updatesSQL := ""
+
+	for key, value := range updates {
+		if updatesSQL != "" {
+			updatesSQL += ", "
+		}
+		updatesSQL += fmt.Sprintf("%s = $%d", key, argNum)
+		args = append(args, value)
+		argNum++
+	}
+
+	query += updatesSQL + fmt.Sprintf(" WHERE email = $%d", argNum)
+	args = append(args, email)
+	query += " RETURNING id"
+
+	var id uuid.UUID
+	err := r.db.QueryRow(ctx, query, args...).Scan(&id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrUserNotFound
+		}
+		return fmt.Errorf("error updating user by email: %w", err)
+	}
+
+	return nil
+}
+
 func isUniqueViolation(err error) bool {
 	return err != nil && (contains(err.Error(), "duplicate key") || contains(err.Error(), "unique constraint"))
 }

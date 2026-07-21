@@ -1,15 +1,14 @@
-﻿import { Component, inject, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { SemanaService } from '../../core/services/semana.service';
+import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-semana-list',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -19,7 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
         @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
           <button class="btn btn-primary btn-mobile-full" (click)="showModal = true">
-            <re-icon icon="add-square2" size="16" weight="outline" class="btn-icon-only"></re-icon>
+            <span class="btn-icon-only">➕</span>
             <span class="btn-text">Nueva Semana</span>
           </button>
         }
@@ -29,7 +28,7 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="loading">Cargando...</div>
       } @else if (semanaService.semanas().length === 0) {
         <div class="empty-state">
-          <re-icon icon="calendar-12" size="48" weight="outline" class="empty-icon"></re-icon>
+          <div class="empty-icon">📅</div>
           <p>No hay semanas de visita registradas</p>
           @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
             <button class="btn btn-primary" (click)="showModal = true">
@@ -310,7 +309,7 @@ export class SemanaListComponent implements OnInit {
         this.loadSemanas();
         this.closeModal();
       },
-      error: (err: { error?: { error?: string } }) => {
+      error: (err) => {
         alert(err.error?.error || 'Error al crear la semana');
       }
     });
