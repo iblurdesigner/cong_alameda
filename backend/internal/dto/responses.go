@@ -171,6 +171,21 @@ type UpdateNotificacionReadRequest struct {
 	Leida bool `json:"leida"`
 }
 
+// ========== Recovery DTOs ==========
+
+type RecoverRequest struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}
+
+type RecoverResponse struct {
+	Message string `json:"message"`
+}
+
 // ========== Common Response DTOs ==========
 
 type ErrorResponse struct {
