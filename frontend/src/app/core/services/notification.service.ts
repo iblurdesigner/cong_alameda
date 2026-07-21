@@ -1,7 +1,8 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { tap } from 'rxjs/operators';
+import { tap, catchError, finalize } from 'rxjs/operators';
+import { of, timeout } from 'rxjs';
 
 export interface Notificacion {
   id: string;
@@ -41,6 +42,23 @@ export class NotificationService {
         tap(response => {
           this.notificacionesSignal.set(response.data);
           this.unreadCountSignal.set(response.unread_count);
+        }),
+        catchError(error => {
+          console.error('Error loading notifications:', error);
+          this.notificacionesSignal.set([]);
+          this.unreadCountSignal.set(0);
+          return of({ data: [], unread_count: 0 });
+        }),
+        timeout({
+          first: 10000,
+          with: () => {
+            console.error('Timeout loading notifications');
+            this.notificacionesSignal.set([]);
+            this.unreadCountSignal.set(0);
+            return of({ data: [], unread_count: 0 });
+          }
+        }),
+        finalize(() => {
           this.loadingSignal.set(false);
         })
       );

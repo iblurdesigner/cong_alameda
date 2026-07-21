@@ -12,8 +12,17 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
   {
+    path: 'recovery',
+    loadComponent: () => import('./features/auth/recovery/recovery.component').then(m => m.RecoveryComponent)
+  },
+  {
     path: 'dashboard',
     loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'perfil',
+    loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard]
   },
   {
@@ -43,7 +52,7 @@ export const routes: Routes = [
   },
   {
     path: 'notificaciones',
-    loadComponent: () => import('./features/notifications/notification-list/notification-list.component').then(m => m.NotificationListComponent),
+    loadComponent: () => import('./features/notifications/notification-dashboard/notification-dashboard.component').then(m => m.NotificationDashboardComponent),
     canActivate: [authGuard]
   },
   // ====== FASE 2: Grupos, Territorios, Semanas ======
@@ -62,11 +71,19 @@ export const routes: Routes = [
     loadComponent: () => import('./features/territorios/territorio-list.component').then(m => m.TerritorioListComponent),
     canActivate: [authGuard]
   },
+  // ====== Día Predicación (antes Semanas) ======
   {
-    path: 'semanas',
-    loadComponent: () => import('./features/semanas/semana-list.component').then(m => m.SemanaListComponent),
+    path: 'dia-predicacion',
+    loadComponent: () => import('./features/programa-predicacion/programa-predicacion-list.component').then(m => m.ProgramaPredicacionListComponent),
     canActivate: [authGuard]
   },
+  // ====== Predicación Visita ======
+  {
+    path: 'predicacion-visita',
+    loadComponent: () => import('./features/programa-visita/programa-visita-list.component').then(m => m.ProgramaVisitaListComponent),
+    canActivate: [authGuard]
+  },
+  // Las siguientes rutas /semanas/:id son usadas por otros módulos (asignaciones)
   {
     path: 'semanas/:id',
     loadComponent: () => import('./features/semanas/semana-detail.component').then(m => m.SemanaDetailComponent),
@@ -76,6 +93,17 @@ export const routes: Routes = [
   {
     path: 'asignaciones',
     loadComponent: () => import('./features/asignaciones/asignacion-list.component').then(m => m.AsignacionListComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'asignaciones/semana/:id',
+    loadComponent: () => import('./features/asignaciones/semana-editar.component').then(m => m.SemanaEditarComponent),
+    canActivate: [authGuard]
+  },
+  // ====== Backoffice: Gestión de Usuarios ======
+  {
+    path: 'usuarios',
+    loadComponent: () => import('./features/admin/usuarios/usuarios-list.component').then(m => m.UsuariosListComponent),
     canActivate: [authGuard]
   },
   {

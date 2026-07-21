@@ -1,14 +1,17 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { GrupoService, GrupoDetail, Territorio } from '../../core/services/grupo.service';
 import { TerritorioService } from '../../core/services/territorio.service';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-grupo-detail',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="page-container">
       <header class="page-header">
@@ -19,9 +22,9 @@ import { AuthService } from '../../core/services/auth.service';
             <p>Grupo #{{ grupo()!.numero }} • {{ grupo()!.territorios?.length || 0 }} territorios</p>
           }
         </div>
-        @if (authService.isSuperintendente() && grupo()) {
+        @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && grupo()) {
           <a [routerLink]="['/territorios']" [queryParams]="{grupo_id: grupo()!.id}" class="btn btn-primary">
-            ➕ Agregar Territorio
+            <re-icon icon="add-square2" size="18" weight="outline"></re-icon> Agregar Territorio
           </a>
         }
       </header>
@@ -39,7 +42,7 @@ import { AuthService } from '../../core/services/auth.service';
         @if (!grupo()!.territorios || grupo()!.territorios.length === 0) {
           <div class="empty-state">
             <p>No hay territorios en este grupo</p>
-            @if (authService.isSuperintendente()) {
+            @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
               <a [routerLink]="['/territorios']" [queryParams]="{grupo_id: grupo()!.id}" class="btn btn-primary">
                 Subir Primer Territorio
               </a>
@@ -49,7 +52,7 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="territorios-grid">
             @for (territorio of grupo()!.territorios; track territorio.id) {
               <div class="territorio-card">
-                <div class="territorio-icon">📄</div>
+                <div class="territorio-icon"><re-icon icon="document-text2" size="18" weight="outline"></re-icon></div>
                 <div class="territorio-info">
                   <h4>{{ territorio.nombre }}</h4>
                   <p class="file-info">
@@ -61,19 +64,26 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 <div class="territorio-actions">
                   <button 
+                    class="btn btn-secondary btn-sm"
+                    (click)="openPreview(territorio)"
+                    title="Visualizar PDF"
+                  >
+                    <re-icon icon="eye-open" size="18" weight="outline"></re-icon> Ver
+                  </button>
+                  <button 
                     class="btn btn-primary btn-sm"
                     (click)="downloadTerritorio(territorio)"
                     title="Descargar PDF"
                   >
-                    ⬇️ Descargar
+                    <re-icon icon="download-square" size="18" weight="outline"></re-icon> Descargar
                   </button>
-                  @if (authService.isSuperintendente()) {
+                  @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
                     <button 
                       class="btn btn-icon btn-sm btn-danger"
                       (click)="deleteTerritorio(territorio)"
                       title="Eliminar"
                     >
-                      🗑️
+                      <re-icon icon="trush-square2" size="18" weight="outline"></re-icon>
                     </button>
                   }
                 </div>
@@ -83,6 +93,49 @@ import { AuthService } from '../../core/services/auth.service';
         }
       }
     </div>
+
+    <!-- Modal de Previsualización -->
+    @if (previewTerritorio()) {
+      <div class="modal-overlay" (click)="closePreview()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-header">
+            <h3>{{ previewTerritorio()!.nombre }}</h3>
+            <div class="modal-header-actions">
+              <a 
+                href="javascript:void(0)" 
+                (click)="openInNewTab(previewTerritorio()!)" 
+                class="btn-open-new"
+                title="Abrir en nueva pestaña"
+              >
+                <re-icon icon="link-12" size="18" weight="outline"></re-icon> Nueva pestaña
+              </a>
+              <button class="modal-close" (click)="closePreview()">✕</button>
+            </div>
+          </div>
+          <div class="modal-body">
+            @if (previewUrl()) {
+              <!-- Usando embed para PDFs -->
+              <embed 
+                [src]="previewUrl()" 
+                type="application/pdf"
+                class="pdf-embed"
+              />
+            } @else {
+              <div class="pdf-viewer-placeholder">
+                <p>El navegador no puede mostrar el PDF directamente.</p>
+                <a 
+                  href="javascript:void(0)" 
+                  (click)="openInNewTab(previewTerritorio()!)" 
+                  class="btn-link"
+                >
+                  Abrir en nueva pestaña
+                </a>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     .page-container {
@@ -118,7 +171,7 @@ import { AuthService } from '../../core/services/auth.service';
     }
     
     .info-card {
-      background: white;
+      background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 1rem 1.5rem;
@@ -158,14 +211,16 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       align-items: center;
       gap: 1rem;
-      background: white;
+      background: var(--surface-color);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       padding: 1rem 1.5rem;
     }
     
     .territorio-icon {
-      font-size: 2rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     
     .territorio-info {
@@ -206,16 +261,129 @@ import { AuthService } from '../../core/services/auth.service';
         border-color: #dc2626;
       }
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 2rem;
+    }
+
+    .modal-content {
+      background: var(--surface-color);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+
+      h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        color: var(--text-primary);
+      }
+    }
+
+    .modal-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-open-new {
+      font-size: 0.75rem;
+      color: var(--primary-color);
+      text-decoration: none;
+      padding: 0.375rem 0.75rem;
+      border: 1px solid var(--primary-color);
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--primary-color);
+        color: white;
+      }
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 0.25rem;
+      line-height: 1;
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+
+    .modal-body {
+      flex: 1;
+      overflow: hidden;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #525659;
+
+      iframe, object, embed, .pdf-viewer-placeholder {
+        width: 100%;
+        height: 75vh;
+        border: none;
+      }
+
+      .pdf-embed {
+        display: block;
+      }
+
+      .pdf-viewer-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ccc;
+        gap: 1rem;
+      }
+
+      .btn-link {
+        color: #4fc3f7;
+        text-decoration: underline;
+        font-size: 0.875rem;
+      }
+    }
   `]
 })
 export class GrupoDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private sanitizer = inject(DomSanitizer);
   grupoService = inject(GrupoService);
   territorioService = inject(TerritorioService);
   authService = inject(AuthService);
   
   grupo = signal<GrupoDetail | null>(null);
   loading = signal(true);
+  previewTerritorio = signal<Territorio | null>(null);
+  previewUrl = signal<SafeResourceUrl>('');
   
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -238,6 +406,29 @@ export class GrupoDetailComponent implements OnInit {
   
   downloadTerritorio(territorio: Territorio) {
     this.territorioService.downloadTerritorio(territorio.id, territorio.nombre_original).subscribe();
+  }
+  
+  openPreview(territorio: Territorio) {
+    // Guardar el territorio y preparar URL sanitizada para el modal
+    this.previewTerritorio.set(territorio);
+    const url = this.getPreviewUrl(territorio.id);
+    this.previewUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+  }
+
+  getPreviewUrl(id: string): string {
+    // Devolver URL absoluta para el backend
+    const baseUrl = environment.apiUrl.replace('/api', '');
+    return `${baseUrl}/public/territorios/${id}/previsualizar`;
+  }
+  
+  openInNewTab(territorio: Territorio) {
+    const url = this.getPreviewUrl(territorio.id);
+    window.open(url, '_blank');
+  }
+  
+  closePreview() {
+    this.previewTerritorio.set(null);
+    this.previewUrl.set('');
   }
   
   deleteTerritorio(territorio: Territorio) {

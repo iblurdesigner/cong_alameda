@@ -2,14 +2,18 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../../environments/environment';
+import { map } from 'rxjs/operators';
 
 export interface User {
   id: string;
   nombre: string;
   telefono?: string;
+  telefono_validado: boolean;
   email: string;
-  rol: 'SUPERINTENDENTE' | 'ANCIANO' | 'VISITANTE';
+  rol: 'SUPER_ADMIN' | 'SUPERINTENDENTE' | 'ANCIANO' | 'VISITANTE';
   activo: boolean;
+  notificaciones_email: boolean;
+  notificaciones_whatsapp: boolean;
 }
 
 export interface LoginResponse {
@@ -37,12 +41,26 @@ export class AuthService {
   }
 
   private loadUser(): User | null {
-    const userJson = localStorage.getItem(this.USER_KEY);
-    return userJson ? JSON.parse(userJson) : null;
+    try {
+      const userJson = localStorage.getItem(this.USER_KEY);
+      return userJson ? (JSON.parse(userJson) as User) : null;
+    } catch {
+      // Handle corrupted localStorage data
+      localStorage.removeItem(this.USER_KEY);
+      return null;
+    }
   }
 
   login(email: string, password: string) {
     return this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, { email, password });
+  }
+
+  requestRecovery(email: string) {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/recover-request`, { email });
+  }
+
+  resetPassword(token: string, password: string) {
+    return this.http.post<{ message: string }>(`${environment.apiUrl}/auth/recover-password`, { token, password });
   }
 
   setAuth(token: string, user: User) {
@@ -52,24 +70,35 @@ export class AuthService {
   }
 
   logout() {
+    console.log('[AuthService] ≡ƒÜ¿ logout() called! Token being cleared!');
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this.userSignal.set(null);
+    void this.router.navigate(['/']);
   }
 
   isSuperintendente(): boolean {
-    return this.currentUser()?.rol === 'SUPERINTENDENTE';
+    const rol = this.currentUser()?.rol;
+    return rol === 'SUPERINTENDENTE' || rol === 'SUPER_ADMIN';
   }
 
   isAnciano(): boolean {
-    return this.currentUser()?.rol === 'ANCIANO';
+    const rol = this.currentUser()?.rol;
+    return rol === 'ANCIANO' || rol === 'SUPER_ADMIN';
   }
 
   isVisitante(): boolean {
     return this.currentUser()?.rol === 'VISITANTE';
   }
 
+  isSuperAdmin(): boolean {
+    return this.currentUser()?.rol === 'SUPER_ADMIN';
+  }
+
   getUsers() {
-    return this.http.get<User[]>(`${environment.apiUrl}/users`);
+    return this.http.get<{ data: User[] }>(`${environment.apiUrl}/users`)
+      .pipe(
+        map(response => response.data)
+      );
   }
 }

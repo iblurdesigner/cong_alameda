@@ -1,0 +1,65 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: Go 1.21 / Fiber v2 (backend), Angular 21 standalone (frontend),
+    PostgreSQL 15 (Docker Compose).
+  Architecture: Clean layered (model → dto → repo → service → handler → route)
+    with inline mocks in tests. Fiber router, pgx for DB, golang-jwt for auth.
+  Testing: Go stdlib `testing` + `httptest` for backend; Jest 30 + jest-preset-angular
+    for frontend. No integration test harness yet. Services use mock repos; handlers
+    use mock services + fiber app.Test().
+  Style: Go standard formatting (`go fmt`). Angular standalone components with SCSS,
+    signals-based state. No explicit linter/formatter config found for either stack.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Scope must be clear and testable
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Follow existing Go/Fiber layered pattern
+    - Document architecture decisions with rationale
+    - Include data flow diagrams for complex flows
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    - Follow existing code patterns (model → dto → repo → service → handler)
+    - Write tests first (strict TDD)
+    tdd: true
+    test_command: "cd backend && go test ./..."
+  verify:
+    test_command: "go test -count=1 ./..."
+    build_command: "go build ./cmd/server"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+    - Verify main spec still compiles after merge
+
+testing:
+  strict_tdd: true
+  backend:
+    runner: go test
+    framework: Go stdlib testing
+    layers:
+      unit: true
+      integration: false
+      e2e: false
+    coverage: "go test -cover ./..."
+    linter: ""
+    type_checker: "go vet ./..."
+    formatter: "go fmt ./..."
+  frontend:
+    runner: jest
+    framework: Jest 30 + jest-preset-angular
+    layers:
+      unit: true
+      integration: false
+      e2e: false
+    coverage: "npm test -- --coverage"
+    linter: ""
+    type_checker: "npx tsc --noEmit"
+    formatter: ""
