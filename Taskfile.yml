@@ -39,3 +39,19 @@ tasks:
     cmds:
       - cd frontend && npx eslint . --fix
       - cd frontend && npx stylelint "src/**/*.scss" --fix
+
+  dev-db:
+    desc: "Start PostgreSQL database in Docker"
+    cmds:
+      - docker compose up -d db
+
+  dev-backend:
+    desc: "Run Go backend locally with live reload (Air)"
+    cmds:
+      - cd backend && air
+
+  dev-frontend:
+    desc: "Run Angular frontend locally with hot reload"
+    cmds:
+      - cd frontend && npm start
+

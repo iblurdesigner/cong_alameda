@@ -22,8 +22,8 @@ import (
 )
 
 func main() {
-	// Load .env file if exists
-	if err := godotenv.Load(); err != nil {
+	// Load .env file if exists (overriding system vars if present)
+	if err := godotenv.Overload(); err != nil {
 		log.Println("No .env file found, using environment variables")
 	}
 
@@ -38,6 +38,11 @@ func main() {
 	defer db.Close()
 
 	log.Println("Connected to database successfully")
+
+	// Run database migrations
+	if err := database.RunMigrations(db.Pool, "./migrations"); err != nil {
+		log.Printf("Warning executing migrations: %v\n", err)
+	}
 
 	// Initialize JWT manager
 	jwtManager := jwt.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)

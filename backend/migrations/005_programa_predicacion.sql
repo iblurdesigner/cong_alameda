@@ -1,7 +1,7 @@
 -- Migration: 005_programa_predicacion.sql
 -- Description: Programa de Predicación (preaching program management)
 
-CREATE TABLE programas_predicacion (
+CREATE TABLE IF NOT EXISTS programas_predicacion (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nombre VARCHAR(200) NOT NULL,
     fecha DATE NOT NULL,
@@ -25,17 +25,18 @@ CREATE TABLE programas_predicacion (
     CONSTRAINT uq_programa_fecha_hora UNIQUE (fecha, hora_inicio)
 );
 
-CREATE TABLE programa_predicacion_territorios (
+CREATE TABLE IF NOT EXISTS programa_predicacion_territorios (
     programa_id UUID NOT NULL REFERENCES programas_predicacion(id) ON DELETE CASCADE,
     territorio_id UUID NOT NULL REFERENCES territorios(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     PRIMARY KEY (programa_id, territorio_id)
 );
 
-CREATE INDEX idx_programas_fecha ON programas_predicacion(fecha DESC);
-CREATE INDEX idx_programas_grupo ON programas_predicacion(grupo_id);
-CREATE INDEX idx_programa_territorios_programa ON programa_predicacion_territorios(programa_id);
+CREATE INDEX IF NOT EXISTS idx_programas_fecha ON programas_predicacion(fecha DESC);
+CREATE INDEX IF NOT EXISTS idx_programas_grupo ON programas_predicacion(grupo_id);
+CREATE INDEX IF NOT EXISTS idx_programa_territorios_programa ON programa_predicacion_territorios(programa_id);
 
+DROP TRIGGER IF EXISTS update_programas_predicacion_updated_at ON programas_predicacion;
 CREATE TRIGGER update_programas_predicacion_updated_at
     BEFORE UPDATE ON programas_predicacion
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

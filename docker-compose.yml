@@ -11,7 +11,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./pg_hba.conf:/etc/postgresql/15/main/pg_hba.conf
     ports:
-      - "5432:5432"
+      - "5499:5432"
     command: postgres -c hba_file=/etc/postgresql/15/main/pg_hba.conf
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U app -d cong_alameda"]

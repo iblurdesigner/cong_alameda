@@ -5,6 +5,7 @@ import { AsignacionService, Asignacion, TipoAsignacion } from '../../core/servic
 import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
+import { forkJoin, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-asignacion-list',
@@ -97,9 +98,17 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                   <span class="day-name">{{ dia.nombre }}</span>
                   <span class="day-date">{{ getFechaForDia(dia.numero) }}</span>
                 </div>
-                @if (isTodayDia(dia.numero)) {
-                  <span class="badge-today">HOY</span>
-                }
+                <div class="day-header-right">
+                  @if (isTodayDia(dia.numero)) {
+                    <span class="badge-today">HOY</span>
+                  }
+                  @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                    <button class="edit-card-btn" (click)="openEditDiaModal(dia.numero)" title="Editar todas las asignaciones de este día">
+                      <span class="material-symbols-outlined">edit_note</span>
+                      <span>Editar tarjeta</span>
+                    </button>
+                  }
+                </div>
               </div>
 
               <!-- Roles Slots List -->
@@ -204,6 +213,65 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
             <div class="modal-footer">
               <button class="pill-btn btn-secondary" (click)="closeAssignModal()">Cancelar</button>
               <button class="pill-btn btn-primary" (click)="saveAsignacion()">Guardar Asignación</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Modal para Editar Todo el Día Completo -->
+      @if (showEditDiaModal) {
+        <div class="modal-backdrop" (click)="closeEditDiaModal()">
+          <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Editar Asignaciones - {{ getDiaNombre(editingDiaSemana) }}</h2>
+              <button class="close-btn" (click)="closeEditDiaModal()">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div class="modal-body day-bulk-body">
+              <p class="section-desc">Asigna o modifica rápidamente las funciones de este día:</p>
+
+              <div class="roles-edit-grid">
+                @for (tipo of getTiposList(); track tipo.id) {
+                  <div class="role-edit-row">
+                    <div class="role-label">
+                      <span class="role-icon">{{ tipo.icono || 'assignment' }}</span>
+                      <span class="role-name">{{ getTipoNombre(tipo.nombre) }}</span>
+                    </div>
+
+                    <div class="role-input-group">
+                      @if (tipo.nombre === 'ASEO_SALON') {
+                        <select [(ngModel)]="dayFormMap[tipo.id].grupo_id" class="form-input">
+                          <option value="">-- Sin asignar --</option>
+                          @for (grupo of grupos(); track grupo.id) {
+                            <option [value]="grupo.id">Grupo {{ grupo.numero }} - {{ grupo.nombre }}</option>
+                          }
+                        </select>
+                      } @else {
+                        <select [(ngModel)]="dayFormMap[tipo.id].user_id" class="form-input">
+                          <option value="">-- Sin asignar --</option>
+                          @for (user of getUsersList(); track user.id) {
+                            <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                          }
+                        </select>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button class="pill-btn btn-secondary" (click)="closeEditDiaModal()">Cancelar</button>
+              <button class="pill-btn btn-primary" (click)="saveDiaAsignaciones()" [disabled]="savingDia">
+                @if (savingDia) {
+                  <span class="material-symbols-outlined spin">sync</span>
+                  <span>Guardando...</span>
+                } @else {
+                  <span>Guardar Día</span>
+                }
+              </button>
             </div>
           </div>
         </div>
@@ -513,6 +581,107 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
       letter-spacing: 0.05em;
     }
 
+    .day-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .edit-card-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-pill);
+      background: rgba(37, 99, 235, 0.08);
+      color: var(--primary-color);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      span.material-symbols-outlined {
+        font-size: 1.1rem;
+      }
+
+      &:hover {
+        background: var(--primary-color);
+        color: #ffffff;
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+      }
+    }
+
+    .day-bulk-body {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .section-desc {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        margin: 0;
+      }
+    }
+
+    .roles-edit-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .role-edit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--background-color);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+
+      .role-label {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        min-width: 180px;
+
+        .role-icon {
+          font-size: 1.25rem;
+        }
+
+        .role-name {
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+      }
+
+      .role-input-group {
+        flex: 1;
+        max-width: 320px;
+
+        .form-input {
+          width: 100%;
+          padding: 0.5rem 0.85rem;
+          border-radius: var(--radius-pill);
+          border: 1px solid var(--border-color);
+          background: var(--surface-color);
+          color: var(--text-primary);
+          font-size: 0.875rem;
+          outline: none;
+
+          &:focus {
+            border-color: var(--primary-color);
+          }
+        }
+      }
+    }
+
     .roles-slot-list {
       display: flex;
       flex-direction: column;
@@ -749,14 +918,17 @@ export class AsignacionListComponent implements OnInit {
   loading = signal(false);
 
   showAssignModal = false;
+  showEditDiaModal = false;
   showPdfExportModal = false;
   showBulkModal = false;
+  savingDia = false;
 
   editingTipo: TipoAsignacion | null = null;
   editingDiaSemana = -1;
   editingAsignacion: Asignacion | null = null;
 
   assignForm = { user_id: '', grupo_id: '', tipo_id: '', observaciones: '' };
+  dayFormMap: Record<string, { user_id: string; grupo_id: string; observaciones: string }> = {};
   selectedWeeksForExportSignal = signal<string[]>([]);
 
   private asignacionMap = signal<Map<string, Asignacion>>(new Map());
@@ -794,7 +966,9 @@ export class AsignacionListComponent implements OnInit {
   }
 
   loadTipos() {
-    this.asignacionService.loadTiposAsignacion().subscribe();
+    this.asignacionService.loadTiposAsignacion().subscribe({
+      next: (res: any) => this.tipos.set(res.data)
+    });
   }
 
   loadUsers() {
@@ -861,10 +1035,14 @@ export class AsignacionListComponent implements OnInit {
     const nombres: Record<string, string> = {
       'PRESIDENTE': 'Presidente',
       'LECTOR_ATALAYA': 'Lector Atalaya',
-      'ACOMODADOR_SALON': 'Acomodador',
-      'PARQUEADERO': 'Parqueadero',
       'MICROFONO': 'Micrófono',
+      'MICROFONO_IZQ': 'Micrófono Izquierda',
+      'MICROFONO_DER': 'Micrófono Derecha',
       'PLATAFORMA': 'Plataforma',
+      'ACOMODADOR_SALON': 'Acomodador',
+      'ACOMODADOR_1': 'Acomodador 1',
+      'ACOMODADOR_2': 'Acomodador 2',
+      'PARQUEADERO': 'Parqueadero',
       'ASEO_SALON': 'Aseo del Salón'
     };
     return nombres[nombre] || nombre;
@@ -877,11 +1055,15 @@ export class AsignacionListComponent implements OnInit {
         const order: Record<string, number> = {
           'PRESIDENTE': 1,
           'LECTOR_ATALAYA': 2,
-          'MICROFONO': 3,
-          'PLATAFORMA': 4,
-          'ACOMODADOR_SALON': 5,
-          'PARQUEADERO': 6,
-          'ASEO_SALON': 7
+          'MICROFONO_IZQ': 3,
+          'MICROFONO_DER': 4,
+          'MICROFONO': 4.5,
+          'PLATAFORMA': 5,
+          'ACOMODADOR_1': 6,
+          'ACOMODADOR_2': 7,
+          'ACOMODADOR_SALON': 7.5,
+          'PARQUEADERO': 8,
+          'ASEO_SALON': 9
         };
         return (order[a.nombre] ?? 99) - (order[b.nombre] ?? 99);
       });
@@ -889,11 +1071,13 @@ export class AsignacionListComponent implements OnInit {
     return [
       { id: '1', nombre: 'PRESIDENTE', icono: '🎯', descripcion: 'Presidente' },
       { id: '2', nombre: 'LECTOR_ATALAYA', icono: '📖', descripcion: 'Lector Atalaya' },
-      { id: '3', nombre: 'MICROFONO', icono: '🎤', descripcion: 'Micrófono' },
-      { id: '4', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
-      { id: '5', nombre: 'ACOMODADOR_SALON', icono: '🪑', descripcion: 'Acomodador' },
-      { id: '6', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
-      { id: '7', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' }
+      { id: '3', nombre: 'MICROFONO_IZQ', icono: '🎤', descripcion: 'Micrófono Izquierda' },
+      { id: '4', nombre: 'MICROFONO_DER', icono: '🎤', descripcion: 'Micrófono Derecha' },
+      { id: '5', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
+      { id: '6', nombre: 'ACOMODADOR_1', icono: '🪑', descripcion: 'Acomodador 1' },
+      { id: '7', nombre: 'ACOMODADOR_2', icono: '🪑', descripcion: 'Acomodador 2' },
+      { id: '8', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
+      { id: '9', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' }
     ] as TipoAsignacion[];
   }
 
@@ -970,6 +1154,72 @@ export class AsignacionListComponent implements OnInit {
         this.closeAssignModal();
       }
     });
+  }
+
+  openEditDiaModal(diaSemana: number) {
+    this.editingDiaSemana = diaSemana;
+    this.dayFormMap = {};
+
+    const tipos = this.getTiposList();
+    tipos.forEach(tipo => {
+      const existing = this.getAsignacionForDiaAndTipo(diaSemana, tipo.id);
+      this.dayFormMap[tipo.id] = {
+        user_id: existing?.user_id || '',
+        grupo_id: existing?.grupo_id || '',
+        observaciones: existing?.observaciones || ''
+      };
+    });
+
+    this.showEditDiaModal = true;
+  }
+
+  closeEditDiaModal() {
+    this.showEditDiaModal = false;
+    this.editingDiaSemana = -1;
+    this.dayFormMap = {};
+  }
+
+  saveDiaAsignaciones() {
+    if (!this.selectedSemanaId || this.editingDiaSemana === -1) return;
+    this.savingDia = true;
+
+    const tipos = this.getTiposList();
+    const requests: Observable<any>[] = [];
+
+    for (const tipo of tipos) {
+      const form = this.dayFormMap[tipo.id];
+      if (form && (form.user_id || form.grupo_id)) {
+        const payload = {
+          semana_id: this.selectedSemanaId,
+          tipo_asignacion_id: tipo.id,
+          user_id: form.user_id || undefined,
+          grupo_id: form.grupo_id || undefined,
+          dia_semana: this.editingDiaSemana,
+          observaciones: form.observaciones || undefined
+        };
+        requests.push(this.asignacionService.createAsignacion(payload as any));
+      }
+    }
+
+    if (requests.length === 0) {
+      this.savingDia = false;
+      this.closeEditDiaModal();
+      return;
+    }
+
+    forkJoin(requests).subscribe({
+        next: () => {
+          this.savingDia = false;
+          this.loadSemana();
+          this.closeEditDiaModal();
+        },
+        error: (err) => {
+          console.error('Error guardando asignaciones del día', err);
+          this.savingDia = false;
+          this.loadSemana();
+          this.closeEditDiaModal();
+        }
+      });
   }
 
   openBulkModal() {
