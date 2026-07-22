@@ -68,8 +68,8 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               <span class="stat-lbl">Asignaciones</span>
             </div>
             <div class="stat-pill pill-lime">
-              <span class="stat-num">{{ getDiasConAsignacionesCount() }}/7</span>
-              <span class="stat-lbl">Días Cubiertos</span>
+              <span class="stat-num">{{ getDiasConAsignacionesCount() }}/2</span>
+              <span class="stat-lbl">Reuniones Cubiertas</span>
             </div>
           </div>
         }
@@ -762,13 +762,8 @@ export class AsignacionListComponent implements OnInit {
   private asignacionMap = signal<Map<string, Asignacion>>(new Map());
 
   diasSemana = [
-    { numero: 0, nombre: 'Domingo' },
-    { numero: 1, nombre: 'Lunes' },
-    { numero: 2, nombre: 'Martes' },
-    { numero: 3, nombre: 'Miércoles' },
-    { numero: 4, nombre: 'Jueves' },
-    { numero: 5, nombre: 'Viernes' },
-    { numero: 6, nombre: 'Sábado' }
+    { numero: 3, nombre: 'Miércoles (Entre semana)' },
+    { numero: 6, nombre: 'Sábado (Fin de semana)' }
   ];
 
   ngOnInit() {
