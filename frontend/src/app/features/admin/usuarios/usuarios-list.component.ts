@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserService, User, UpdateUserRequest } from '../../../core/services/user.service';
+import { UserService, User, UpdateUserRequest, CreateUserRequest } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-usuarios-list',
@@ -10,8 +10,13 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
   template: `
     <div class="page-container">
       <div class="page-header">
-        <h1>Gestión de Usuarios</h1>
-        <p class="subtitle">Administra los usuarios del sistema</p>
+        <div>
+          <h1>Gestión de Usuarios</h1>
+          <p class="subtitle">Administra los usuarios del sistema</p>
+        </div>
+        <button class="btn btn-primary btn-add-user" (click)="openCreateModal()">
+          <span class="icon">+</span> Nuevo Usuario
+        </button>
       </div>
 
       @if (loading()) {
@@ -246,6 +251,21 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
               </div>
 
               <div class="form-group">
+                <label for="edit-rol">Rol del Usuario</label>
+                <select 
+                  id="edit-rol"
+                  [(ngModel)]="editForm().rol"
+                  name="rol"
+                  class="form-select"
+                >
+                  <option value="VISITANTE">VISITANTE</option>
+                  <option value="ANCIANO">ANCIANO</option>
+                  <option value="SUPERINTENDENTE">SUPERINTENDENTE</option>
+                  <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                </select>
+              </div>
+
+              <div class="form-group">
                 <label class="checkbox-label">
                   <input 
                     type="checkbox" 
@@ -272,6 +292,99 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
           </div>
         </div>
       }
+
+      <!-- Modal de Creación de Usuario -->
+      @if (showCreateModal()) {
+        <div class="modal-overlay" (click)="closeCreateModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Crear Nuevo Usuario</h2>
+              <button class="btn-close" (click)="closeCreateModal()">✕</button>
+            </div>
+            
+            @if (createError()) {
+              <div class="error-message">{{ createError() }}</div>
+            }
+
+            <form (ngSubmit)="createUser()" class="edit-form">
+              <div class="form-group">
+                <label for="create-nombre">Nombre Completo *</label>
+                <input 
+                  type="text" 
+                  id="create-nombre"
+                  [(ngModel)]="createForm().nombre"
+                  name="nombre"
+                  required
+                  placeholder="Ej: Juan Pérez"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="create-email">Correo Electrónico *</label>
+                <input 
+                  type="email" 
+                  id="create-email"
+                  [(ngModel)]="createForm().email"
+                  name="email"
+                  required
+                  placeholder="correo@ejemplo.com"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="create-password">Contraseña *</label>
+                <input 
+                  type="password" 
+                  id="create-password"
+                  [(ngModel)]="createForm().password"
+                  name="password"
+                  required
+                  placeholder="Contraseña del usuario"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="create-telefono">Teléfono</label>
+                <input 
+                  type="tel" 
+                  id="create-telefono"
+                  [(ngModel)]="createForm().telefono"
+                  name="telefono"
+                  placeholder="+593 98 123 4567"
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="create-rol">Rol del Usuario</label>
+                <select 
+                  id="create-rol"
+                  [(ngModel)]="createForm().rol"
+                  name="rol"
+                  class="form-select"
+                >
+                  <option value="VISITANTE">VISITANTE</option>
+                  <option value="ANCIANO">ANCIANO</option>
+                  <option value="SUPERINTENDENTE">SUPERINTENDENTE</option>
+                  <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                </select>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">
+                  Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary" [disabled]="saving()">
+                  @if (saving()) {
+                    Creando...
+                  } @else {
+                    Crear Usuario
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -281,17 +394,52 @@ import { UserService, User, UpdateUserRequest } from '../../../core/services/use
 
     .page-header {
       margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
 
       h1 {
         font-size: 1.5rem;
         font-weight: 700;
         color: var(--text-primary);
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.25rem;
       }
 
       .subtitle {
         color: var(--text-secondary);
         font-size: 0.875rem;
+      }
+
+      .btn-add-user {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: var(--radius-pill);
+        font-weight: 600;
+        font-size: 0.875rem;
+
+        .icon {
+          font-size: 1.2rem;
+          font-weight: 800;
+        }
+      }
+    }
+
+    .form-select {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--surface-color);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      outline: none;
+
+      &:focus {
+        border-color: var(--primary-color);
       }
     }
 
@@ -774,16 +922,28 @@ export class UsuariosListComponent implements OnInit {
   editingUser = signal<User | null>(null);
   saving = signal(false);
 
+  showCreateModal = signal(false);
+  createError = signal<string | null>(null);
+  createForm = signal<CreateUserRequest>({
+    nombre: '',
+    email: '',
+    password: '',
+    telefono: '',
+    rol: 'VISITANTE'
+  });
+
   editForm = signal<{
     nombre: string;
     email: string;
     telefono: string;
     telefono_validado: boolean;
+    rol: string;
   }>({
     nombre: '',
     email: '',
     telefono: '',
-    telefono_validado: false
+    telefono_validado: false,
+    rol: 'VISITANTE'
   });
 
   ngOnInit() {
@@ -806,13 +966,61 @@ export class UsuariosListComponent implements OnInit {
     });
   }
 
+  openCreateModal() {
+    this.createError.set(null);
+    this.createForm.set({
+      nombre: '',
+      email: '',
+      password: '',
+      telefono: '',
+      rol: 'VISITANTE'
+    });
+    this.showCreateModal.set(true);
+  }
+
+  closeCreateModal() {
+    this.showCreateModal.set(false);
+    this.createError.set(null);
+  }
+
+  createUser() {
+    const form = this.createForm();
+    if (!form.nombre || !form.email || !form.password) {
+      this.createError.set('Por favor completa todos los campos requeridos (*)');
+      return;
+    }
+
+    this.saving.set(true);
+    this.createError.set(null);
+
+    this.userService.createUser({
+      nombre: form.nombre,
+      email: form.email,
+      password: form.password,
+      telefono: form.telefono || undefined,
+      rol: form.rol
+    }).subscribe({
+      next: (createdUser) => {
+        this.users.update(users => [createdUser, ...users]);
+        this.saving.set(false);
+        this.closeCreateModal();
+      },
+      error: (err) => {
+        const msg = err?.error?.message || 'Error al crear el usuario';
+        this.createError.set(msg);
+        this.saving.set(false);
+      }
+    });
+  }
+
   openEditModal(user: User) {
     this.editingUser.set(user);
     this.editForm.set({
       nombre: user.nombre,
       email: user.email,
       telefono: user.telefono || '',
-      telefono_validado: user.telefono_validado
+      telefono_validado: user.telefono_validado,
+      rol: user.rol
     });
   }
 
@@ -831,7 +1039,8 @@ export class UsuariosListComponent implements OnInit {
       nombre: form.nombre,
       email: form.email,
       telefono: form.telefono || undefined,
-      telefono_validado: form.telefono_validado
+      telefono_validado: form.telefono_validado,
+      rol: form.rol
     };
 
     this.userService.updateUser(user.id, update).subscribe({

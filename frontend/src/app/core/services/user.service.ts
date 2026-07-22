@@ -15,6 +15,14 @@ export interface User {
   notificaciones_whatsapp: boolean;
 }
 
+export interface CreateUserRequest {
+  nombre: string;
+  email: string;
+  password: string;
+  telefono?: string;
+  rol?: string;
+}
+
 export interface UpdateUserRequest {
   nombre?: string;
   email?: string;
@@ -34,6 +42,10 @@ export class UserService {
     return this.http.get<{data: User[]}>(`${environment.apiUrl}/users`).pipe(
       map(res => res.data)
     );
+  }
+
+  createUser(data: CreateUserRequest) {
+    return this.http.post<User>(`${environment.apiUrl}/users`, data);
   }
 
   updateUser(id: string, data: UpdateUserRequest) {
