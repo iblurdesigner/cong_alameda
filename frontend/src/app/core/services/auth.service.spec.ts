@@ -1,3 +1,4 @@
+import { of } from 'rxjs';
 import { AuthService, User, LoginResponse } from './auth.service';
 
 // Helper to clear localStorage mock storage
@@ -8,8 +9,8 @@ const clearStorage = () => {
 // Mock HttpClient - we don't need the real HttpClient for unit tests
 // We can test the service logic without making HTTP calls
 const createMockHttpClient = () => ({
-  post: jest.fn(),
-  get: jest.fn()
+  post: jest.fn().mockReturnValue(of({})),
+  get: jest.fn().mockReturnValue(of({}))
 });
 
 // Mock Router
@@ -27,8 +28,11 @@ describe('AuthService', () => {
     nombre: 'Juan Pérez',
     email: 'juan@iglesia.org',
     telefono: '1234567890',
+    telefono_validado: true,
     rol: 'SUPERINTENDENTE',
-    activo: true
+    activo: true,
+    notificaciones_email: true,
+    notificaciones_whatsapp: false,
   };
 
   beforeEach(() => {
@@ -77,9 +81,7 @@ describe('AuthService', () => {
       const password = 'password123';
       const mockResponse: LoginResponse = { token: 'jwt-token', user: mockUser };
 
-      (mockHttpClient.post as jest.Mock).mockReturnValue({
-        subscribe: (cb: Function) => cb(mockResponse)
-      });
+      (mockHttpClient.post as jest.Mock).mockReturnValue(of(mockResponse));
 
       const result = service.login(email, password);
       
@@ -92,9 +94,7 @@ describe('AuthService', () => {
     it('should return observable with token and user', () => {
       const mockResponse: LoginResponse = { token: 'jwt-token', user: mockUser };
 
-      (mockHttpClient.post as jest.Mock).mockReturnValue({
-        subscribe: (cb: (r: LoginResponse) => void) => cb(mockResponse)
-      });
+      (mockHttpClient.post as jest.Mock).mockReturnValue(of(mockResponse));
 
       let receivedResponse: LoginResponse | null = null;
       service.login('test@test.com', 'pass').subscribe((r: LoginResponse) => {
@@ -206,9 +206,7 @@ describe('AuthService', () => {
     it('should call GET /users', () => {
       const mockUsers: User[] = [mockUser];
 
-      (mockHttpClient.get as jest.Mock).mockReturnValue({
-        subscribe: (cb: (users: User[]) => void) => cb(mockUsers)
-      });
+      (mockHttpClient.get as jest.Mock).mockReturnValue(of(mockUsers));
 
       let receivedUsers: User[] | null = null;
       service.getUsers().subscribe((users: User[]) => {

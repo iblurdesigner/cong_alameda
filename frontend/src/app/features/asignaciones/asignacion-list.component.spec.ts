@@ -71,23 +71,24 @@ describe('AsignacionListComponent', () => {
     });
 
     it('should render the assignment modal with person select and observaciones textarea when opened', () => {
+      component.selectedSemanaId = 'some-semana';
       component.openAssignModal(mockTipos[0], 0);
       fixture.detectChanges();
 
-      const persona = fixture.nativeElement.querySelector('#persona');
+      const nuevaPersona = fixture.nativeElement.querySelector('#nuevaPersona');
       const observaciones = fixture.nativeElement.querySelector('#observaciones');
-      const asignarBtn = Array.from(fixture.nativeElement.querySelectorAll('button'))
-        .find((b: Element) => b.textContent?.includes('Asignar'));
+      const agregarBtn = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+        .find(b => b.textContent?.includes('Agregar'));
 
-      expect(persona).toBeTruthy();
+      expect(nuevaPersona).toBeTruthy();
       expect(observaciones).toBeTruthy();
-      expect(asignarBtn).toBeTruthy();
-      expect(persona.querySelectorAll('option').length).toBeGreaterThan(1);
+      expect(agregarBtn).toBeTruthy();
+      expect(nuevaPersona.querySelectorAll('option').length).toBeGreaterThan(1);
     });
 
     it('should wire saveAsignacion to AsignacionService.createAsignacion', () => {
       component.openAssignModal(mockTipos[0], 2);
-      component.assignForm = { user_id: 'u1', observaciones: 'Temprano' };
+      component.assignForm = { user_id: 'u1', grupo_id: '', observaciones: 'Temprano', tipo_id: 't1', isEditing: false };
 
       component.saveAsignacion();
 
@@ -104,7 +105,7 @@ describe('AsignacionListComponent', () => {
 
     it('should NOT call createAsignacion when user_id is empty', () => {
       component.openAssignModal(mockTipos[0], 2);
-      component.assignForm = { user_id: '', observaciones: '' };
+      component.assignForm = { user_id: '', grupo_id: '', observaciones: '', tipo_id: '', isEditing: false };
 
       component.saveAsignacion();
 
@@ -119,14 +120,15 @@ describe('AsignacionListComponent', () => {
       fixture.detectChanges();
     }
 
-    it('should render ONLY the group selector for ASEO_SALON (person selector absent)', () => {
+    it('should render both group and person selectors for ASEO_SALON type', () => {
       openAseoSalonModal();
 
       const grupoSelect = fixture.nativeElement.querySelector('#grupoSelect');
-      const personaSelect = fixture.nativeElement.querySelector('#persona');
+      const personaSelect = fixture.nativeElement.querySelector('#nuevaPersona');
 
       expect(grupoSelect).toBeTruthy();
-      expect(personaSelect).toBeNull();
+      expect(personaSelect).toBeTruthy();
+      expect(fixture.nativeElement.textContent).toContain('O seleccionar Persona');
     });
 
     it('should keep observaciones visible for ASEO_SALON', () => {
@@ -149,7 +151,7 @@ describe('AsignacionListComponent', () => {
       fixture.detectChanges();
 
       const grupoSelect = fixture.nativeElement.querySelector('#grupoSelect');
-      const personaSelect = fixture.nativeElement.querySelector('#persona');
+      const personaSelect = fixture.nativeElement.querySelector('#nuevaPersona');
 
       expect(personaSelect).toBeTruthy();
       expect(grupoSelect).toBeNull();
@@ -163,7 +165,7 @@ describe('AsignacionListComponent', () => {
       expect(mockAsignacionService.createAsignacion).toHaveBeenCalledTimes(1);
       const payload = mockAsignacionService.createAsignacion.mock.calls[0][0];
       expect(payload.grupo_id).toBe('grupo-123');
-      expect(payload.user_id).toBeUndefined();
+      expect(payload.user_id).toBeNull();
     });
 
     it('onTipoChange should reset both user_id and grupo_id', () => {

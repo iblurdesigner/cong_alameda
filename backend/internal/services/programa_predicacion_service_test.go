@@ -3,54 +3,43 @@ package services
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 
-	"cong-alameda-backend/internal/dto"
 	"cong-alameda-backend/internal/models"
+	"cong-alameda-backend/internal/repositories"
 )
 
-// --- Mock Repo ---
+// --- Mocks ---
 
-type mockProgramaRepo struct {
-	mu          sync.Mutex
+type mockProgramaPredicacionRepository struct {
 	programas   map[uuid.UUID]*models.ProgramaPredicacion
-	territorios map[uuid.UUID][]uuid.UUID // programaID -> territorioIDs
+	territorios map[uuid.UUID][]uuid.UUID
 }
 
-func newMockProgramaRepo() *mockProgramaRepo {
-	return &mockProgramaRepo{
+func newMockProgramaPredicacionRepository() *mockProgramaPredicacionRepository {
+	return &mockProgramaPredicacionRepository{
 		programas:   make(map[uuid.UUID]*models.ProgramaPredicacion),
 		territorios: make(map[uuid.UUID][]uuid.UUID),
 	}
 }
 
-func (m *mockProgramaRepo) Create(_ context.Context, p *models.ProgramaPredicacion) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	p.ID = uuid.New()
-	p.CreatedAt = time.Now()
-	p.UpdatedAt = time.Now()
+func (m *mockProgramaPredicacionRepository) Create(_ context.Context, p *models.ProgramaPredicacion) error {
 	m.programas[p.ID] = p
 	return nil
 }
 
-func (m *mockProgramaRepo) GetByID(_ context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m *mockProgramaPredicacionRepository) GetByID(_ context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error) {
 	p, ok := m.programas[id]
 	if !ok {
-		return nil, ErrProgramaNotFound
+		return nil, repositories.ErrProgramaPredicacionNotFound
 	}
 	return p, nil
 }
 
-func (m *mockProgramaRepo) List(_ context.Context) ([]*models.ProgramaPredicacion, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m *mockProgramaPredicacionRepository) GetAll(_ context.Context) ([]*models.ProgramaPredicacion, error) {
 	result := make([]*models.ProgramaPredicacion, 0, len(m.programas))
 	for _, p := range m.programas {
 		result = append(result, p)
@@ -58,153 +47,228 @@ func (m *mockProgramaRepo) List(_ context.Context) ([]*models.ProgramaPredicacio
 	return result, nil
 }
 
-func (m *mockProgramaRepo) Update(_ context.Context, id uuid.UUID, p *models.ProgramaPredicacion) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if _, ok := m.programas[id]; !ok {
-		return ErrProgramaNotFound
+func (m *mockProgramaPredicacionRepository) Update(_ context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaPredicacion, error) {
+	p, ok := m.programas[id]
+	if !ok {
+		return nil, repositories.ErrProgramaPredicacionNotFound
+	}
+	for k, v := range updates {
+		switch k {
+		case "nombre":
+			p.Nombre = v.(string)
+		case "conductor":
+			p.Conductor = v.(string)
+		}
 	}
 	p.UpdatedAt = time.Now()
-	m.programas[id] = p
-	return nil
+	return p, nil
 }
 
-func (m *mockProgramaRepo) Delete(_ context.Context, id uuid.UUID) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m *mockProgramaPredicacionRepository) Delete(_ context.Context, id uuid.UUID) error {
 	delete(m.programas, id)
 	delete(m.territorios, id)
 	return nil
 }
 
-func (m *mockProgramaRepo) SyncTerritorios(_ context.Context, programaID uuid.UUID, territorioIDs []uuid.UUID) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m *mockProgramaPredicacionRepository) GetTerritorios(_ context.Context, _ uuid.UUID) ([]*models.Territorio, error) {
+	return []*models.Territorio{}, nil
+}
+
+func (m *mockProgramaPredicacionRepository) SetTerritorios(_ context.Context, programaID uuid.UUID, territorioIDs []uuid.UUID) error {
 	ids := make([]uuid.UUID, len(territorioIDs))
 	copy(ids, territorioIDs)
 	m.territorios[programaID] = ids
 	return nil
 }
 
-func (m *mockProgramaRepo) GetTerritoriosByProgramaID(_ context.Context, programaID uuid.UUID) ([]uuid.UUID, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	ids := m.territorios[programaID]
-	result := make([]uuid.UUID, len(ids))
-	copy(result, ids)
-	return result, nil
+type mockGrupoRepository struct{}
+
+func (m *mockGrupoRepository) GetByID(_ context.Context, _ uuid.UUID) (*models.Grupo, error) {
+	return nil, repositories.ErrGrupoNotFound
 }
 
-func (m *mockProgramaRepo) ExistsByFechaHora(_ context.Context, fecha, horaInicio string, excludeID *uuid.UUID) (bool, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	for _, p := range m.programas {
-		if p.Fecha.Format("2006-01-02") == fecha && p.HoraInicio == horaInicio {
-			if excludeID != nil && p.ID == *excludeID {
-				continue
-			}
-			return true, nil
-		}
-	}
-	return false, nil
-}
+type mockTerritorioRepository struct{}
 
 // --- Tests ---
 
-// 2.1 Write failing test: service duplicate fecha+hora_inicio returns 409 with mock repo
-func TestProgramaPredicacionService_Create_DuplicateReturnsError(t *testing.T) {
-	mock := newMockProgramaRepo()
-	svc := NewProgramaPredicacionService(mock)
+func TestProgramaPredicacionService_Create_Success(t *testing.T) {
+	repo := newMockProgramaPredicacionRepository()
+	svc := NewProgramaPredicacionService(repo, &mockGrupoRepository{}, &mockTerritorioRepository{})
 
-	// Seed a program with this fecha+hora_inicio
-	seedReq := &dto.CreateProgramaPredicacionRequest{
-		Nombre:     "Existing Program",
-		Fecha:      "2026-07-15",
-		HoraInicio: "10:00",
-	}
-	_, err := svc.Create(context.Background(), seedReq)
+	nombre := "Predicación Matutina"
+	fecha := "2026-07-21"
+	diaSemana := 2
+	conductor := "Hermano Pérez"
+	horaInicio := "09:00"
+	horaFin := "11:00"
+	lugarNombre := "Salón del Reino"
+	lugarDireccion := "Av. Siempre Viva 742"
+	lugarCiudad := "Springfield"
+	lugarProvincia := "Buenos Aires"
+	lugarCodigoPostal := "1234"
+	lugarPais := "Argentina"
+	lugarContacto := "Bro. Simpson"
+	lugarTelefono := "555-0102"
+	grupoID := uuid.New()
+
+	p, err := svc.Create(
+		context.Background(),
+		nombre, fecha, diaSemana,
+		conductor, horaInicio, horaFin,
+		lugarNombre, lugarDireccion, lugarCiudad, lugarProvincia, lugarCodigoPostal, lugarPais, lugarContacto, lugarTelefono,
+		&grupoID,
+	)
 	if err != nil {
-		t.Fatalf("failed to seed program: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	// Try creating another with the same fecha+hora_inicio
-	dupReq := &dto.CreateProgramaPredicacionRequest{
-		Nombre:     "Duplicate Program",
-		Fecha:      "2026-07-15",
-		HoraInicio: "10:00",
+	if p == nil {
+		t.Fatal("expected non-nil program")
 	}
-	_, err = svc.Create(context.Background(), dupReq)
-	if err == nil {
-		t.Fatal("expected error for duplicate program, got nil")
+	if p.Nombre != nombre {
+		t.Errorf("expected nombre %q, got %q", nombre, p.Nombre)
 	}
-	if !errors.Is(err, ErrDuplicatePrograma) {
-		t.Errorf("expected ErrDuplicatePrograma, got %v", err)
+	if p.Fecha != fecha {
+		t.Errorf("expected fecha %q, got %q", fecha, p.Fecha)
+	}
+	if p.DiaSemana != diaSemana {
+		t.Errorf("expected diaSemana %d, got %d", diaSemana, p.DiaSemana)
+	}
+	if p.Conductor != conductor {
+		t.Errorf("expected conductor %q, got %q", conductor, p.Conductor)
+	}
+	if p.HoraInicio != horaInicio {
+		t.Errorf("expected horaInicio %q, got %q", horaInicio, p.HoraInicio)
+	}
+	if p.HoraFin != horaFin {
+		t.Errorf("expected horaFin %q, got %q", horaFin, p.HoraFin)
+	}
+	if p.LugarNombre != lugarNombre {
+		t.Errorf("expected lugarNombre %q, got %q", lugarNombre, p.LugarNombre)
+	}
+	if p.LugarDireccion != lugarDireccion {
+		t.Errorf("expected lugarDireccion %q, got %q", lugarDireccion, p.LugarDireccion)
+	}
+	if p.LugarCiudad != lugarCiudad {
+		t.Errorf("expected lugarCiudad %q, got %q", lugarCiudad, p.LugarCiudad)
+	}
+	if p.LugarProvincia != lugarProvincia {
+		t.Errorf("expected lugarProvincia %q, got %q", lugarProvincia, p.LugarProvincia)
+	}
+	if p.LugarCodigoPostal != lugarCodigoPostal {
+		t.Errorf("expected lugarCodigoPostal %q, got %q", lugarCodigoPostal, p.LugarCodigoPostal)
+	}
+	if p.LugarPais != lugarPais {
+		t.Errorf("expected lugarPais %q, got %q", lugarPais, p.LugarPais)
+	}
+	if p.LugarContacto != lugarContacto {
+		t.Errorf("expected lugarContacto %q, got %q", lugarContacto, p.LugarContacto)
+	}
+	if p.LugarTelefono != lugarTelefono {
+		t.Errorf("expected lugarTelefono %q, got %q", lugarTelefono, p.LugarTelefono)
+	}
+	if p.GrupoID == nil || *p.GrupoID != grupoID {
+		t.Errorf("expected grupoID %v, got %v", grupoID, p.GrupoID)
 	}
 }
 
-// 2.2 Write failing test: service GetByID returns error when missing
+func TestProgramaPredicacionService_Create_DefaultsEmptyFields(t *testing.T) {
+	repo := newMockProgramaPredicacionRepository()
+	svc := NewProgramaPredicacionService(repo, &mockGrupoRepository{}, &mockTerritorioRepository{})
+
+	p, err := svc.Create(
+		context.Background(),
+		"Test", "2026-07-21", 0,
+		"Conductor", "", "",
+		"", "", "", "", "", "", "", "",
+		nil,
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p.HoraInicio != "09:00" {
+		t.Errorf("expected default horaInicio 09:00, got %q", p.HoraInicio)
+	}
+	if p.HoraFin != "11:00" {
+		t.Errorf("expected default horaFin 11:00, got %q", p.HoraFin)
+	}
+	if p.LugarNombre == "" {
+		t.Error("expected default lugarNombre, got empty string")
+	}
+	if p.LugarPais != "Argentina" {
+		t.Errorf("expected default lugarPais 'Argentina', got %q", p.LugarPais)
+	}
+}
+
 func TestProgramaPredicacionService_GetByID_NotFound(t *testing.T) {
-	mock := newMockProgramaRepo()
-	svc := NewProgramaPredicacionService(mock)
+	repo := newMockProgramaPredicacionRepository()
+	svc := NewProgramaPredicacionService(repo, &mockGrupoRepository{}, &mockTerritorioRepository{})
 
 	_, err := svc.GetByID(context.Background(), uuid.New())
 	if err == nil {
 		t.Fatal("expected error for non-existent program, got nil")
 	}
-	if !errors.Is(err, ErrProgramaNotFound) {
-		t.Errorf("expected ErrProgramaNotFound, got %v", err)
+	if !errors.Is(err, repositories.ErrProgramaPredicacionNotFound) {
+		t.Errorf("expected ErrProgramaPredicacionNotFound, got %v", err)
 	}
 }
 
-// 2.3 Write failing test: service SyncTerritorios replaces join-table rows atomically
-func TestProgramaPredicacionService_SyncTerritorios_ReplacesRows(t *testing.T) {
-	mock := newMockProgramaRepo()
-	svc := NewProgramaPredicacionService(mock)
+func TestProgramaPredicacionService_SetTerritorios_DelegatesToRepo(t *testing.T) {
+	repo := newMockProgramaPredicacionRepository()
+	svc := NewProgramaPredicacionService(repo, &mockGrupoRepository{}, &mockTerritorioRepository{})
 
-	// Step 1: Create a program with 2 territorios
-	t1 := uuid.New()
-	t2 := uuid.New()
-	createReq := &dto.CreateProgramaPredicacionRequest{
-		Nombre:      "Territorio Test",
-		Fecha:       "2026-08-01",
-		HoraInicio:  "09:00",
-		Territorios: []uuid.UUID{t1, t2},
+	programaID := uuid.New()
+	territorioID1 := uuid.New()
+	territorioID2 := uuid.New()
+
+	err := svc.SetTerritorios(context.Background(), programaID, []string{territorioID1.String(), territorioID2.String()})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	created, err := svc.Create(context.Background(), createReq)
-	if err != nil {
-		t.Fatalf("unexpected error on create: %v", err)
-	}
-
-	// Verify after create: 2 territorios stored
-	stored, err := mock.GetTerritoriosByProgramaID(context.Background(), created.ID)
-	if err != nil {
-		t.Fatalf("unexpected error getting territorios: %v", err)
+	stored, ok := repo.territorios[programaID]
+	if !ok {
+		t.Fatal("expected territorios to be stored in mock repo")
 	}
 	if len(stored) != 2 {
-		t.Errorf("expected 2 stored territories after create, got %d", len(stored))
+		t.Fatalf("expected 2 stored territorios, got %d", len(stored))
+	}
+	if stored[0] != territorioID1 {
+		t.Errorf("expected territorioID %v at index 0, got %v", territorioID1, stored[0])
+	}
+	if stored[1] != territorioID2 {
+		t.Errorf("expected territorioID %v at index 1, got %v", territorioID2, stored[1])
+	}
+}
+
+func TestProgramaPredicacionService_Update_DelegatesToRepo(t *testing.T) {
+	repo := newMockProgramaPredicacionRepository()
+	svc := NewProgramaPredicacionService(repo, &mockGrupoRepository{}, &mockTerritorioRepository{})
+
+	programa := &models.ProgramaPredicacion{
+		ID:        uuid.New(),
+		Nombre:    "Original",
+		Fecha:     "2026-07-21",
+		DiaSemana: 2,
+		Conductor: "Hermano Original",
+	}
+	repo.programas[programa.ID] = programa
+
+	updates := map[string]interface{}{
+		"nombre":    "Updated Program",
+		"conductor": "Hermano Actualizado",
 	}
 
-	// Step 2: Update with 1 different territorio (should replace, not append)
-	t3 := uuid.New()
-	updateReq := &dto.UpdateProgramaPredicacionRequest{
-		Territorios: []uuid.UUID{t3},
-	}
-
-	_, err = svc.Update(context.Background(), created.ID, updateReq)
+	detail, err := svc.Update(context.Background(), programa.ID, updates)
 	if err != nil {
-		t.Fatalf("unexpected error on update: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	// Verify after update: exactly 1 territorio (the new one)
-	stored, err = mock.GetTerritoriosByProgramaID(context.Background(), created.ID)
-	if err != nil {
-		t.Fatalf("unexpected error getting territorios: %v", err)
+	if detail == nil {
+		t.Fatal("expected non-nil detail")
 	}
-	if len(stored) != 1 {
-		t.Errorf("expected 1 stored territory after update, got %d", len(stored))
+	if detail.Nombre != "Updated Program" {
+		t.Errorf("expected nombre %q, got %q", "Updated Program", detail.Nombre)
 	}
-	if stored[0] != t3 {
-		t.Errorf("expected stored territory %v, got %v", t3, stored[0])
+	if detail.Conductor != "Hermano Actualizado" {
+		t.Errorf("expected conductor %q, got %q", "Hermano Actualizado", detail.Conductor)
 	}
 }

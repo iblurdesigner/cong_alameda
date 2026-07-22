@@ -10,8 +10,9 @@ import (
 func TestConsoleEmailService_SendPasswordReset(t *testing.T) {
 	// Capture log output
 	var buf bytes.Buffer
+	originalOutput := log.Writer()
 	log.SetOutput(&buf)
-	defer log.SetOutput(nil) // Reset after test
+	defer log.SetOutput(originalOutput) // Restore after test
 
 	svc := NewConsoleEmailService("http://localhost:4200")
 	err := svc.SendPasswordReset("user@example.com", "test-token-123")

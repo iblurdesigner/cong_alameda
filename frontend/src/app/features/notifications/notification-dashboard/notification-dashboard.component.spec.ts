@@ -47,11 +47,16 @@ describe('NotificationDashboardComponent', () => {
     },
   ];
 
+  // Use writable signals so tests can update them via .set()
+  const notificacionesSignal = signal(mockNotificaciones);
+  const unreadCountSignal = signal(3);
+  const loadingSignal = signal(false);
+
   function createMockNotificationService(override?: Partial<NotificationService>): Partial<NotificationService> {
     return {
-      notificaciones: signal(mockNotificaciones).asReadonly(),
-      unreadCount: signal(3).asReadonly(),
-      loading: signal(false).asReadonly(),
+      notificaciones: notificacionesSignal.asReadonly(),
+      unreadCount: unreadCountSignal.asReadonly(),
+      loading: loadingSignal.asReadonly(),
       loadNotifications: jest.fn().mockReturnValue(of({ data: mockNotificaciones, unread_count: 3 })),
       markAsRead: jest.fn().mockReturnValue(of({ message: 'Notificación marcada como leída' })),
       markAllAsRead: jest.fn().mockReturnValue(of({ message: 'Todas las notificaciones marcadas como leídas' })),
@@ -60,6 +65,11 @@ describe('NotificationDashboardComponent', () => {
   }
 
   beforeEach(async () => {
+    // Reset shared signals to default values
+    notificacionesSignal.set(mockNotificaciones);
+    unreadCountSignal.set(3);
+    loadingSignal.set(false);
+
     mockNotificationService = createMockNotificationService();
 
     await TestBed.configureTestingModule({
@@ -110,7 +120,7 @@ describe('NotificationDashboardComponent', () => {
       tick();
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
       expect(chips[0].textContent).toContain('Todos');
       expect(chips[0].classList).toContain('active');
     }));
@@ -129,7 +139,7 @@ describe('NotificationDashboardComponent', () => {
         'ASIGNACION_COMPLETADA',
       ];
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
       expect(chips.length).toBe(expectedTipos.length + 1); // +1 for "Todos"
     }));
 
@@ -137,33 +147,33 @@ describe('NotificationDashboardComponent', () => {
       tick();
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card') as NodeListOf<Element>;
       const casaChip = Array.from(chips).find(chip => 
         chip.textContent?.includes('Casas')
       );
       
-      expect(casaChip?.querySelector('.chip-badge')).toBeTruthy();
-      expect(casaChip?.querySelector('.chip-badge')?.textContent).toBe('2');
+      expect(casaChip?.querySelector('.filter-count')).toBeTruthy();
+      expect(casaChip?.querySelector('.filter-count')?.textContent).toBe('2');
     }));
 
     it('should not show badge when count is 0', fakeAsync(() => {
       tick();
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card') as NodeListOf<Element>;
       const completadaChip = Array.from(chips).find(chip => 
         chip.textContent?.includes('Completadas')
       );
       
       // Should not have badge if count is 0
-      expect(completadaChip?.querySelector('.chip-badge')).toBeNull();
+      expect(completadaChip?.querySelector('.filter-count')).toBeNull();
     }));
 
     it('should set filter when chip is clicked', fakeAsync(() => {
       tick();
       fixture.detectChanges();
 
-      const chips = fixture.nativeElement.querySelectorAll('.chip');
+      const chips = fixture.nativeElement.querySelectorAll('.filter-card');
       const casaChip = chips[1]; // Second chip (after "Todos")
 
       casaChip.click();
@@ -320,7 +330,7 @@ describe('NotificationDashboardComponent', () => {
     }));
 
     it('should disable mark all button when unread count is 0', fakeAsync(() => {
-      (mockNotificationService as any).unreadCount = signal(0);
+      unreadCountSignal.set(0);
       tick();
       fixture.detectChanges();
 
@@ -333,7 +343,7 @@ describe('NotificationDashboardComponent', () => {
 
   describe('empty state', () => {
     it('should show empty state when no notifications', fakeAsync(() => {
-      (mockNotificationService as any).notificaciones = signal([]);
+      notificacionesSignal.set([]);
       tick();
       fixture.detectChanges();
 
@@ -357,11 +367,11 @@ describe('NotificationDashboardComponent', () => {
 
   describe('loading state', () => {
     it('should show loading when loading is true', fakeAsync(() => {
-      (mockNotificationService as any).loading = signal(true);
+      loadingSignal.set(true);
       tick();
       fixture.detectChanges();
 
-      const loading = fixture.nativeElement.querySelector('.loading');
+      const loading = fixture.nativeElement.querySelector('.loader-container');
       expect(loading).toBeTruthy();
       expect(loading?.textContent).toContain('Cargando');
     }));
@@ -369,22 +379,29 @@ describe('NotificationDashboardComponent', () => {
 
   // ========== Pagination ==========
 
-  describe('pagination', () => {
-    it('should show pagination when totalPages > 1', fakeAsync(() => {
-      // Add more notifications to trigger pagination (PAGE_SIZE = 50)
-      const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
-        id: `notif-${i}`,
-        tipo: 'CASA_REGISTRADA',
-        mensaje: `Notification ${i}`,
-        leida: i % 2 === 0,
-        created_at: new Date().toISOString(),
-      }));
+  function setupManyNotifications() {
+    const manyNotificaciones: Notificacion[] = Array.from({ length: 55 }, (_, i) => ({
+      id: `notif-${i}`,
+      tipo: i < 50 ? 'CASA_REGISTRADA' : 'VISITA_PROGRAMADA',
+      mensaje: `Notification ${i}`,
+      leida: i % 2 === 0,
+      created_at: new Date().toISOString(),
+    }));
+    notificacionesSignal.set(manyNotificaciones);
+    unreadCountSignal.set(28);
+    component.setFilter(null);
+  }
 
-      (mockNotificationService as any).notificaciones = signal(manyNotificaciones);
-      component.setFilter(null);
+  describe('pagination', () => {
+    beforeEach(() => {
+      setupManyNotifications();
+    });
+
+    it('should show pagination when totalPages > 1', fakeAsync(() => {
       tick();
       fixture.detectChanges();
 
+      expect(component.totalPages()).toBe(2);
       const pagination = fixture.nativeElement.querySelector('.pagination');
       expect(pagination).toBeTruthy();
     }));
@@ -403,15 +420,18 @@ describe('NotificationDashboardComponent', () => {
       tick();
       fixture.detectChanges();
 
-      const prevButton = fixture.nativeElement.querySelector('.pagination button:first-child') as HTMLButtonElement;
+      const pagination = fixture.nativeElement.querySelector('.pagination');
+      const prevButton = pagination?.querySelector('button:first-child') as HTMLButtonElement;
       expect(prevButton?.disabled).toBe(true);
     }));
 
     it('should go to previous page', fakeAsync(() => {
       component.currentPage.set(2);
       tick();
+      fixture.detectChanges();
 
-      const prevButton = fixture.nativeElement.querySelector('.pagination button:first-child');
+      const pagination = fixture.nativeElement.querySelector('.pagination');
+      const prevButton = pagination?.querySelector('button:first-child');
       prevButton?.click();
       tick();
 
@@ -421,8 +441,10 @@ describe('NotificationDashboardComponent', () => {
     it('should go to next page', fakeAsync(() => {
       component.currentPage.set(1);
       tick();
+      fixture.detectChanges();
 
-      const nextButton = fixture.nativeElement.querySelector('.pagination button:last-child');
+      const pagination = fixture.nativeElement.querySelector('.pagination');
+      const nextButton = pagination?.querySelector('button:last-child');
       nextButton?.click();
       tick();
 
@@ -462,7 +484,7 @@ describe('NotificationDashboardComponent', () => {
         created_at: new Date().toISOString(),
       }));
 
-      (mockNotificationService as any).notificaciones = signal(manyNotificaciones);
+      notificacionesSignal.set(manyNotificaciones);
       component.setFilter(null);
       tick();
 
