@@ -1,8 +1,7 @@
-// Jest setup file - minimal configuration for unit tests
-// zone.js/testing no es compatible con Jest 30 todavía
+// Jest setup file - configure Angular zone test environment
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
-// Import Angular compiler for JIT compilation (required for HttpClient)
-import '@angular/compiler';
+setupZoneTestEnv();
 
 // Mock localStorage que persiste datos entre llamadas
 let storage: Record<string, string> = {};

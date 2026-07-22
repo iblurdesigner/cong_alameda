@@ -26,7 +26,7 @@ import { AuthService } from '../../core/services/auth.service';
             class="btn btn-outline btn-sm btn-danger"
             (click)="confirmDelete()"
           >
-            🗑️ Eliminar Semana
+            ≡ƒùæ️ Eliminar Semana
           </button>
         }
       </header>
@@ -44,7 +44,7 @@ import { AuthService } from '../../core/services/auth.service';
               
               <div class="dia-content">
                 <div class="turno">
-                  <label>🌅 Mañana</label>
+                  <label>≡ƒîà Mañana</label>
                   @if (dia.territorio_manana) {
                     <div class="territorio-assigned">
                       <span>{{ dia.territorio_manana.nombre }}</span>
@@ -55,7 +55,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 
                 <div class="turno">
-                  <label>🌆 Tarde</label>
+                  <label>≡ƒîå Tarde</label>
                   @if (dia.territorio_tarde) {
                     <div class="territorio-assigned">
                       <span>{{ dia.territorio_tarde.nombre }}</span>
@@ -66,7 +66,7 @@ import { AuthService } from '../../core/services/auth.service';
                 </div>
                 
                 <div class="turno">
-                  <label>👥 Grupo</label>
+                  <label>≡ƒæÑ Grupo</label>
                   @if (dia.grupo_asignado) {
                     <div class="grupo-assigned">
                       <span>#{{ dia.grupo_asignado.numero }} {{ dia.grupo_asignado.nombre }}</span>

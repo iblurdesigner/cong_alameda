@@ -2,7 +2,7 @@
 
 ## Intent
 
-Standardize code quality tools across the project. Currently, there are no linters or formatters configured — Go code is unchecked, and frontend code has no ESLint setup. This leads to inconsistent style, avoidable bugs, and review overhead.
+Standardize code quality tools across the project. Currently, there are no linters or formatters configured ΓÇö Go code is unchecked, and frontend code has no ESLint setup. This leads to inconsistent style, avoidable bugs, and review overhead.
 
 ## Scope
 
@@ -22,13 +22,13 @@ Standardize code quality tools across the project. Currently, there are no linte
 
 ## Capabilities
 
-> Pure tooling/config change — no spec-level behavior changes.
+> Pure tooling/config change ΓÇö no spec-level behavior changes.
 
 ### New Capabilities
-None (tooling/config change — no spec-level behavior changes)
+None (tooling/config change ΓÇö no spec-level behavior changes)
 
 ### Modified Capabilities
-None (tooling/config change — no spec-level behavior changes)
+None (tooling/config change ΓÇö no spec-level behavior changes)
 
 ## Approach
 

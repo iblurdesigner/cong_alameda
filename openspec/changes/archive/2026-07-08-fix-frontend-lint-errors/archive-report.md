@@ -37,12 +37,12 @@ All 9 tasks confirmed `[x]` in tasks.md. No stale unchecked tasks. Gate passed.
 
 | Artifact | Path | Status |
 |----------|------|--------|
-| Proposal | `proposal.md` | ✅ |
-| Specs | `specs/developer-tooling/spec.md` | ✅ |
-| Design | `design.md` | ✅ |
-| Tasks | `tasks.md` | ✅ (9/9 complete) |
-| Verify Report | `verify-report.md` | ✅ (PASS WITH WARNINGS) |
-| Archive Report | `archive-report.md` | ✅ (this file) |
+| Proposal | `proposal.md` | Γ£à |
+| Specs | `specs/developer-tooling/spec.md` | Γ£à |
+| Design | `design.md` | Γ£à |
+| Tasks | `tasks.md` | Γ£à (9/9 complete) |
+| Verify Report | `verify-report.md` | Γ£à (PASS WITH WARNINGS) |
+| Archive Report | `archive-report.md` | Γ£à (this file) |
 
 ## Verification
 

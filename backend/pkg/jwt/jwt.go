@@ -9,16 +9,11 @@ import (
 )
 
 var (
-	ErrInvalidToken = errors.New("token inválido")
-	ErrExpiredToken  = errors.New("token expirado")
+	ErrInvalidToken      = errors.New("token inválido")
+	ErrExpiredToken      = errors.New("token expirado")
+	ErrInvalidPurpose    = errors.New("propósito del token inválido")
+	ErrMissingPurpose    = errors.New("token sin propósito")
 )
-
-// ResetClaims contiene claims específicos para reset de password
-type ResetClaims struct {
-	Email string `json:"email"`
-	Type  string `json:"type"` // "password_reset"
-	jwt.RegisteredClaims
-}
 
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
@@ -56,34 +51,20 @@ func (m *JWTManager) GenerateToken(userID uuid.UUID, email, rol string) (string,
 	return token.SignedString(m.secret)
 }
 
-func (m *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrInvalidToken
-		}
-		return m.secret, nil
-	})
-
-	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrExpiredToken
-		}
-		return nil, ErrInvalidToken
-	}
-
-	claims, ok := token.Claims.(*Claims)
-	if !ok || !token.Valid {
-		return nil, ErrInvalidToken
-	}
-
-	return claims, nil
+// ResetClaims represents the JWT claims for password reset tokens
+type ResetClaims struct {
+	UserID  uuid.UUID `json:"user_id"`
+	Email   string    `json:"email"`
+	Purpose string    `json:"purpose"`
+	jwt.RegisteredClaims
 }
 
-// GenerateResetToken genera un JWT para recovery de password con expiry 15min
-func (m *JWTManager) GenerateResetToken(email string) (string, error) {
+// GenerateResetToken generates a password reset JWT with 15-minute expiry
+func (m *JWTManager) GenerateResetToken(userID uuid.UUID, email string) (string, error) {
 	claims := &ResetClaims{
-		Email: email,
-		Type:  "password_reset",
+		UserID:  userID,
+		Email:   email,
+		Purpose: "password_reset",
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -96,7 +77,7 @@ func (m *JWTManager) GenerateResetToken(email string) (string, error) {
 	return token.SignedString(m.secret)
 }
 
-// ValidateResetToken valida un JWT de recovery de password
+// ValidateResetToken validates a password reset token and returns its claims
 func (m *JWTManager) ValidateResetToken(tokenString string) (*ResetClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &ResetClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -117,8 +98,34 @@ func (m *JWTManager) ValidateResetToken(tokenString string) (*ResetClaims, error
 		return nil, ErrInvalidToken
 	}
 
-	// Verificar que es un token de password_reset
-	if claims.Type != "password_reset" {
+	if claims.Purpose == "" {
+		return nil, ErrMissingPurpose
+	}
+
+	if claims.Purpose != "password_reset" {
+		return nil, ErrInvalidPurpose
+	}
+
+	return claims, nil
+}
+
+func (m *JWTManager) ValidateToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, ErrInvalidToken
+		}
+		return m.secret, nil
+	})
+
+	if err != nil {
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrExpiredToken
+		}
+		return nil, ErrInvalidToken
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok || !token.Valid {
 		return nil, ErrInvalidToken
 	}
 

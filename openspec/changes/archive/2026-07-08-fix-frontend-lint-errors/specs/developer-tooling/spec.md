@@ -29,7 +29,7 @@ The project SHALL configure ESLint (flat config) for TypeScript and SCSS files i
 
 ### Requirement: Production Code Lint Compliance
 
-Production `.ts` files in `frontend/src/` SHALL be fixed file-by-file until `npx eslint .` exits with code 0. Each fix batch SHALL be verified with `npx eslint .` AND `ng build` — both MUST pass. Production code MUST NOT disable `recommendedTypeChecked` globally; per‑file suppressions MUST carry an inline justification comment.
+Production `.ts` files in `frontend/src/` SHALL be fixed file-by-file until `npx eslint .` exits with code 0. Each fix batch SHALL be verified with `npx eslint .` AND `ng build` ΓÇö both MUST pass. Production code MUST NOT disable `recommendedTypeChecked` globally; perΓÇæfile suppressions MUST carry an inline justification comment.
 
 #### Scenario: File-by-file fix verified
 
@@ -41,4 +41,4 @@ Production `.ts` files in `frontend/src/` SHALL be fixed file-by-file until `npx
 
 - GIVEN a developer proposes disabling `recommendedTypeChecked` for all production files
 - WHEN the approach is evaluated against this requirement
-- THEN it MUST be rejected; only per‑file suppressions with justification are allowed
+- THEN it MUST be rejected; only perΓÇæfile suppressions with justification are allowed

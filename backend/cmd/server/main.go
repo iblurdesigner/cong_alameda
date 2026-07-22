@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -54,7 +54,10 @@ func main() {
 	visitaService := services.NewVisitaService(visitaRepo, casaRepo, userRepo, notifService)
 	userService := services.NewUserService(userRepo, jwtManager)
 
-	// Initialize email/notification service
+	// Initialize email service, rate limiter, and notification service
+	emailService := services.NewConsoleEmailService(cfg.FrontendURL)
+	rateLimiter := services.NewRateLimiter(5 * time.Minute)
+
 	emailConfig := services.EmailConfig{
 		SMTPHost:     cfg.SMTPHost,
 		SMTPPort:     cfg.SMTPPort,
@@ -67,7 +70,7 @@ func main() {
 	services.InitNotificationService(emailConfig)
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(userService, jwtManager)
+	authHandler := handlers.NewAuthHandler(userService, jwtManager, emailService, rateLimiter)
 	casaHandler := handlers.NewCasaHandler(casaService, userService)
 	visitaHandler := handlers.NewVisitaHandler(visitaService, casaService, userService)
 	notifHandler := handlers.NewNotificacionHandler(notifService, userService, casaService)
@@ -90,35 +93,32 @@ func main() {
 	territorioHandler := handlers.NewTerritorioHandler(territorioService)
 	semanaHandler := handlers.NewSemanaHandler(semanaService)
 
-	// ====== PROGRAMA DE PREDICACIÓN ======
-	// Initialize ProgramaPredicacion repository, service and handler
-	programaPredicacionRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
-	programaPredicacionService := services.NewProgramaPredicacionService(programaPredicacionRepo, grupoRepo, territorioRepo)
-	programaPredicacionHandler := handlers.NewProgramaPredicacionHandler(programaPredicacionService)
-
-	// ====== PROGRAMA VISITA ======
-	// Initialize ProgramaVisita repository, service and handler
-	programaVisitaRepo := repositories.NewProgramaVisitaRepository(db.Pool)
-	programaVisitaService := services.NewProgramaVisitaService(programaVisitaRepo, programaPredicacionRepo, grupoRepo, territorioRepo)
-	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaService)
-
 	// ====== FASE 3: Asignaciones Internas ======
 	// Initialize Fase 3 repositories
 	tipoAsignRepo := repositories.NewTipoAsignacionRepository(db.Pool)
 	asignacionRepo := repositories.NewAsignacionRepository(db.Pool)
 
 	// Initialize Fase 3 services
-	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo, grupoRepo)
+	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo)
 
 	// Initialize Fase 3 handlers
-	asignacionHandler := handlers.NewAsignacionHandler(asignacionService, userService, notifService)
+	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)
+
+	// Initialize ProgramaPredicacion repo, service, handler
+	programaPredicacionRepo := repositories.NewProgramaPredicacionRepository(db.Pool)
+	programaPredicacionService := services.NewProgramaPredicacionService(programaPredicacionRepo, grupoRepo, territorioRepo)
+	programaPredicacionHandler := handlers.NewProgramaPredicacionHandler(programaPredicacionService)
+
+	// Initialize ProgramaVisita repo, service, handler
+	programaVisitaRepo := repositories.NewProgramaVisitaRepository(db.Pool)
+	programaVisitaService := services.NewProgramaVisitaService(programaVisitaRepo, programaPredicacionRepo, grupoRepo, territorioRepo)
+	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 
-	// Create Fiber app with UTF-8 support
+	// Create Fiber app
 	app := fiber.New(fiber.Config{
-		AppName: "cong-alameda-backend",
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 			if e, ok := err.(*fiber.Error); ok {
@@ -129,11 +129,6 @@ func main() {
 				"message": err.Error(),
 			})
 		},
-		CaseSensitive:         false,
-		StrictRouting:         false,
-		DisableStartupMessage: false,
-		BodyLimit:             4 * 1024 * 1024,
-		Concurrency:           256 * 1024,
 	})
 
 	// Global middleware
@@ -141,22 +136,6 @@ func main() {
 	app.Use(logger.New(logger.Config{
 		Format: "[${time}] ${status} - ${method} ${path} - ${latency}\n",
 	}))
-
-	// UTF-8 encoding middleware for JSON responses only
-	app.Use(func(c *fiber.Ctx) error {
-		// Skip for public routes that serve binary files
-		path := c.Path()
-		if strings.HasPrefix(path, "/public/") || strings.HasPrefix(path, "/health") {
-			return c.Next()
-		}
-		// Don't override content-type for binary responses (PDFs, etc.)
-		contentType := string(c.Response().Header.ContentType())
-		if contentType == "" {
-			c.Set("Content-Type", "application/json; charset=utf-8")
-		}
-		return c.Next()
-	})
-
 	app.Use(middleware.CORSMiddleware(cfg.FrontendURL))
 
 	// Health check
@@ -167,69 +146,54 @@ func main() {
 		})
 	})
 
-	// Static files for uploaded images
-	// Configure UPLOADS_DIR in .env (default: ./uploads)
-	app.Static("/uploads", cfg.UploadDir)
-	log.Printf("Serving uploads from: %s", cfg.UploadDir)
-
-
-	// Public routes (no authentication required)
-	public := app.Group("/public")
-
-	// Preview endpoint for PDF (public - used by iframe)
-	public.Get("/territorios/:id/previsualizar", territorioHandler.Preview)
-
 	// API routes
 	api := app.Group("/api")
 
 	// Auth routes (public)
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
-	auth.Post("/recover-request", authHandler.RecoverRequest)
-	auth.Post("/recover-password", authHandler.RecoverPassword)
+	auth.Post("/recover-request", authHandler.RequestRecovery)
+	auth.Post("/recover-password", authHandler.ResetPassword)
 
 	// Protected routes
 	protected := api.Group("", authMiddleware.Authenticate())
 
 	// Auth protected routes
 	protected.Get("/auth/me", authHandler.GetCurrentUser)
-	protected.Put("/auth/profile", authHandler.UpdateCurrentUserProfile)
 
 	// Casa routes
 	casas := protected.Group("/casas")
 	casas.Get("/", casaHandler.List)
 	casas.Get("/sectores", casaHandler.GetSectores)
 	casas.Get("/:id", casaHandler.GetByID)
-	casas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Create)
-	casas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Update)
-	casas.Post("/:id/foto", casaHandler.UploadFoto)
-	casas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), casaHandler.Delete)
+	casas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Create)
+	casas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Update)
+	casas.Post("/:id/foto", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.UploadFoto)
+	casas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), casaHandler.Delete)
 
 	// Visita routes
 	visitas := protected.Group("/visitas")
 	visitas.Get("/", visitaHandler.List)
 	visitas.Get("/stats", visitaHandler.GetStats)
 	visitas.Get("/:id", visitaHandler.GetByID)
-	visitas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), visitaHandler.Create)
-	visitas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), visitaHandler.Update)
-	visitas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), visitaHandler.Delete)
+	visitas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Create)
+	visitas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Update)
+	visitas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), visitaHandler.Delete)
 
 	// Notificacion routes
 	notificaciones := protected.Group("/notificaciones")
 	notificaciones.Get("/", notifHandler.List)
 	notificaciones.Put("/:id/read", notifHandler.MarkAsRead)
 	notificaciones.Put("/read-all", notifHandler.MarkAllAsRead)
-	notificaciones.Delete("/cleanup", notifHandler.CleanupOldNotifications)
-	notificaciones.Post("/rekindle/visitas", notifHandler.RekindleVisitas)
 
-	// User routes - SUPER_ADMIN can manage all, SUPERINTENDENTE can create
+	// User routes
 	users := protected.Group("/users")
 	users.Get("/", userHandler.List)
 	users.Get("/visitantes", userHandler.GetVisitantes)
 	users.Get("/:id", userHandler.GetByID)
-	users.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), userHandler.Create)
-	users.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), userHandler.Update)
-	users.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN"), userHandler.Delete)
+	users.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Create)
+	users.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Update)
+	users.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Delete)
 
 	// ====== FASE 2 ROUTES ======
 
@@ -237,31 +201,30 @@ func main() {
 	grupos := protected.Group("/grupos")
 	grupos.Get("/", grupoHandler.List)
 	grupos.Get("/:id", grupoHandler.GetByID)
-	grupos.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), grupoHandler.Create)
-	grupos.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), grupoHandler.Update)
-	grupos.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), grupoHandler.Delete)
+	grupos.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), grupoHandler.Create)
+	grupos.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), grupoHandler.Update)
+	grupos.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), grupoHandler.Delete)
 
 	// Territorio routes
 	territorios := protected.Group("/territorios")
 	territorios.Get("/", territorioHandler.List)
-	territorios.Post("/upload", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), territorioHandler.Upload)
-	territorios.Get("/:id/descargar", territorioHandler.Download)
+	territorios.Post("/upload", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), territorioHandler.Upload)
 	territorios.Get("/:id", territorioHandler.GetByID)
-	territorios.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), territorioHandler.Delete)
+	territorios.Get("/:id/descargar", territorioHandler.Download)
+	territorios.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), territorioHandler.Delete)
 
 	// Semana routes
 	semanas := protected.Group("/semanas")
 	semanas.Get("/", semanaHandler.List)
 	semanas.Get("/:id", semanaHandler.GetByID)
-	semanas.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), semanaHandler.Create)
-	semanas.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), semanaHandler.Update)
-	semanas.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), semanaHandler.Delete)
+	semanas.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Create)
+	semanas.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Update)
+	semanas.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.Delete)
 	semanas.Get("/:id/dias", semanaHandler.GetDias)
-	semanas.Put("/:id/archivar", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), semanaHandler.Archive)
 
 	// Dia routes
 	dias := protected.Group("/dias")
-	dias.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), semanaHandler.UpdateDia)
+	dias.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), semanaHandler.UpdateDia)
 
 	// ====== FASE 3 ROUTES: Asignaciones Internas ======
 
@@ -277,6 +240,8 @@ func main() {
 	asignaciones.Post("/bulk", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.BulkCreate)
 	asignaciones.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Update)
 	asignaciones.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), asignacionHandler.Delete)
+
+	// ====== PROGRAMA PREDICACION ROUTES ======
 
 	// Programa de Predicación routes
 	programas := protected.Group("/programas-predicacion")

@@ -2,7 +2,7 @@
 
 ## Intent
 
-Clean up TypeScript lint violations in `frontend/src/` so that `npx eslint .` exits clean. Currently, `recommendedTypeChecked` rules flag ~100+ errors—mostly `no-unsafe-*` and `no-explicit-any` in test files. Unclean lint blocks pre-commit hooks and masks real issues.
+Clean up TypeScript lint violations in `frontend/src/` so that `npx eslint .` exits clean. Currently, `recommendedTypeChecked` rules flag ~100+ errorsΓÇömostly `no-unsafe-*` and `no-explicit-any` in test files. Unclean lint blocks pre-commit hooks and masks real issues.
 
 ## Scope
 
@@ -15,14 +15,14 @@ Clean up TypeScript lint violations in `frontend/src/` so that `npx eslint .` ex
 
 ### Out of Scope
 - Backend lint errors (none exist)
-- New type interfaces or models—use existing types only
+- New type interfaces or modelsΓÇöuse existing types only
 - Full codebase type refactoring
 - SCSS lint rules (currently none configured)
 
 ## Capabilities
 
 ### New Capabilities
-None—no new capability introduced.
+NoneΓÇöno new capability introduced.
 
 ### Modified Capabilities
 - `developer-tooling`: ESLint rules relaxed for test files via `overrides`; production `recommendedTypeChecked` remains unchanged.
@@ -30,7 +30,7 @@ None—no new capability introduced.
 ## Approach
 
 1. **ESLint config first**: Add `overrides` block for test files relaxing `@typescript-eslint/no-unsafe-*` and `@typescript-eslint/no-explicit-any`.
-2. **Fix production code file by file**: Prioritize by error count—fix `no-unused-vars`, `no-floating-promises`, then `no-unsafe-*` and missing types.
+2. **Fix production code file by file**: Prioritize by error countΓÇöfix `no-unused-vars`, `no-floating-promises`, then `no-unsafe-*` and missing types.
 3. **Verify after each batch**: Run `npx eslint .` and `ng build` to confirm zero regressions.
 
 ## Affected Areas
@@ -51,7 +51,7 @@ None—no new capability introduced.
 
 ## Rollback Plan
 
-Revert `eslint.config.js` changes and/or use `git checkout -- frontend/src/` for individual files that break. The change is additive—no schema or data migration involved.
+Revert `eslint.config.js` changes and/or use `git checkout -- frontend/src/` for individual files that break. The change is additiveΓÇöno schema or data migration involved.
 
 ## Dependencies
 

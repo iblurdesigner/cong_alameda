@@ -2,12 +2,12 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
 	"cong-alameda-backend/internal/models"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -72,73 +72,48 @@ func (r *AsignacionRepository) GetBySemana(ctx context.Context, semanaID uuid.UU
 	for rows.Next() {
 		a := &models.AsignacionDetail{}
 		t := &models.TipoAsignacion{}
-		u := &models.User{}
-		g := &models.Grupo{}
-
-		// Use NullString for nullable UUIDs
-		var userID, grupoID sql.NullString
-		// Use NullString for User fields (LEFT JOIN can be NULL)
-		var userID2, userNombre, userEmail, userRol sql.NullString
-		// Use NullString for Grupo fields (LEFT JOIN can be NULL)
-		var grupoID2, grupoNombre sql.NullString
-		var grupoNumero sql.NullInt64
+		var (
+			tempUserID *uuid.UUID
+			uID        *uuid.UUID
+			uNombre    *string
+			uEmail     *string
+			uRol       *string
+			gID        *uuid.UUID
+			gNombre    *string
+			gNumero    *int
+		)
 
 		err := rows.Scan(
-			&a.ID, &a.SemanaID, &a.TipoAsignacionID, &userID, &grupoID, &a.DiaSemana,
+			&a.ID, &a.SemanaID, &a.TipoAsignacionID, &tempUserID, &a.GrupoID, &a.DiaSemana,
 			&a.Observaciones, &a.CreatedAt, &a.UpdatedAt,
 			&t.ID, &t.Nombre, &t.Descripcion, &t.Icono,
-			&userID2, &userNombre, &userEmail, &userRol,
-			&grupoID2, &grupoNombre, &grupoNumero,
+			&uID, &uNombre, &uEmail, &uRol,
+			&gID, &gNombre, &gNumero,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		// Convert NullString to *uuid.UUID for IDs
-		if userID.Valid {
-			parsed, _ := uuid.Parse(userID.String)
-			a.UserID = &parsed
-		}
-		if grupoID.Valid {
-			parsed, _ := uuid.Parse(grupoID.String)
-			a.GrupoID = &parsed
+		if tempUserID != nil {
+			a.UserID = *tempUserID
 		}
 
 		a.TipoAsignacion = t
-
-		// Only set User if user data exists
-		if userNombre.Valid {
-			if userID2.Valid {
-				if parsed, err := uuid.Parse(userID2.String); err == nil {
-					u.ID = parsed
-				}
+		if uID != nil {
+			a.User = &models.User{
+				ID:     *uID,
+				Nombre: *uNombre,
+				Email:  *uEmail,
+				Rol:    models.Rol(*uRol),
 			}
-			if userNombre.Valid {
-				u.Nombre = userNombre.String
-			}
-			if userEmail.Valid {
-				u.Email = userEmail.String
-			}
-			if userRol.Valid {
-				u.Rol = models.Rol(userRol.String)
-			}
-			a.User = u
 		}
-
-		// Only set Grupo if grupo data exists
-		if grupoNombre.Valid {
-			if grupoID2.Valid {
-				if parsed, err := uuid.Parse(grupoID2.String); err == nil {
-					g.ID = parsed
-				}
+		if gID != nil {
+			a.Grupo = &models.Grupo{
+				ID:     *gID,
+				Nombre: *gNombre,
+				Numero: *gNumero,
 			}
-			g.Nombre = grupoNombre.String
-			if grupoNumero.Valid {
-				g.Numero = int(grupoNumero.Int64)
-			}
-			a.Grupo = g
 		}
-
 		asignaciones = append(asignaciones, a)
 	}
 	return asignaciones, nil
@@ -170,73 +145,48 @@ func (r *AsignacionRepository) GetBySemanaAndDia(ctx context.Context, semanaID u
 	for rows.Next() {
 		a := &models.AsignacionDetail{}
 		t := &models.TipoAsignacion{}
-		u := &models.User{}
-		g := &models.Grupo{}
-
-		// Use NullString for nullable UUIDs
-		var userID, grupoID sql.NullString
-		// Use NullString for User fields (LEFT JOIN can be NULL)
-		var userID2, userNombre, userEmail, userRol sql.NullString
-		// Use NullString for Grupo fields (LEFT JOIN can be NULL)
-		var grupoID2, grupoNombre sql.NullString
-		var grupoNumero sql.NullInt64
+		var (
+			tempUserID *uuid.UUID
+			uID        *uuid.UUID
+			uNombre    *string
+			uEmail     *string
+			uRol       *string
+			gID        *uuid.UUID
+			gNombre    *string
+			gNumero    *int
+		)
 
 		err := rows.Scan(
-			&a.ID, &a.SemanaID, &a.TipoAsignacionID, &userID, &grupoID, &a.DiaSemana,
+			&a.ID, &a.SemanaID, &a.TipoAsignacionID, &tempUserID, &a.GrupoID, &a.DiaSemana,
 			&a.Observaciones, &a.CreatedAt, &a.UpdatedAt,
 			&t.ID, &t.Nombre, &t.Descripcion, &t.Icono,
-			&userID2, &userNombre, &userEmail, &userRol,
-			&grupoID2, &grupoNombre, &grupoNumero,
+			&uID, &uNombre, &uEmail, &uRol,
+			&gID, &gNombre, &gNumero,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		// Convert NullString to *uuid.UUID for IDs
-		if userID.Valid {
-			parsed, _ := uuid.Parse(userID.String)
-			a.UserID = &parsed
-		}
-		if grupoID.Valid {
-			parsed, _ := uuid.Parse(grupoID.String)
-			a.GrupoID = &parsed
+		if tempUserID != nil {
+			a.UserID = *tempUserID
 		}
 
 		a.TipoAsignacion = t
-
-		// Only set User if user data exists
-		if userNombre.Valid {
-			if userID2.Valid {
-				if parsed, err := uuid.Parse(userID2.String); err == nil {
-					u.ID = parsed
-				}
+		if uID != nil {
+			a.User = &models.User{
+				ID:     *uID,
+				Nombre: *uNombre,
+				Email:  *uEmail,
+				Rol:    models.Rol(*uRol),
 			}
-			if userNombre.Valid {
-				u.Nombre = userNombre.String
-			}
-			if userEmail.Valid {
-				u.Email = userEmail.String
-			}
-			if userRol.Valid {
-				u.Rol = models.Rol(userRol.String)
-			}
-			a.User = u
 		}
-
-		// Only set Grupo if grupo data exists
-		if grupoNombre.Valid {
-			if grupoID2.Valid {
-				if parsed, err := uuid.Parse(grupoID2.String); err == nil {
-					g.ID = parsed
-				}
+		if gID != nil {
+			a.Grupo = &models.Grupo{
+				ID:     *gID,
+				Nombre: *gNombre,
+				Numero: *gNumero,
 			}
-			g.Nombre = grupoNombre.String
-			if grupoNumero.Valid {
-				g.Numero = int(grupoNumero.Int64)
-			}
-			a.Grupo = g
 		}
-
 		asignaciones = append(asignaciones, a)
 	}
 	return asignaciones, nil
@@ -287,7 +237,30 @@ func (r *AsignacionRepository) GetByUser(ctx context.Context, userID uuid.UUID) 
 	return asignaciones, nil
 }
 
-func (r *AsignacionRepository) Update(ctx context.Context, id uuid.UUID, userID *uuid.UUID, grupoID *uuid.UUID, observaciones *string) error {
+func (r *AsignacionRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.AsignacionSemanal, error) {
+	query := `
+		SELECT id, semana_id, tipo_asignacion_id, user_id, grupo_id, dia_semana, observaciones, created_at, updated_at
+		FROM asignacion_semanal
+		WHERE id = $1
+	`
+
+	a := &models.AsignacionSemanal{}
+	var tempUserID uuid.UUID
+	err := r.db.QueryRow(ctx, query, id).Scan(
+		&a.ID, &a.SemanaID, &a.TipoAsignacionID, &tempUserID, &a.GrupoID, &a.DiaSemana,
+		&a.Observaciones, &a.CreatedAt, &a.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrAsignacionNotFound
+		}
+		return nil, err
+	}
+	a.UserID = tempUserID
+	return a, nil
+}
+
+func (r *AsignacionRepository) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, grupoID *uuid.UUID, observaciones *string) error {
 	query := `
 		UPDATE asignacion_semanal 
 		SET user_id = $1, grupo_id = $2, observaciones = $3, updated_at = $4

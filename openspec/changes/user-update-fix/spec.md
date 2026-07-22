@@ -13,7 +13,7 @@
 
 ## Acceptance Criteria
 - [ ] Changing any field in the "Editar Usuario" modal and clicking "Guardar Cambios" persists the data in the DB.
-- [ ] Toggling notification checkboxes or "Teléfono validado" persists the data.
+- [ ] Toggling notification checkboxes or "Tel├⌐fono validado" persists the data.
 - [ ] After saving, the UI displays the new values without needing a refresh.
 - [ ] If an email is already taken, a clear error message is shown.
 
@@ -28,5 +28,5 @@
 ### Scenario 2: Email Update with Conflict
 **Given** there is a user with email "test@example.com"
 **When** I try to change another user's email to "test@example.com"
-**Then** an error message "El email ya está registrado" appears
+**Then** an error message "El email ya est├í registrado" appears
 **And** the changes are not saved

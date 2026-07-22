@@ -308,7 +308,8 @@ describe('NotificationService', () => {
   describe('error handling', () => {
     it('should handle HTTP error on loadNotifications', (done) => {
       service.loadNotifications().subscribe({
-        error: (err) => {
+        next: () => {
+          expect(service.loading()).toBe(false);
           done();
         },
       });
@@ -319,7 +320,8 @@ describe('NotificationService', () => {
 
     it('should handle network error on loadNotifications', (done) => {
       service.loadNotifications().subscribe({
-        error: (err) => {
+        next: () => {
+          expect(service.loading()).toBe(false);
           done();
         },
       });
@@ -330,7 +332,7 @@ describe('NotificationService', () => {
 
     it('should reset loading state on error', (done) => {
       service.loadNotifications().subscribe({
-        error: () => {
+        next: () => {
           expect(service.loading()).toBe(false);
           done();
         },

@@ -56,7 +56,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo,
 		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE id = $1
@@ -90,7 +90,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.Use
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo,
 		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE email = $1
@@ -124,7 +124,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*models.
 
 func (r *UserRepository) List(ctx context.Context, rol *models.Rol, activo *bool) ([]*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo,
 		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE 1=1
@@ -240,7 +240,7 @@ func (r *UserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (r *UserRepository) GetVisitantes(ctx context.Context) ([]*models.User, error) {
 	query := `
-		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo, 
+		SELECT id, nombre, telefono, telefono_validado, email, password, rol, activo,
 		       notificaciones_email, notificaciones_whatsapp, created_at, updated_at
 		FROM users
 		WHERE rol = 'VISITANTE' AND activo = true
@@ -279,6 +279,16 @@ func (r *UserRepository) GetVisitantes(ctx context.Context) ([]*models.User, err
 	return users, nil
 }
 
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	return string(bytes), err
+}
+
+func CheckPassword(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
 func (r *UserRepository) UpdateByEmail(ctx context.Context, email string, updates map[string]interface{}) error {
 	query := "UPDATE users SET "
 	args := []interface{}{}
@@ -308,16 +318,6 @@ func (r *UserRepository) UpdateByEmail(ctx context.Context, email string, update
 	}
 
 	return nil
-}
-
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func CheckPassword(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
 
 func isUniqueViolation(err error) bool {

@@ -1538,8 +1538,9 @@ export class AsignacionListComponent implements OnInit {
   }
 
   onTipoChange() {
-    // Reset user selection when tipo changes
+    // Reset user and group selection when tipo changes
     this.assignForm.user_id = '';
+    this.assignForm.grupo_id = '';
   }
 
   getCurrentAssignmentsForTipo(): Asignacion[] {

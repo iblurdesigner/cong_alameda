@@ -2,7 +2,7 @@
 
 ## Technical Approach
 
-Config-first: add ESLint `overrides` for test files to suppress `no-unsafe-*`/`no-explicit-any` (70% of current errors), then fix production files file-by-file sorted by error count (quick wins first). Each batch verified with `npx eslint . && ng build`. Per spec: no global suppression, no new types — use existing interfaces.
+Config-first: add ESLint `overrides` for test files to suppress `no-unsafe-*`/`no-explicit-any` (70% of current errors), then fix production files file-by-file sorted by error count (quick wins first). Each batch verified with `npx eslint . && ng build`. Per spec: no global suppression, no new types ΓÇö use existing interfaces.
 
 ## Architecture Decisions
 
@@ -10,23 +10,23 @@ Config-first: add ESLint `overrides` for test files to suppress `no-unsafe-*`/`n
 
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| Disable all rules for test files | Loses real jest API errors | ❌ |
-| Selective override: `no-unsafe-*` + `no-explicit-any` | False-positive Jest mock errors suppressed; meaningful violations caught | ✅ |
-| Override per spec file with inline comments | Duplicate `eslint-disable` in every spec file | ❌ |
+| Disable all rules for test files | Loses real jest API errors | Γ¥î |
+| Selective override: `no-unsafe-*` + `no-explicit-any` | False-positive Jest mock errors suppressed; meaningful violations caught | Γ£à |
+| Override per spec file with inline comments | Duplicate `eslint-disable` in every spec file | Γ¥î |
 
-**Rationale**: Jest 30 mocks (`jest.fn()`, `mockReturnValue`) are inherently dynamic — `recommendedTypeChecked` flags every mock call as unsafe, producing ~190 false positives across 4 spec files and `setup-jest.ts`. Centralized overrides in `eslint.config.js` are the only practical fix.
+**Rationale**: Jest 30 mocks (`jest.fn()`, `mockReturnValue`) are inherently dynamic ΓÇö `recommendedTypeChecked` flags every mock call as unsafe, producing ~190 false positives across 4 spec files and `setup-jest.ts`. Centralized overrides in `eslint.config.js` are the only practical fix.
 
-### Decision: Fix Order — Error Count Ascending
+### Decision: Fix Order ΓÇö Error Count Ascending
 
 | Option | Tradeoff | Decision |
 |--------|----------|----------|
-| Fix by error count ascending | Quick wins build confidence; complex files get more attention | ✅ |
-| Fix by dependency order (services → components) | Blocks UI work until backend fix cycle finishes | ❌ |
-| Fix all at once with `eslint --fix` | Cannot use auto-fix for type-aware rules; risks breakage | ❌ |
+| Fix by error count ascending | Quick wins build confidence; complex files get more attention | Γ£à |
+| Fix by dependency order (services ΓåÆ components) | Blocks UI work until backend fix cycle finishes | Γ¥î |
+| Fix all at once with `eslint --fix` | Cannot use auto-fix for type-aware rules; risks breakage | Γ¥î |
 
-**Rationale**: Files with 1–2 errors (unused vars, floating promises) are trivial to fix and can be verified independently. Starting with them builds rhythm and validates the verify script (`eslint . && ng build`). Heavier files (services with `any` usage) come last.
+**Rationale**: Files with 1ΓÇô2 errors (unused vars, floating promises) are trivial to fix and can be verified independently. Starting with them builds rhythm and validates the verify script (`eslint . && ng build`). Heavier files (services with `any` usage) come last.
 
-### Decision: Floating Promises — `void` over `await`
+### Decision: Floating Promises ΓÇö `void` over `await`
 
 | Scenario | Approach | Rationale |
 |----------|----------|-----------|
@@ -40,18 +40,18 @@ Config-first: add ESLint `overrides` for test files to suppress `no-unsafe-*`/`n
 
 ```
 eslint.config.js (add overrides)
-       │
-       ▼
+       Γöé
+       Γû╝
   Batch 1: Fix spec files (via override config)
-       │
-       ▼
+       Γöé
+       Γû╝
   Batch 2-5: Fix production files (ascending errors)
-       │
-       ▼
-  Verify: eslint . → ng build
-       │
-       ▼
-  All files clean → Done
+       Γöé
+       Γû╝
+  Verify: eslint . ΓåÆ ng build
+       Γöé
+       Γû╝
+  All files clean ΓåÆ Done
 ```
 
 ## File Changes
@@ -100,7 +100,7 @@ import { Observable } from 'rxjs';                    // for return types
 |-------|-------------|----------|
 | Lint | All `.ts` files pass | `npx eslint .` exits 0 |
 | Build | Full Angular compilation | `ng build` completes |
-| Unit | Existing Jest tests | `npx jest` — no regressions |
+| Unit | Existing Jest tests | `npx jest` ΓÇö no regressions |
 | Smoke | Test file overrides do not mask real errors | Manual: add intentional error in spec, verify it's caught by remaining active rules |
 
 ## Migration / Rollout

@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"fmt"
-	"log"
+	"context"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -13,18 +13,28 @@ import (
 	"cong-alameda-backend/internal/services"
 )
 
-type AsignacionHandler struct {
-	asignacionService    *services.AsignacionService
-	userService          *services.UserService
-	notificacionService  *services.NotificacionService
+// asignacionService is the subset of the service the handler depends on. Using
+// an interface keeps the handler unit-testable with a mock and avoids coupling
+// to the concrete *services.AsignacionService.
+type asignacionService interface {
+	Create(ctx context.Context, a *models.AsignacionSemanal) error
+	Update(ctx context.Context, id, userID uuid.UUID, grupoID *uuid.UUID, observaciones *string) error
+	BulkCreate(ctx context.Context, asignaciones []*models.AsignacionSemanal) error
+	ClearSemana(ctx context.Context, semanaID uuid.UUID) error
+	GetSemanaConAsignaciones(ctx context.Context, semanaID uuid.UUID) (*models.SemanaConAsignaciones, error)
+	GetTiposAsignacion(ctx context.Context) ([]*models.TipoAsignacion, error)
+	GetByUser(ctx context.Context, userID uuid.UUID) ([]*models.AsignacionDetail, error)
+	GetBySemana(ctx context.Context, semanaID uuid.UUID) ([]*models.AsignacionDetail, error)
+	GetBySemanaAndDia(ctx context.Context, semanaID uuid.UUID, diaSemana int) ([]*models.AsignacionDetail, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-func NewAsignacionHandler(asignacionService *services.AsignacionService, userService *services.UserService, notificacionService *services.NotificacionService) *AsignacionHandler {
-	return &AsignacionHandler{
-		asignacionService:    asignacionService,
-		userService:          userService,
-		notificacionService:  notificacionService,
-	}
+type AsignacionHandler struct {
+	asignacionService asignacionService
+}
+
+func NewAsignacionHandler(asignacionService asignacionService) *AsignacionHandler {
+	return &AsignacionHandler{asignacionService: asignacionService}
 }
 
 // GetTiposAsignacion returns all assignment types
@@ -45,7 +55,6 @@ func (h *AsignacionHandler) GetBySemana(c *fiber.Ctx) error {
 
 	detail, err := h.asignacionService.GetSemanaConAsignaciones(c.Context(), semanaID)
 	if err != nil {
-		log.Printf("[ERROR] GetSemanaConAsignaciones failed: %v", err)
 		if err == repositories.ErrSemanaNotFound {
 			return c.Status(404).JSON(dto.ErrorResponse{Error: "not_found"})
 		}
@@ -75,8 +84,8 @@ func (h *AsignacionHandler) Create(c *fiber.Ctx) error {
 	var req struct {
 		SemanaID         string  `json:"semana_id"`
 		TipoAsignacionID string  `json:"tipo_asignacion_id"`
-		UserID           *string `json:"user_id,omitempty"`
-		GrupoID          *string `json:"grupo_id,omitempty"`
+		UserID           string  `json:"user_id"`
+		GrupoID          string  `json:"grupo_id"`
 		DiaSemana        int     `json:"dia_semana"`
 		Observaciones    *string `json:"observaciones,omitempty"`
 	}
@@ -95,87 +104,36 @@ func (h *AsignacionHandler) Create(c *fiber.Ctx) error {
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_tipo_asignacion_id"})
 	}
 
-	var userUUID *uuid.UUID
-	var grupoUUID *uuid.UUID
-
-	if req.UserID != nil && *req.UserID != "" {
-		u, err := uuid.Parse(*req.UserID)
+	userID := uuid.Nil
+	if req.UserID != "" {
+		parsed, err := uuid.Parse(req.UserID)
 		if err != nil {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_user_id"})
 		}
-		userUUID = &u
+		userID = parsed
 	}
 
-	if req.GrupoID != nil && *req.GrupoID != "" {
-		g, err := uuid.Parse(*req.GrupoID)
+	var grupoID *uuid.UUID
+	if req.GrupoID != "" {
+		parsed, err := uuid.Parse(req.GrupoID)
 		if err != nil {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_grupo_id"})
 		}
-		grupoUUID = &g
+		grupoID = &parsed
 	}
 
 	if err := h.asignacionService.Create(c.Context(), &models.AsignacionSemanal{
 		SemanaID:         semanaID,
 		TipoAsignacionID: tipoID,
-		UserID:           userUUID,
-		GrupoID:          grupoUUID,
+		UserID:           userID,
+		GrupoID:          grupoID,
 		DiaSemana:        req.DiaSemana,
 		Observaciones:    req.Observaciones,
 	}); err != nil {
+		if errors.Is(err, services.ErrAseoSalonRequiresGrupo) {
+			return c.Status(400).JSON(dto.ErrorResponse{Error: "aseo_salon_requires_grupo"})
+		}
 		return c.Status(500).JSON(dto.ErrorResponse{Error: err.Error()})
-	}
-
-	// Send notification email (async) - only if user is assigned
-	if userUUID != nil {
-		go func() {
-			// Get user info
-			user, err := h.userService.GetByID(c.Context(), *userUUID)
-			if err != nil || user == nil {
-				log.Printf("[NOTIFICATION] Could not get user for assignment notification: %v", err)
-				return
-			}
-
-			// Get tipo asignacion name
-			tipo, err := h.asignacionService.GetTipoAsignacionByID(c.Context(), tipoID)
-			if err != nil {
-				log.Printf("[NOTIFICATION] Could not get tipo asignacion: %v", err)
-				return
-			}
-
-			// Get week info
-			semana, err := h.asignacionService.GetSemanaByID(c.Context(), semanaID)
-			if err != nil {
-				log.Printf("[NOTIFICATION] Could not get semana: %v", err)
-				return
-			}
-
-			// Format date
-			fecha := semana.FechaInicio.Format("02/01/2006")
-			if req.DiaSemana > 0 && req.DiaSemana <= 7 {
-				fecha += " - Día " + string(rune('0'+req.DiaSemana))
-			}
-
-			obs := ""
-			if req.Observaciones != nil {
-				obs = *req.Observaciones
-			}
-
-			if err := services.GetNotificationService().SendNewAssignmentNotification(user, tipo.Nombre, fecha, obs); err != nil {
-				log.Printf("[NOTIFICATION] Failed to send assignment notification: %v", err)
-			}
-
-			// Create in-app notification for assignment
-			mensaje := fmt.Sprintf("Nueva asignación: %s para la semana del %s", tipo.Nombre, semana.FechaInicio.Format("02/01/2006"))
-			if err := h.notificacionService.CreateAsignacionNotification(
-				c.Context(),
-				models.NotifTipoAsignacionCreada,
-				[]uuid.UUID{*userUUID},
-				mensaje,
-				semanaID, // Use semanaID as reference since we don't have the full asignacion ID yet
-			); err != nil {
-				log.Printf("[NOTIFICATION] Failed to create in-app notification: %v", err)
-			}
-		}()
 	}
 
 	return c.Status(201).JSON(fiber.Map{"message": "Asignación creada"})
@@ -187,8 +145,8 @@ func (h *AsignacionHandler) BulkCreate(c *fiber.Ctx) error {
 		SemanaID     string `json:"semana_id"`
 		Asignaciones []struct {
 			TipoAsignacionID string  `json:"tipo_asignacion_id"`
-			UserID           *string `json:"user_id,omitempty"`
-			GrupoID          *string `json:"grupo_id,omitempty"`
+			UserID           string  `json:"user_id"`
+			GrupoID          string  `json:"grupo_id"`
 			DiaSemana        int     `json:"dia_semana"`
 			Observaciones    *string `json:"observaciones,omitempty"`
 		} `json:"asignaciones"`
@@ -208,48 +166,46 @@ func (h *AsignacionHandler) BulkCreate(c *fiber.Ctx) error {
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
 	}
 
-	// Create new assignments
+	// Create new assignments — parse every UUID strictly and route through
+	// the service so ASEO_SALON group-only enforcement applies per item.
+	asignaciones := make([]*models.AsignacionSemanal, 0, len(req.Asignaciones))
 	for _, a := range req.Asignaciones {
 		tipoID, err := uuid.Parse(a.TipoAsignacionID)
 		if err != nil {
-			log.Printf("[BULK] Invalid tipo_asignacion_id: %s, error: %v", a.TipoAsignacionID, err)
-			return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_tipo_asignacion_id: " + err.Error()})
+			return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_tipo_asignacion_id"})
 		}
-
-		var userUUID *uuid.UUID
-		var grupoUUID *uuid.UUID
-
-		if a.UserID != nil && *a.UserID != "" {
-			u, err := uuid.Parse(*a.UserID)
+		userID := uuid.Nil
+		if a.UserID != "" {
+			parsed, err := uuid.Parse(a.UserID)
 			if err != nil {
-				log.Printf("[BULK] Invalid user_id: %s, error: %v", *a.UserID, err)
-				return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_user_id: " + err.Error()})
+				return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_user_id"})
 			}
-			userUUID = &u
+			userID = parsed
 		}
-
-		if a.GrupoID != nil && *a.GrupoID != "" {
-			g, err := uuid.Parse(*a.GrupoID)
+		var grupoID *uuid.UUID
+		if a.GrupoID != "" {
+			parsed, err := uuid.Parse(a.GrupoID)
 			if err != nil {
-				log.Printf("[BULK] Invalid grupo_id: %s, error: %v", *a.GrupoID, err)
-				return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_grupo_id: " + err.Error()})
+				return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_grupo_id"})
 			}
-			grupoUUID = &g
+			grupoID = &parsed
 		}
 
-		log.Printf("[BULK] Creating: tipoID=%s, userID=%v, grupoID=%v", tipoID, userUUID, grupoUUID)
-
-		if err := h.asignacionService.Create(c.Context(), &models.AsignacionSemanal{
+		asignaciones = append(asignaciones, &models.AsignacionSemanal{
 			SemanaID:         semanaID,
 			TipoAsignacionID: tipoID,
-			UserID:           userUUID,
-			GrupoID:          grupoUUID,
+			UserID:           userID,
+			GrupoID:          grupoID,
 			DiaSemana:        a.DiaSemana,
 			Observaciones:    a.Observaciones,
-		}); err != nil {
-			log.Printf("[BULK] Error creating: %v", err)
-			return c.Status(500).JSON(dto.ErrorResponse{Error: err.Error()})
+		})
+	}
+
+	if err := h.asignacionService.BulkCreate(c.Context(), asignaciones); err != nil {
+		if errors.Is(err, services.ErrAseoSalonRequiresGrupo) {
+			return c.Status(400).JSON(dto.ErrorResponse{Error: "aseo_salon_requires_grupo"})
 		}
+		return c.Status(500).JSON(dto.ErrorResponse{Error: err.Error()})
 	}
 
 	return c.JSON(fiber.Map{"message": "Asignaciones creadas"})
@@ -263,8 +219,8 @@ func (h *AsignacionHandler) Update(c *fiber.Ctx) error {
 	}
 
 	var req struct {
-		UserID        *string `json:"user_id,omitempty"`
-		GrupoID       *string `json:"grupo_id,omitempty"`
+		UserID        string  `json:"user_id"`
+		GrupoID       string  `json:"grupo_id"`
 		Observaciones *string `json:"observaciones,omitempty"`
 	}
 
@@ -272,63 +228,29 @@ func (h *AsignacionHandler) Update(c *fiber.Ctx) error {
 		return c.Status(400).JSON(dto.ErrorResponse{Error: "bad_request"})
 	}
 
-	var userUUID *uuid.UUID
-	var grupoUUID *uuid.UUID
-
-	if req.UserID != nil && *req.UserID != "" {
-		u, err := uuid.Parse(*req.UserID)
+	userID := uuid.Nil
+	if req.UserID != "" {
+		parsed, err := uuid.Parse(req.UserID)
 		if err != nil {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_user_id"})
 		}
-		userUUID = &u
+		userID = parsed
 	}
 
-	if req.GrupoID != nil && *req.GrupoID != "" {
-		g, err := uuid.Parse(*req.GrupoID)
+	var grupoID *uuid.UUID
+	if req.GrupoID != "" {
+		parsed, err := uuid.Parse(req.GrupoID)
 		if err != nil {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "invalid_grupo_id"})
 		}
-		grupoUUID = &g
+		grupoID = &parsed
 	}
 
-	if err := h.asignacionService.Update(c.Context(), id, userUUID, grupoUUID, req.Observaciones); err != nil {
+	if err := h.asignacionService.Update(c.Context(), id, userID, grupoID, req.Observaciones); err != nil {
 		if err == repositories.ErrAsignacionNotFound {
 			return c.Status(404).JSON(dto.ErrorResponse{Error: "not_found"})
 		}
 		return c.Status(500).JSON(dto.ErrorResponse{Error: "internal_error"})
-	}
-
-	// Send in-app notification for assignment update
-	if userUUID != nil {
-		go func() {
-			// Get user info
-			user, err := h.userService.GetByID(c.Context(), *userUUID)
-			if err != nil || user == nil {
-				log.Printf("[NOTIFICATION] Could not get user for assignment update notification: %v", err)
-				return
-			}
-
-			// Get tipo asignacion name
-			tipos, err := h.asignacionService.GetTiposAsignacion(c.Context())
-			if err != nil {
-				log.Printf("[NOTIFICATION] Could not get tipos asignacion: %v", err)
-				return
-			}
-
-			// Find the tipo for this assignment (we need to get it from the assignment detail)
-			// For now, use a generic message
-			mensaje := fmt.Sprintf("Tu asignación ha sido actualizada")
-			if err := h.notificacionService.CreateAsignacionNotification(
-				c.Context(),
-				models.NotifTipoAsignacionActualizada,
-				[]uuid.UUID{*userUUID},
-				mensaje,
-				id,
-			); err != nil {
-				log.Printf("[NOTIFICATION] Failed to create update notification: %v", err)
-			}
-			_ = tipos // silence unused warning
-		}()
 	}
 
 	return c.JSON(fiber.Map{"message": "Asignación actualizada"})

@@ -8,19 +8,38 @@ import (
 	"github.com/google/uuid"
 
 	"cong-alameda-backend/internal/models"
-	"cong-alameda-backend/internal/repositories"
 )
 
+// programaPredicacionRepo is the subset of the repository the service depends on. Using
+// an interface keeps the service unit-testable with in-memory mocks.
+type programaPredicacionRepo interface {
+	Create(ctx context.Context, p *models.ProgramaPredicacion) error
+	GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error)
+	GetAll(ctx context.Context) ([]*models.ProgramaPredicacion, error)
+	Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaPredicacion, error)
+	Delete(ctx context.Context, id uuid.UUID) error
+	GetTerritorios(ctx context.Context, programaID uuid.UUID) ([]*models.Territorio, error)
+	SetTerritorios(ctx context.Context, programaID uuid.UUID, territorioIDs []uuid.UUID) error
+}
+
+// grupoRepo is the subset of GrupoRepository the service needs.
+type grupoRepo interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*models.Grupo, error)
+}
+
+// territorioRepo is the subset of TerritorioRepository the service needs.
+type territorioRepo interface{}
+
 type ProgramaPredicacionService struct {
-	repo           *repositories.ProgramaPredicacionRepository
-	grupoRepo      *repositories.GrupoRepository
-	territorioRepo *repositories.TerritorioRepository
+	repo           programaPredicacionRepo
+	grupoRepo      grupoRepo
+	territorioRepo territorioRepo
 }
 
 func NewProgramaPredicacionService(
-	repo *repositories.ProgramaPredicacionRepository,
-	grupoRepo *repositories.GrupoRepository,
-	territorioRepo *repositories.TerritorioRepository,
+	repo programaPredicacionRepo,
+	grupoRepo grupoRepo,
+	territorioRepo territorioRepo,
 ) *ProgramaPredicacionService {
 	return &ProgramaPredicacionService{
 		repo:           repo,

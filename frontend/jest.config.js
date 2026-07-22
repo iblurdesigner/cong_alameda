@@ -4,7 +4,7 @@ module.exports = {
   ...createCjsPreset({
     tsconfig: require('path').resolve(__dirname, 'tsconfig.spec.json')
   }),
-  setupFiles: ['<rootDir>/src/setup-jest.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/setup-jest.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.module.ts',

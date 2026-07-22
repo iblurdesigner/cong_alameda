@@ -20,7 +20,7 @@ type AsignacionSemanal struct {
 	ID               uuid.UUID  `json:"id"`
 	SemanaID         uuid.UUID  `json:"semana_id"`
 	TipoAsignacionID uuid.UUID  `json:"tipo_asignacion_id"`
-	UserID           *uuid.UUID `json:"user_id,omitempty"`
+	UserID           uuid.UUID  `json:"user_id"`
 	GrupoID          *uuid.UUID `json:"grupo_id,omitempty"`
 	DiaSemana        int        `json:"dia_semana"`
 	Observaciones    *string    `json:"observaciones,omitempty"`

@@ -329,11 +329,7 @@ func (r *NotificacionRepository) GetAsignacionesProximas(ctx context.Context, di
 
 		if userID.Valid {
 			parsed, _ := uuid.Parse(userID.String)
-			a.UserID = &parsed
-		}
-		if grupoID.Valid {
-			parsed, _ := uuid.Parse(grupoID.String)
-			a.GrupoID = &parsed
+			a.UserID = parsed
 		}
 
 		a.TipoAsignacion = t

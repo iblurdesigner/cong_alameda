@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VisitaService, VisitaStats } from '../../core/services/visita.service';
@@ -7,6 +7,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, RouterLink],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="dashboard">
       <header class="page-header">
@@ -21,7 +22,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
       } @else if (stats()) {
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon">🏠</div>
+            <re-icon icon="home" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.total_casas }}</span>
               <span class="stat-label">Total Casas</span>
@@ -29,7 +30,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">🚫</div>
+            <re-icon icon="forbidden-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_no_visitar }}</span>
               <span class="stat-label">No Visitar</span>
@@ -37,7 +38,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">⏳</div>
+            <re-icon icon="clock-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_en_espera }}</span>
               <span class="stat-label">En Espera</span>
@@ -45,7 +46,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">🤝</div>
+            <re-icon icon="help-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_recontactadas }}</span>
               <span class="stat-label">Recontactadas</span>
@@ -53,7 +54,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
           </div>
           
           <div class="stat-card">
-            <div class="stat-icon">📅</div>
+            <re-icon icon="calendar-12" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.visitas_mes }}</span>
               <span class="stat-label">Visitas del Mes</span>
@@ -61,7 +62,7 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
           </div>
           
           <div class="stat-card stat-success">
-            <div class="stat-icon">✅</div>
+            <re-icon icon="check-circle" size="28" weight="outline" class="stat-icon"></re-icon>
             <div class="stat-content">
               <span class="stat-value">{{ stats()!.casas_activas }}</span>
               <span class="stat-label">Activas</span>
@@ -73,19 +74,19 @@ import { VisitaService, VisitaStats } from '../../core/services/visita.service';
           <h2>Acciones Rápidas</h2>
           <div class="actions-grid">
             <a routerLink="/casas/new" class="action-card">
-              <span class="action-icon">➕</span>
+              <re-icon icon="add-square2" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Registrar Casa</span>
             </a>
             <a routerLink="/casas" class="action-card">
-              <span class="action-icon">🏠</span>
+              <re-icon icon="home" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Ver Casas</span>
             </a>
             <a routerLink="/visitas" class="action-card">
-              <span class="action-icon">📅</span>
+              <re-icon icon="calendar-12" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Ver Visitas</span>
             </a>
             <a routerLink="/notificaciones" class="action-card">
-              <span class="action-icon">🔔</span>
+              <re-icon icon="bell-ring" size="24" weight="outline" class="action-icon"></re-icon>
               <span class="action-label">Notificaciones</span>
             </a>
           </div>
