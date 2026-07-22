@@ -19,37 +19,40 @@ import { ThemeService } from './core/services/theme.service';
         
         <nav class="sidebar" [class.open]="sidebarOpen()">
           <div class="sidebar-header">
-            <h2>App Alameda</h2>
+            <div class="logo-container">
+              <span class="material-symbols-outlined logo-icon">hub</span>
+              <h2>App Alameda</h2>
+            </div>
           </div>
           <ul class="nav-list">
             <li>
               <a routerLink="/dashboard" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">📊</span>
-                Dashboard
+                <span class="material-symbols-outlined icon">dashboard</span>
+                <span>Dashboard</span>
               </a>
             </li>
             <li>
               <a routerLink="/perfil" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">👤</span>
-                Mi Perfil
+                <span class="material-symbols-outlined icon">account_circle</span>
+                <span>Mi Perfil</span>
               </a>
             </li>
             <li>
               <a routerLink="/casas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">🏠</span>
-                Casas
+                <span class="material-symbols-outlined icon">home</span>
+                <span>Casas</span>
               </a>
             </li>
             <li>
               <a routerLink="/visitas" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">📅</span>
-                Visitas
+                <span class="material-symbols-outlined icon">event_available</span>
+                <span>Visitas</span>
               </a>
             </li>
             <li>
               <a routerLink="/notificaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">🔔</span>
-                Notificaciones
+                <span class="material-symbols-outlined icon">notifications</span>
+                <span>Notificaciones</span>
                 @if (notificationService.unreadCount() > 0) {
                   <span class="badge">{{ notificationService.unreadCount() }}</span>
                 }
@@ -61,26 +64,26 @@ import { ThemeService } from './core/services/theme.service';
             </li>
             <li>
               <a routerLink="/grupos" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">👥</span>
-                Grupos
+                <span class="material-symbols-outlined icon">groups</span>
+                <span>Grupos</span>
               </a>
             </li>
             <li>
               <a routerLink="/territorios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">📁</span>
-                Territorios
+                <span class="material-symbols-outlined icon">map</span>
+                <span>Territorios</span>
               </a>
             </li>
             <li>
               <a routerLink="/dia-predicacion" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">📅</span>
-                Día Predicación
+                <span class="material-symbols-outlined icon">today</span>
+                <span>Día Predicación</span>
               </a>
             </li>
             <li>
               <a routerLink="/predicacion-visita" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">🚗</span>
-                Predicación Visita
+                <span class="material-symbols-outlined icon">directions_car</span>
+                <span>Predicación Visita</span>
               </a>
             </li>
             <!-- Fase 3: Asignaciones Internas -->
@@ -89,8 +92,8 @@ import { ThemeService } from './core/services/theme.service';
             </li>
             <li>
               <a routerLink="/asignaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                <span class="icon">📋</span>
-                Asignaciones
+                <span class="material-symbols-outlined icon">assignment</span>
+                <span>Asignaciones</span>
               </a>
             </li>
             <!-- Backoffice - Solo SUPER_ADMIN -->
@@ -100,24 +103,30 @@ import { ThemeService } from './core/services/theme.service';
               </li>
               <li>
                 <a routerLink="/usuarios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                  <span class="icon">👤</span>
-                  Usuarios
+                  <span class="material-symbols-outlined icon">manage_accounts</span>
+                  <span>Usuarios</span>
                 </a>
               </li>
             }
           </ul>
           <div class="sidebar-footer">
-            <div class="user-info">
-              <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
-              <span class="user-role">{{ authService.currentUser()?.rol }}</span>
+            <div class="user-card">
+              <span class="material-symbols-outlined user-avatar">person</span>
+              <div class="user-info">
+                <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
+                <span class="user-role">{{ authService.currentUser()?.rol }}</span>
+              </div>
             </div>
-            <button class="theme-toggle" (click)="themeService.toggle()" [attr.aria-label]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-              <span class="theme-icon">{{ themeService.isDark() ? '☀️' : '🌙' }}</span>
-              <span class="theme-label">{{ themeService.isDark() ? 'Modo Claro' : 'Modo Oscuro' }}</span>
-            </button>
-            <button class="btn-logout" (click)="logout()">
-              Cerrar Sesión
-            </button>
+            <div class="footer-actions">
+              <button class="theme-toggle" (click)="themeService.toggle()" [attr.aria-label]="themeService.isDark() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
+                <span class="material-symbols-outlined theme-icon">{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+                <span class="theme-label">{{ themeService.isDark() ? 'Modo Claro' : 'Modo Oscuro' }}</span>
+              </button>
+              <button class="btn-logout" (click)="logout()" aria-label="Cerrar Sesión">
+                <span class="material-symbols-outlined logout-icon">logout</span>
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
           </div>
         </nav>
         <main class="main-content">
@@ -142,6 +151,7 @@ import { ThemeService } from './core/services/theme.service';
     .app-layout {
       display: flex;
       min-height: 100vh;
+      background-color: var(--background-color);
     }
 
     /* Overlay para móvil */
@@ -149,95 +159,131 @@ import { ThemeService } from './core/services/theme.service';
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
       z-index: 40;
       opacity: 0;
       transition: opacity 0.3s ease;
     }
 
     .sidebar {
-      width: 260px;
+      width: 250px;
       background: var(--surface-color);
-      border-right: 1px solid var(--border-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
       display: flex;
       flex-direction: column;
       position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
+      top: 1rem;
+      left: 1rem;
+      height: calc(100vh - 2rem);
       z-index: 50;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .sidebar-header {
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid var(--border-color);
+      padding: 1.5rem 1.25rem 1rem;
       flex-shrink: 0;
       
-      h2 {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--primary-color);
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .logo-icon {
+          font-size: 1.6rem;
+          color: var(--accent-lime);
+          background: #121316;
+          padding: 0.45rem;
+          border-radius: 14px;
+          box-shadow: 0 4px 12px rgba(18, 19, 22, 0.25);
+        }
+
+        h2 {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 1.2rem;
+          font-weight: 800;
+          color: var(--text-primary);
+          letter-spacing: -0.02em;
+        }
       }
     }
 
     .nav-list {
       list-style: none;
-      padding: 0.5rem 0;
+      padding: 0.5rem 0.75rem;
       flex: 1;
       overflow-y: auto;
 
       li {
-        margin: 0.125rem 0;
+        margin: 0.35rem 0;
       }
 
       a {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.625rem 1.25rem;
+        gap: 0.85rem;
+        padding: 0.7rem 1rem;
         color: var(--text-secondary);
         text-decoration: none;
         font-weight: 500;
-        transition: all 0.15s;
+        border-radius: var(--radius-pill);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         font-size: 0.9rem;
+        position: relative;
 
         .icon {
-          font-size: 1.125rem;
+          font-size: 1.25rem;
+          color: var(--text-secondary);
+          transition: transform 0.2s ease, color 0.2s ease;
         }
 
         .badge {
           margin-left: auto;
-          background: var(--danger-color);
-          color: white;
+          background: var(--accent-lime);
+          color: #121316;
           font-size: 0.7rem;
-          padding: 0.125rem 0.4rem;
+          font-weight: 700;
+          padding: 0.15rem 0.5rem;
           border-radius: 9999px;
+          box-shadow: 0 2px 6px rgba(196, 248, 42, 0.4);
         }
 
         &:hover {
-          background: var(--background-color);
-          color: var(--text-primary);
+          background: rgba(37, 99, 235, 0.08);
+          color: var(--primary-color);
+
+          .icon {
+            color: var(--primary-color);
+            transform: translateX(3px);
+          }
         }
 
         &.active {
-          background: rgba(37, 99, 235, 0.1);
-          color: var(--primary-color);
-          border-right: 3px solid var(--primary-color);
+          background: #121316;
+          color: #ffffff;
+          font-weight: 600;
+          box-shadow: 0 6px 16px -2px rgba(18, 19, 22, 0.3);
+
+          .icon {
+            color: var(--accent-lime);
+          }
         }
       }
     }
     
     .nav-section {
-      padding: 0.75rem 1.25rem 0.375rem;
+      padding: 1rem 1rem 0.35rem;
       
       .section-label {
-        font-size: 0.6rem;
+        font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.08em;
         color: var(--text-secondary);
+        opacity: 0.8;
       }
     }
 
@@ -246,71 +292,111 @@ import { ThemeService } from './core/services/theme.service';
       border-top: 1px solid var(--border-color);
       background: var(--surface-color);
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
       
-      .user-info {
-        margin-bottom: 0.75rem;
-        
-        .user-name {
-          display: block;
-          font-weight: 600;
-          color: var(--text-primary);
-          font-size: 0.9rem;
+      .user-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        border-radius: var(--radius-md);
+        background: var(--background-color);
+
+        .user-avatar {
+          font-size: 1.5rem;
+          color: var(--primary-color);
+          background: var(--primary-light);
+          padding: 0.35rem;
+          border-radius: 50%;
         }
-        
-        .user-role {
-          display: block;
-          font-size: 0.7rem;
-          color: var(--text-secondary);
-          text-transform: uppercase;
+
+        .user-info {
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          
+          .user-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          
+          .user-role {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+          }
         }
+      }
+
+      .footer-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
       }
       
       .btn-logout {
         width: 100%;
-        padding: 0.625rem 0.75rem;
-        background: var(--background-color);
+        padding: 0.55rem 0.75rem;
+        background: transparent;
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
-        color: var(--text-primary);
+        color: var(--text-secondary);
         cursor: pointer;
-        transition: all 0.15s;
-        margin-top: 0.5rem;
+        transition: all 0.2s ease;
         font-weight: 500;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+
+        .logout-icon {
+          font-size: 1.1rem;
+        }
         
         &:hover {
-          background: var(--danger-color);
+          background: rgba(239, 68, 68, 0.08);
           border-color: var(--danger-color);
-          color: white;
+          color: var(--danger-color);
         }
       }
 
       .theme-toggle {
         width: 100%;
-        padding: 0.625rem 0.75rem;
+        padding: 0.55rem 0.75rem;
         background: var(--background-color);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
         color: var(--text-primary);
         cursor: pointer;
-        transition: all 0.15s;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
         font-weight: 500;
+        font-size: 0.85rem;
         
         .theme-icon {
-          font-size: 1.125rem;
+          font-size: 1.1rem;
         }
         
         .theme-label {
-          font-size: 0.875rem;
+          font-size: 0.85rem;
         }
         
         &:hover {
-          background: var(--primary-color);
+          background: var(--primary-light);
           border-color: var(--primary-color);
-          color: white;
+          color: var(--primary-color);
         }
       }
     }

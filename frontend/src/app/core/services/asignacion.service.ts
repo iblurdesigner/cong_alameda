@@ -79,7 +79,8 @@ export class AsignacionService {
   createAsignacion(data: {
     semana_id: string;
     tipo_asignacion_id: string;
-    user_id: string;
+    user_id: string | null;
+    grupo_id?: string | null;
     dia_semana: number;
     observaciones?: string;
   }) {
