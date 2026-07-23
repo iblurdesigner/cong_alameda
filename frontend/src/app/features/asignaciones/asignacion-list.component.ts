@@ -288,35 +288,129 @@ import { forkJoin, Observable } from 'rxjs';
         </div>
       }
 
-      <!-- Modal de Exportación a PDF -->
+      <!-- Modal de Exportación a PDF con Vista Previa en Vivo -->
       @if (showPdfExportModal) {
-        <div class="modal-backdrop" (click)="closePdfExportModal()">
-          <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h2>Exportar Programa a PDF</h2>
+        <div class="modal-backdrop pdf-modal-backdrop" (click)="closePdfExportModal()">
+          <div class="modal-card pdf-modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header pdf-header">
+              <div class="pdf-modal-title">
+                <span class="material-symbols-outlined icon">picture_as_pdf</span>
+                <div>
+                  <h2>Exportar Programa a PDF</h2>
+                  <p class="subtitle">Previsualiza y selecciona las semanas a incluir en el documento imprimible</p>
+                </div>
+              </div>
               <button class="close-btn" (click)="closePdfExportModal()">
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div class="modal-body">
-              <p>Selecciona las semanas que deseas incluir en el documento imprimible:</p>
-              <div class="weeks-checklist">
-                @for (semana of semanas(); track semana.id) {
-                  <label class="week-checkbox-row">
-                    <input 
-                      type="checkbox" 
-                      [checked]="isSemanaSelectedForExport(semana.id)"
-                      (change)="toggleSemanaSelection(semana.id)"
-                    />
-                    <span class="week-row-name">{{ semana.nombre }}</span>
-                    <span class="week-row-date">({{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }})</span>
-                  </label>
-                }
+
+            <div class="modal-body pdf-modal-body">
+              <div class="pdf-split-layout">
+                <!-- Sidebar de selección de semanas -->
+                <div class="pdf-sidebar">
+                  <div class="sidebar-actions">
+                    <span class="sidebar-label">Semanas ({{ selectedWeeksForExportSignal().length }}):</span>
+                    <div class="sidebar-btns">
+                      <button type="button" class="text-btn" (click)="selectAllWeeksForExport()">Todas</button>
+                      <span class="sep">|</span>
+                      <button type="button" class="text-btn" (click)="deselectAllWeeksForExport()">Ninguna</button>
+                    </div>
+                  </div>
+                  <div class="weeks-checklist">
+                    @for (semana of semanas(); track semana.id) {
+                      <label class="week-checkbox-row" [class.selected]="isSemanaSelectedForExport(semana.id)">
+                        <input 
+                          type="checkbox" 
+                          [checked]="isSemanaSelectedForExport(semana.id)"
+                          (change)="toggleSemanaSelection(semana.id)"
+                        />
+                        <div class="week-info">
+                          <span class="week-row-name">{{ semana.nombre }}</span>
+                          <span class="week-row-date">{{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }}</span>
+                        </div>
+                      </label>
+                    }
+                  </div>
+                </div>
+
+                <!-- Panel de Vista Previa del Documento Imprimible -->
+                <div class="pdf-preview-container">
+                  <div class="pdf-preview-toolbar">
+                    <span class="toolbar-title">
+                      <span class="material-symbols-outlined">visibility</span>
+                      Vista Previa en Vivo
+                    </span>
+                    <span class="toolbar-badge">Documento Imprimible</span>
+                  </div>
+
+                  <div class="pdf-preview-viewport">
+                    <div class="pdf-printable-sheet">
+                      <div class="sheet-header">
+                        <h1 class="sheet-org">CONGREGACIÓN ALAMEDA</h1>
+                        <h2 class="sheet-doc-title">PROGRAMA DE ASIGNACIONES DE REUNIONES</h2>
+                      </div>
+
+                      @if (loadingPreview()) {
+                        <div class="preview-loading">
+                          <span class="material-symbols-outlined spin">sync</span>
+                          <span>Cargando vista previa del documento...</span>
+                        </div>
+                      } @else if (selectedWeeksForExportSignal().length === 0) {
+                        <div class="preview-empty">
+                          <span class="material-symbols-outlined">find_in_page</span>
+                          <p>Selecciona al menos una semana en el panel izquierdo para generar la vista previa.</p>
+                        </div>
+                      } @else {
+                        @for (semanaId of getOrderedSelectedWeeks(); track semanaId) {
+                          @let weekData = getPreviewWeekData(semanaId);
+                          @if (weekData) {
+                            <div class="sheet-week-block">
+                              <div class="sheet-week-header">
+                                <h3>SEMANA: {{ weekData.semana.nombre }}</h3>
+                                <span class="sheet-week-dates">({{ formatDate(weekData.semana.fecha_inicio) }} al {{ formatDate(weekData.semana.fecha_fin) }})</span>
+                              </div>
+
+                              <table class="sheet-table">
+                                <thead>
+                                  <tr>
+                                    <th class="col-role">Función / Asignación</th>
+                                    @for (dia of diasSemana; track dia.numero) {
+                                      <th class="col-day">{{ dia.nombre }}</th>
+                                    }
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  @for (tipo of getTiposList(); track tipo.id) {
+                                    <tr>
+                                      <td class="cell-role">
+                                        <strong>{{ getTipoNombre(tipo.nombre) }}</strong>
+                                      </td>
+                                      @for (dia of diasSemana; track dia.numero) {
+                                        <td class="cell-assigned">
+                                          {{ getPreviewAsignado(weekData, dia.numero, tipo.id) }}
+                                        </td>
+                                      }
+                                    </tr>
+                                  }
+                                </tbody>
+                              </table>
+                            </div>
+                          }
+                        }
+                      }
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+
             <div class="modal-footer">
               <button class="pill-btn btn-secondary" (click)="closePdfExportModal()">Cancelar</button>
-              <button class="pill-btn btn-primary" (click)="generatePdfWithSelection()">Generar PDF</button>
+              <button class="pill-btn btn-primary" (click)="generatePdfWithSelection()" [disabled]="selectedWeeksForExportSignal().length === 0">
+                <span class="material-symbols-outlined icon">print</span>
+                <span>Generar PDF / Imprimir</span>
+              </button>
             </div>
           </div>
         </div>
@@ -957,13 +1051,103 @@ import { forkJoin, Observable } from 'rxjs';
       gap: 0.75rem;
     }
 
+    /* Estilos Modal PDF y Vista Previa Imprimible */
+    .pdf-modal-card {
+      max-width: 1100px !important;
+      width: 95vw !important;
+      height: 88vh !important;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem !important;
+    }
+
+    .pdf-modal-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .icon {
+        font-size: 2.2rem;
+        color: #ef4444;
+      }
+      h2 {
+        font-size: 1.35rem;
+        margin: 0;
+      }
+      .subtitle {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin: 0.1rem 0 0 0;
+      }
+    }
+
+    .pdf-modal-body {
+      flex: 1;
+      overflow: hidden;
+      padding: 0.5rem 0;
+      display: flex;
+    }
+
+    .pdf-split-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.25rem;
+      width: 100%;
+      height: 100%;
+    }
+
+    .pdf-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    .sidebar-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+
+      .sidebar-label {
+        font-weight: 700;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+      }
+
+      .sidebar-btns {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        .sep { color: var(--text-secondary); font-size: 0.8rem; }
+      }
+
+      .text-btn {
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.8rem;
+        cursor: pointer;
+        padding: 0 0.2rem;
+
+        &:hover { text-decoration: underline; }
+      }
+    }
+
     .weeks-checklist {
+      flex: 1;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      max-height: 260px;
-      overflow-y: auto;
-      margin-top: 1rem;
+      max-height: none;
+      margin-top: 0;
     }
 
     .week-checkbox-row {
@@ -972,11 +1156,218 @@ import { forkJoin, Observable } from 'rxjs';
       gap: 0.75rem;
       padding: 0.65rem 0.85rem;
       background: var(--background-color);
+      border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       cursor: pointer;
+      transition: all 0.15s ease;
 
-      .week-row-name { font-weight: 600; color: var(--text-primary); }
-      .week-row-date { font-size: 0.8rem; color: var(--text-secondary); }
+      &:hover {
+        border-color: var(--primary-color);
+      }
+
+      &.selected {
+        border-color: var(--primary-color);
+        background: rgba(37, 99, 235, 0.08);
+      }
+
+      input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary-color);
+        cursor: pointer;
+      }
+
+      .week-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .week-row-name { font-weight: 600; font-size: 0.88rem; color: var(--text-primary); }
+      .week-row-date { font-size: 0.78rem; color: var(--text-secondary); }
+    }
+
+    .pdf-preview-container {
+      display: flex;
+      flex-direction: column;
+      background: #f1f5f9;
+      border-radius: var(--radius-lg);
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+    }
+
+    .pdf-preview-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.65rem 1.25rem;
+      background: #e2e8f0;
+      border-bottom: 1px solid #cbd5e1;
+
+      .toolbar-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 700;
+        font-size: 0.88rem;
+        color: #334155;
+
+        .material-symbols-outlined { font-size: 1.15rem; color: #2563eb; }
+      }
+
+      .toolbar-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: #ffffff;
+        color: #475569;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+      }
+    }
+
+    .pdf-preview-viewport {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* Hoja imprimible simulada en la previsualización */
+    .pdf-printable-sheet {
+      background: #ffffff;
+      color: #1e293b;
+      width: 100%;
+      max-width: 740px;
+      min-height: 700px;
+      padding: 2.25rem;
+      border-radius: 4px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+
+      .sheet-header {
+        text-align: center;
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 0.85rem;
+        margin-bottom: 1.5rem;
+
+        .sheet-org {
+          font-size: 1.35rem;
+          font-weight: 900;
+          letter-spacing: 0.05em;
+          color: #0f172a;
+          margin: 0;
+        }
+
+        .sheet-doc-title {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #475569;
+          margin: 0.3rem 0 0 0;
+          text-transform: uppercase;
+        }
+      }
+
+      .sheet-week-block {
+        margin-bottom: 1.75rem;
+        page-break-inside: avoid;
+      }
+
+      .sheet-week-header {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-bottom: none;
+        padding: 0.55rem 0.85rem;
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+
+        h3 {
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0;
+        }
+
+        .sheet-week-dates {
+          font-size: 0.82rem;
+          color: #64748b;
+          font-weight: 600;
+        }
+      }
+
+      .sheet-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.83rem;
+
+        th, td {
+          border: 1px solid #cbd5e1;
+          padding: 0.5rem 0.75rem;
+          text-align: left;
+        }
+
+        th {
+          background: #f1f5f9;
+          color: #1e293b;
+          font-weight: 700;
+          text-transform: uppercase;
+          font-size: 0.75rem;
+        }
+
+        .col-role { width: 36%; }
+        .col-day { width: 32%; }
+
+        .cell-role {
+          background: #f8fafc;
+          color: #0f172a;
+        }
+
+        .cell-assigned {
+          color: #1e293b;
+          font-weight: 500;
+        }
+      }
+
+      .preview-empty, .preview-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 2rem;
+        text-align: center;
+        color: #64748b;
+        gap: 1rem;
+
+        .material-symbols-outlined { font-size: 3rem; color: #94a3b8; }
+        p { max-width: 320px; font-size: 0.92rem; margin: 0; }
+      }
+    }
+
+    /* Reglas especiales de Impresión / PDF */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+
+      .pdf-printable-sheet,
+      .pdf-printable-sheet * {
+        visibility: visible !important;
+      }
+
+      .pdf-printable-sheet {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
     }
 
     @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -1010,6 +1401,8 @@ export class AsignacionListComponent implements OnInit {
   assignForm = { user_id: '', grupo_id: '', tipo_id: '', observaciones: '' };
   dayFormMap: Record<string, { user_id: string; grupo_id: string; observaciones: string }> = {};
   selectedWeeksForExportSignal = signal<string[]>([]);
+  previewWeeksDataMap = signal<Map<string, { semana: Semana; asignaciones: Asignacion[]; map: Map<string, Asignacion> }>>(new Map());
+  loadingPreview = signal<boolean>(false);
 
   private asignacionMap = signal<Map<string, Asignacion>>(new Map());
 
@@ -1404,9 +1797,10 @@ export class AsignacionListComponent implements OnInit {
 
   openPdfExportModal() {
     this.showPdfExportModal = true;
-    if (this.selectedSemanaId) {
+    if (this.selectedSemanaId && this.selectedWeeksForExportSignal().length === 0) {
       this.selectedWeeksForExportSignal.set([this.selectedSemanaId]);
     }
+    this.fetchPreviewDataForSelectedWeeks();
   }
 
   closePdfExportModal() {
@@ -1424,10 +1818,88 @@ export class AsignacionListComponent implements OnInit {
     } else {
       this.selectedWeeksForExportSignal.set([...current, semanaId]);
     }
+    this.fetchPreviewDataForSelectedWeeks();
+  }
+
+  selectAllWeeksForExport() {
+    const allIds = this.semanas().map((s: Semana) => s.id);
+    this.selectedWeeksForExportSignal.set(allIds);
+    this.fetchPreviewDataForSelectedWeeks();
+  }
+
+  deselectAllWeeksForExport() {
+    this.selectedWeeksForExportSignal.set([]);
+  }
+
+  fetchPreviewDataForSelectedWeeks() {
+    const selectedIds = this.selectedWeeksForExportSignal();
+    if (selectedIds.length === 0) return;
+
+    const currentMap = new Map(this.previewWeeksDataMap());
+    const missingIds = selectedIds.filter(id => !currentMap.has(id));
+
+    if (missingIds.length === 0) return;
+
+    this.loadingPreview.set(true);
+    const requests = missingIds.map(id => this.asignacionService.loadAsignacionesBySemana(id));
+
+    forkJoin(requests).subscribe({
+      next: (results: any[]) => {
+        const updatedMap = new Map(this.previewWeeksDataMap());
+        results.forEach((data: any) => {
+          if (data && data.id) {
+            const asigMap = new Map<string, Asignacion>();
+            data.asignaciones?.forEach((a: Asignacion) => {
+              asigMap.set(`${a.dia_semana}-${a.tipo_asignacion_id}`, a);
+            });
+            updatedMap.set(data.id, {
+              semana: data,
+              asignaciones: data.asignaciones || [],
+              map: asigMap
+            });
+          }
+        });
+        this.previewWeeksDataMap.set(updatedMap);
+        this.loadingPreview.set(false);
+      },
+      error: (err) => {
+        console.error('Error cargando semanas para previsualización PDF', err);
+        this.loadingPreview.set(false);
+      }
+    });
+  }
+
+  getOrderedSelectedWeeks(): string[] {
+    const allSemanas = this.semanas();
+    const selectedIds = this.selectedWeeksForExportSignal();
+    return allSemanas
+      .filter((s: Semana) => selectedIds.includes(s.id))
+      .map((s: Semana) => s.id);
+  }
+
+  getPreviewWeekData(semanaId: string): any {
+    return this.previewWeeksDataMap().get(semanaId) || null;
+  }
+
+  getPreviewAsignado(weekData: any, diaSemana: number, tipoId: string): string {
+    if (!weekData || !weekData.map) return '—';
+    const asig: Asignacion | undefined = weekData.map.get(`${diaSemana}-${tipoId}`);
+    if (!asig) return '—';
+
+    if (asig.grupo) {
+      return `Grupo ${asig.grupo.numero ? asig.grupo.numero + ' - ' : ''}${asig.grupo.nombre}`;
+    }
+    if (asig.user && asig.user.nombre) {
+      return asig.user.nombre;
+    }
+    if (asig.user_id) {
+      const u = this.users().find((usr: any) => usr.id === asig.user_id);
+      if (u) return u.nombre;
+    }
+    return '—';
   }
 
   generatePdfWithSelection() {
     window.print();
-    this.closePdfExportModal();
   }
 }
