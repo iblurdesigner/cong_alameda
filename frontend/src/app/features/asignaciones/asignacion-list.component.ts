@@ -39,27 +39,38 @@ import { forkJoin, Observable } from 'rxjs';
         </div>
       </header>
 
-      <!-- Week Selector Bar -->
+      <!-- Week Navigator Bar -->
       <div class="week-selector-card">
-        <div class="week-selector-info">
-          <span class="material-symbols-outlined week-icon">calendar_today</span>
-          <div class="week-select-wrapper">
-            <label for="semanaSelect">Semana de Servicio:</label>
-            <select 
-              id="semanaSelect" 
-              [(ngModel)]="selectedSemanaId" 
-              (change)="onSemanaSelectChange()"
-              class="semana-dropdown"
-            >
-              <option value="" disabled>Selecciona una semana...</option>
-              @for (semana of semanas(); track semana.id) {
-                <option [value]="semana.id">
-                  {{ semana.nombre }} ({{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }})
-                  {{ semana.archivado ? '[Archivada]' : '' }}
-                </option>
-              }
-            </select>
+        <div class="week-nav-container">
+          <button class="nav-arrow-btn" (click)="navigateWeek(-1)" title="Semana anterior">
+            <span class="material-symbols-outlined">chevron_left</span>
+            <span class="nav-text">Anterior</span>
+          </button>
+
+          <div class="week-current-picker">
+            <span class="material-symbols-outlined week-icon">calendar_month</span>
+            <div class="week-date-input-wrapper">
+              <span class="week-display-title">
+                {{ getSelectedWeekDisplayTitle() }}
+              </span>
+              <input 
+                type="date" 
+                #picker
+                [ngModel]="selectedDateInput" 
+                (change)="onDateInputChange($event)"
+                class="date-picker-input"
+              >
+              <button type="button" class="btn-change-date" (click)="openDatePicker(picker)" title="Seleccionar cualquier fecha en el calendario">
+                <span class="material-symbols-outlined">edit_calendar</span>
+                <span>Elegir Fecha</span>
+              </button>
+            </div>
           </div>
+
+          <button class="nav-arrow-btn" (click)="navigateWeek(1)" title="Semana siguiente">
+            <span class="nav-text">Siguiente</span>
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
         </div>
 
         @if (semanaActual) {
@@ -433,34 +444,103 @@ import { forkJoin, Observable } from 'rxjs';
       }
     }
 
-    .week-select-wrapper {
+    .week-nav-container {
       display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      flex: 1;
+    }
 
-      label {
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        color: var(--text-secondary);
-        letter-spacing: 0.05em;
+    .nav-arrow-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-color);
+      background: var(--background-color);
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--primary-color);
+        color: #ffffff;
+        border-color: var(--primary-color);
+      }
+
+      .material-symbols-outlined {
+        font-size: 1.25rem;
       }
     }
 
-    .semana-dropdown {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-pill);
+    .week-current-picker {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       background: var(--background-color);
-      color: var(--text-primary);
-      font-weight: 600;
-      font-size: 0.95rem;
-      min-width: 320px;
-      outline: none;
-      cursor: pointer;
+      padding: 0.5rem 1.25rem;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-color);
+      flex: 1;
+      min-width: 280px;
 
-      &:focus {
-        border-color: var(--primary-color);
+      .week-icon {
+        color: var(--primary-color);
+        font-size: 1.5rem;
+      }
+    }
+
+    .week-date-input-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      width: 100%;
+
+      .week-display-title {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+
+      .date-picker-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        border: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .btn-change-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: var(--radius-pill);
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: var(--primary-color);
+          color: #ffffff;
+          border-color: var(--primary-color);
+        }
+
+        .material-symbols-outlined {
+          font-size: 1rem;
+        }
       }
     }
 
@@ -951,14 +1031,109 @@ export class AsignacionListComponent implements OnInit {
     });
   }
 
+  currentRefDate: Date = new Date();
+  selectedDateInput: string = '';
+
+  openDatePicker(picker: HTMLInputElement) {
+    if (picker && typeof picker.showPicker === 'function') {
+      picker.showPicker();
+    } else if (picker) {
+      picker.focus();
+      picker.click();
+    }
+  }
+
+  getMonday(d: Date): Date {
+    const date = new Date(d);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(date.setDate(diff));
+  }
+
+  formatDateToISO(d: Date): string {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getSelectedWeekDisplayTitle(): string {
+    if (this.semanaActual && this.semanaActual.nombre) {
+      return `${this.semanaActual.nombre} (${this.formatDate(this.semanaActual.fecha_inicio)} - ${this.formatDate(this.semanaActual.fecha_fin)})`;
+    }
+    const mon = this.getMonday(this.currentRefDate);
+    const sun = new Date(mon);
+    sun.setDate(sun.getDate() + 6);
+    return `Semana del ${mon.getDate()} al ${sun.getDate()}`;
+  }
+
+  navigateWeek(offsetWeeks: number) {
+    const newDate = new Date(this.currentRefDate);
+    newDate.setDate(newDate.getDate() + (offsetWeeks * 7));
+    this.currentRefDate = newDate;
+    this.selectedDateInput = this.formatDateToISO(newDate);
+    this.selectOrCreateWeekForDate(newDate);
+  }
+
+  onDateInputChange(event: Event) {
+    const val = (event.target as HTMLInputElement).value;
+    if (!val) return;
+    const parts = val.split('-');
+    if (parts.length === 3) {
+      const pickedDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      this.currentRefDate = pickedDate;
+      this.selectedDateInput = val;
+      this.selectOrCreateWeekForDate(pickedDate);
+    }
+  }
+
+  selectOrCreateWeekForDate(date: Date) {
+    const monday = this.getMonday(date);
+    const mondayISO = this.formatDateToISO(monday);
+
+    const existing = this.semanas().find((s: Semana) => {
+      const semStart = s.fecha_inicio.substring(0, 10);
+      return semStart === mondayISO;
+    });
+
+    if (existing) {
+      this.selectedSemanaId = existing.id;
+      this.loadSemana();
+    } else {
+      this.loading.set(true);
+      const sunday = new Date(monday);
+      sunday.setDate(sunday.getDate() + 6);
+      const nombreSemana = `Semana del ${monday.getDate()} al ${sunday.getDate()} de ${monday.toLocaleString('es-ES', { month: 'long' })} ${monday.getFullYear()}`;
+
+      this.semanaService.createSemana({ fecha_inicio: mondayISO, nombre: nombreSemana }).subscribe({
+        next: (newSem: any) => {
+          this.semanaService.loadSemanas().subscribe({
+            next: (res) => {
+              this.semanas.set(res.data);
+              const foundNew = res.data.find((s: Semana) => s.fecha_inicio.substring(0, 10) === mondayISO);
+              this.selectedSemanaId = newSem.id || (foundNew ? foundNew.id : '');
+              this.loadSemana();
+            }
+          });
+        },
+        error: () => {
+          this.loading.set(false);
+        }
+      });
+    }
+  }
+
   loadSemanas() {
     this.semanaService.loadSemanas().subscribe({
       next: (res) => {
         this.semanas.set(res.data);
         if (res.data.length > 0 && !this.selectedSemanaId) {
-          // Select first active week by default
           const active = res.data.find((s: Semana) => !s.archivado) || res.data[0];
           this.selectedSemanaId = active.id;
+          if (active.fecha_inicio) {
+            this.currentRefDate = new Date(active.fecha_inicio);
+            this.selectedDateInput = active.fecha_inicio.substring(0, 10);
+          }
           this.loadSemana();
         }
       }
