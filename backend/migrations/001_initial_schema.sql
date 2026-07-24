@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS casas (
     fecha_registro TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     persona_registra VARCHAR(100) NOT NULL,
     estado casa_estado NOT NULL DEFAULT 'NO_VISITAR',
+    latitud DOUBLE PRECISION,
+    longitud DOUBLE PRECISION,
+    foto_url VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
@@ -111,11 +114,13 @@ CREATE TRIGGER update_users_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_casas_updated_at ON casas;
 CREATE TRIGGER update_casas_updated_at
     BEFORE UPDATE ON casas
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_visitas_updated_at ON visitas;
 CREATE TRIGGER update_visitas_updated_at
     BEFORE UPDATE ON visitas
     FOR EACH ROW

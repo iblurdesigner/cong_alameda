@@ -338,3 +338,20 @@ re-icon {
     }
   }
 }
+
+// Global Print Optimization Rules
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .sidebar, .sidebar-header, .logo-container, .overlay, nav, header {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .pdf-printable-sheet,
+  .pdf-printable-sheet * {
+    visibility: visible !important;
+  }
+}

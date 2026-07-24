@@ -11,14 +11,16 @@ VALUES
     ('a2222222-2222-2222-2222-222222222222', 'Pedro Anciano', '+1234567891', 'anciano1@iglesia.org', '$2a$10$S1lkwcxhyMGycLrOwn6UaeFckm5hXB/tHapW31w7A0V2VZooVwBO6', 'ANCIANO', true),
     ('a3333333-3333-3333-3333-333333333333', 'María Anciana', '+1234567892', 'anciana1@iglesia.org', '$2a$10$S1lkwcxhyMGycLrOwn6UaeFckm5hXB/tHapW31w7A0V2VZooVwBO6', 'ANCIANO', true),
     ('a4444444-4444-4444-4444-444444444444', 'Carlos Visitante', '+1234567893', 'visitante1@iglesia.org', '$2a$10$S1lkwcxhyMGycLrOwn6UaeFckm5hXB/tHapW31w7A0V2VZooVwBO6', 'VISITANTE', true),
-    ('a5555555-5555-5555-5555-555555555555', 'Ana Visitante', '+1234567894', 'visitante2@iglesia.org', '$2a$10$S1lkwcxhyMGycLrOwn6UaeFckm5hXB/tHapW31w7A0V2VZooVwBO6', 'VISITANTE', true);
+    ('a5555555-5555-5555-5555-555555555555', 'Ana Visitante', '+1234567894', 'visitante2@iglesia.org', '$2a$10$S1lkwcxhyMGycLrOwn6UaeFckm5hXB/tHapW31w7A0V2VZooVwBO6', 'VISITANTE', true)
+ON CONFLICT DO NOTHING;
 
 -- Seed data: Sample houses for testing
 INSERT INTO casas (id, calle_principal, numeracion, calle_secundaria, sector, referencia, motivo_no_volver, persona_registra, estado)
 VALUES
     ('b1111111-1111-1111-1111-111111111111', 'Av. Principal', '123', 'Entre Calle 1 y 2', 'Centro', 'Casa azul con rejas', 'No desea recibir visitas de predicadores', 'Juan Superintendente', 'NO_VISITAR'),
     ('b2222222-2222-2222-2222-222222222222', 'Calle Secundaria', '456', 'Av. Las Flores', 'Norte', 'Portón verde, jardín con flores', 'Solicitó no ser contactada', 'Pedro Anciano', 'EN_ESPERA_VISITA'),
-    ('b3333333-3333-3333-3333-333333333333', 'Av. Libertador', '789', 'Edificio Los Alpes', 'Sur', 'Apto 301, tercer piso', 'Mudanza temporal', 'María Anciana', 'RECONTACTADA');
+    ('b3333333-3333-3333-3333-333333333333', 'Av. Libertador', '789', 'Edificio Los Alpes', 'Sur', 'Apto 301, tercer piso', 'Mudanza temporal', 'María Anciana', 'RECONTACTADA')
+ON CONFLICT DO NOTHING;
 
 -- Seed data: Sample visita for testing
 INSERT INTO visitas (id, casa_id, fecha_programada, visitante_1_id, visitante_2_id, estado)

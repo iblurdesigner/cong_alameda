@@ -93,6 +93,7 @@ import { forkJoin, Observable } from 'rxjs';
           <span class="material-symbols-outlined empty-icon">date_range</span>
           <h3>Selecciona una semana arriba para ver y gestionar las asignaciones</h3>
           <p>Podrás ver los roles asignados día por día (Presidente, Lector, Micrófonos, Aseo, etc.)</p>
+          <p>Podrás ver y asignar la lista semanal de funciones (Presidente, Lector, Micrófonos, Plataforma, Aseo, etc.)</p>
         </div>
       } @else if (loading()) {
         <div class="loading-card">
@@ -100,79 +101,74 @@ import { forkJoin, Observable } from 'rxjs';
           <p>Cargando asignaciones de la semana...</p>
         </div>
       } @else {
-        <div class="days-stream-grid">
-          @for (dia of diasSemana; track dia.numero) {
-            <div class="day-card" [class.is-today]="isTodayDia(dia.numero)" [class.has-data]="getAssignmentsForDia(dia.numero).length > 0">
-              <!-- Day Card Header -->
-              <div class="day-card-header">
-                <div class="day-title-group">
-                  <span class="day-name">{{ dia.nombre }}</span>
-                  <span class="day-date">{{ getFechaForDia(dia.numero) }}</span>
-                </div>
-                <div class="day-header-right">
-                  @if (isTodayDia(dia.numero)) {
-                    <span class="badge-today">HOY</span>
-                  }
-                  @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                    <button class="edit-card-btn" (click)="openEditDiaModal(dia.numero)" title="Editar todas las asignaciones de este día">
-                      <span class="material-symbols-outlined">edit_note</span>
-                      <span>Editar tarjeta</span>
-                    </button>
-                  }
-                </div>
+        <div class="weekly-stream-container">
+          <div class="day-card weekly-card">
+            <!-- Weekly Card Header -->
+            <div class="day-card-header">
+              <div class="day-title-group">
+                <span class="day-name">Programa Semanal</span>
+                <span class="day-date">{{ getSelectedWeekDisplayTitle() }}</span>
               </div>
-
-              <!-- Roles Slots List -->
-              <div class="roles-slot-list">
-                @for (tipo of getTiposList(); track tipo.id) {
-                  @let asig = getAsignacionForDiaAndTipo(dia.numero, tipo.id);
-                  <div class="role-slot" [class.filled]="!!asig">
-                    <div class="role-info">
-                      <span class="role-type-name">{{ getTipoNombre(tipo.nombre) }}</span>
-                      
-                      @if (asig) {
-                        <div class="assigned-badge">
-                          <span class="material-symbols-outlined user-icon">
-                            {{ asig.grupo_id ? 'groups' : 'person' }}
-                          </span>
-                          <span class="person-name">
-                            {{ asig.user?.nombre || asig.grupo?.nombre || 'Asignado' }}
-                          </span>
-                          @if (asig.grupo?.numero) {
-                            <span class="grupo-pill">G{{ asig.grupo?.numero }}</span>
-                          }
-                        </div>
-                      } @else {
-                        <span class="slot-empty-text">Sin asignar</span>
-                      }
-                    </div>
-
-                    @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
-                      <div class="slot-actions">
-                        @if (asig) {
-                          <button 
-                            class="action-icon-btn edit-btn" 
-                            (click)="editAsignacion(asig, tipo, dia.numero)"
-                            title="Editar asignación"
-                          >
-                            <span class="material-symbols-outlined">edit</span>
-                          </button>
-                        } @else {
-                          <button 
-                            class="action-icon-btn add-btn" 
-                            (click)="openAssignModal(tipo, dia.numero)"
-                            title="Asignar rol"
-                          >
-                            <span class="material-symbols-outlined">add</span>
-                          </button>
-                        }
-                      </div>
-                    }
-                  </div>
+              <div class="day-header-right">
+                @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                  <button class="edit-card-btn" (click)="openEditDiaModal(3)" title="Editar asignaciones de esta semana">
+                    <span class="material-symbols-outlined">edit_note</span>
+                    <span>Editar tarjeta semanal</span>
+                  </button>
                 }
               </div>
             </div>
-          }
+
+            <!-- Roles Slots List -->
+            <div class="roles-slot-list">
+              @for (tipo of getTiposList(); track tipo.id) {
+                @let asig = getAsignacionForTipo(tipo.id);
+                <div class="role-slot" [class.filled]="!!asig">
+                  <div class="role-info">
+                    <span class="role-type-name">{{ getTipoNombre(tipo.nombre) }}</span>
+                    
+                    @if (asig) {
+                      <div class="assigned-badge">
+                        <span class="material-symbols-outlined user-icon">
+                          {{ asig.grupo_id ? 'groups' : 'person' }}
+                        </span>
+                        <span class="person-name">
+                          {{ asig.user?.nombre || asig.grupo?.nombre || 'Asignado' }}
+                        </span>
+                        @if (asig.grupo?.numero) {
+                          <span class="grupo-pill">G{{ asig.grupo?.numero }}</span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="slot-empty-text">Sin asignar</span>
+                    }
+                  </div>
+
+                  @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                    <div class="slot-actions">
+                      @if (asig) {
+                        <button 
+                          class="action-icon-btn edit-btn" 
+                          (click)="editAsignacion(asig, tipo, 3)"
+                          title="Editar asignación"
+                        >
+                          <span class="material-symbols-outlined">edit</span>
+                        </button>
+                      } @else {
+                        <button 
+                          class="action-icon-btn add-btn" 
+                          (click)="openAssignModal(tipo, 3)"
+                          title="Asignar rol"
+                        >
+                          <span class="material-symbols-outlined">add</span>
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
         </div>
       }
 
@@ -190,7 +186,7 @@ import { forkJoin, Observable } from 'rxjs';
             <div class="modal-body">
               <div class="info-pill-bar">
                 <span><strong>Función:</strong> {{ getTipoNombre(editingTipo?.nombre || '') }}</span>
-                <span><strong>Día:</strong> {{ getDiaNombre(editingDiaSemana) }}</span>
+                <span><strong>Semana:</strong> {{ getSelectedWeekDisplayTitle() }}</span>
               </div>
 
               @if (editingTipo?.nombre === 'ASEO_SALON') {
@@ -223,30 +219,30 @@ import { forkJoin, Observable } from 'rxjs';
 
             <div class="modal-footer">
               <button class="pill-btn btn-secondary" (click)="closeAssignModal()">Cancelar</button>
-              <button class="pill-btn btn-primary" (click)="saveAsignacion()">Guardar Asignación</button>
+              <button class="pill-btn btn-primary" (click)="saveAsignacion()">Guardar</button>
             </div>
           </div>
         </div>
       }
 
-      <!-- Modal para Editar Todo el Día Completo -->
+      <!-- Modal para Editar Tarjeta Completa de la Semana -->
       @if (showEditDiaModal) {
         <div class="modal-backdrop" (click)="closeEditDiaModal()">
           <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h2>Editar Asignaciones - {{ getDiaNombre(editingDiaSemana) }}</h2>
+              <h2>Editar Asignaciones de la Semana</h2>
               <button class="close-btn" (click)="closeEditDiaModal()">
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            <div class="modal-body day-bulk-body">
-              <p class="section-desc">Asigna o modifica rápidamente las funciones de este día:</p>
-
-              <div class="roles-edit-grid">
+            <div class="modal-body">
+              <p class="subtitle">Asigna rápidamente las funciones semanales:</p>
+              
+              <div class="day-roles-edit-list">
                 @for (tipo of getTiposList(); track tipo.id) {
                   <div class="role-edit-row">
-                    <div class="role-label">
+                    <div class="role-label-group">
                       <span class="role-icon">{{ tipo.icono || 'assignment' }}</span>
                       <span class="role-name">{{ getTipoNombre(tipo.nombre) }}</span>
                     </div>
@@ -280,7 +276,7 @@ import { forkJoin, Observable } from 'rxjs';
                   <span class="material-symbols-outlined spin">sync</span>
                   <span>Guardando...</span>
                 } @else {
-                  <span>Guardar Día</span>
+                  <span>Guardar Asignaciones</span>
                 }
               </button>
             </div>
@@ -334,14 +330,14 @@ import { forkJoin, Observable } from 'rxjs';
                   </div>
                 </div>
 
-                <!-- Panel de Vista Previa del Documento Imprimible -->
+                <!-- Panel de Vista Previa del Documento Imprimible (Formato Oficial Congregación) -->
                 <div class="pdf-preview-container">
                   <div class="pdf-preview-toolbar">
                     <span class="toolbar-title">
                       <span class="material-symbols-outlined">visibility</span>
                       Vista Previa en Vivo
                     </span>
-                    <span class="toolbar-badge">Documento Imprimible</span>
+                    <span class="toolbar-badge">A4 Imprimible</span>
                   </div>
 
                   <div class="pdf-preview-viewport">
@@ -366,31 +362,22 @@ import { forkJoin, Observable } from 'rxjs';
                           @let weekData = getPreviewWeekData(semanaId);
                           @if (weekData) {
                             <div class="sheet-week-block">
-                              <div class="sheet-week-header">
-                                <h3>SEMANA: {{ weekData.semana.nombre }}</h3>
-                                <span class="sheet-week-dates">({{ formatDate(weekData.semana.fecha_inicio) }} al {{ formatDate(weekData.semana.fecha_fin) }})</span>
-                              </div>
-
                               <table class="sheet-table">
                                 <thead>
-                                  <tr>
-                                    <th class="col-role">Función / Asignación</th>
-                                    @for (dia of diasSemana; track dia.numero) {
-                                      <th class="col-day">{{ dia.nombre }}</th>
-                                    }
+                                  <tr class="row-week-header">
+                                    <th class="col-role">FECHA:</th>
+                                    <th class="col-assigned">{{ getWeekDisplayTitleForPdf(weekData) }}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   @for (tipo of getTiposList(); track tipo.id) {
                                     <tr>
                                       <td class="cell-role">
-                                        <strong>{{ getTipoNombre(tipo.nombre) }}</strong>
+                                        <span>{{ getTipoNombre(tipo.nombre) }}:</span>
                                       </td>
-                                      @for (dia of diasSemana; track dia.numero) {
-                                        <td class="cell-assigned">
-                                          {{ getPreviewAsignado(weekData, dia.numero, tipo.id) }}
-                                        </td>
-                                      }
+                                      <td class="cell-assigned">
+                                        {{ getPreviewAsignadoSemanal(weekData, tipo.id) }}
+                                      </td>
                                     </tr>
                                   }
                                 </tbody>
@@ -1270,65 +1257,42 @@ import { forkJoin, Observable } from 'rxjs';
       }
 
       .sheet-week-block {
-        margin-bottom: 1.75rem;
+        margin-bottom: 0.5rem;
         page-break-inside: avoid;
-      }
-
-      .sheet-week-header {
-        display: flex;
-        align-items: baseline;
-        gap: 0.75rem;
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
-        border-bottom: none;
-        padding: 0.55rem 0.85rem;
-        border-top-left-radius: 6px;
-        border-top-right-radius: 6px;
-
-        h3 {
-          font-size: 0.95rem;
-          font-weight: 800;
-          color: #0f172a;
-          margin: 0;
-        }
-
-        .sheet-week-dates {
-          font-size: 0.82rem;
-          color: #64748b;
-          font-weight: 600;
-        }
       }
 
       .sheet-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 0.83rem;
+        font-size: 0.74rem;
 
         th, td {
-          border: 1px solid #cbd5e1;
-          padding: 0.5rem 0.75rem;
+          border: 1px solid #64748b;
+          padding: 2px 6px;
           text-align: left;
         }
 
-        th {
-          background: #f1f5f9;
-          color: #1e293b;
-          font-weight: 700;
+        .row-week-header th {
+          background: #e2e8f0;
+          color: #0f172a;
+          font-weight: 800;
           text-transform: uppercase;
-          font-size: 0.75rem;
+          font-size: 0.76rem;
+          padding: 3px 6px;
         }
 
-        .col-role { width: 36%; }
-        .col-day { width: 32%; }
+        .col-role { width: 30%; }
+        .col-assigned { width: 70%; }
 
         .cell-role {
-          background: #f8fafc;
-          color: #0f172a;
+          background: #ffffff;
+          color: #1e293b;
+          font-weight: 700;
         }
 
         .cell-assigned {
-          color: #1e293b;
-          font-weight: 500;
+          color: #0f172a;
+          font-weight: 600;
         }
       }
 
@@ -1347,26 +1311,109 @@ import { forkJoin, Observable } from 'rxjs';
       }
     }
 
-    /* Reglas especiales de Impresión / PDF */
+    /* Reglas especiales de Impresión / PDF A4 Estricto */
     @media print {
-      body * {
+      @page {
+        size: A4 portrait;
+        margin: 6mm 10mm;
+      }
+
+      /* Ocultar UI web que no corresponde al PDF */
+      header, nav, .sidebar, .sidebar-header, .logo-container, .overlay, .user-card, .nav-list,
+      .top-header, .week-selector-card, .weekly-stream-container, 
+      .pdf-header, .pdf-sidebar, .pdf-preview-toolbar, .modal-footer, .close-btn,
+      .empty-selection-card, .loading-card {
+        display: none !important;
         visibility: hidden !important;
       }
 
-      .pdf-printable-sheet,
-      .pdf-printable-sheet * {
-        visibility: visible !important;
+      *, *::before, *::after {
+        box-sizing: border-box !important;
       }
 
-      .pdf-printable-sheet {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        max-width: none !important;
+      /* Reset completo de contenedores padres en impresión */
+      html, body, app-root, .asignaciones-container, .modal-backdrop, .modal-card,
+      .pdf-modal-backdrop, .pdf-modal-card, .pdf-modal-body, .pdf-split-layout,
+      .pdf-preview-container, .pdf-preview-viewport {
+        position: static !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: none !important;
+        border-radius: 0 !important;
         box-shadow: none !important;
         padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        display: block !important;
+        transform: none !important;
+      }
+
+      /* Hoja imprimible limpia alineada y sin desbordes */
+      .pdf-printable-sheet {
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: #ffffff !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        font-size: 8.5px !important;
+        display: block !important;
+        box-sizing: border-box !important;
+      }
+
+      .sheet-header {
+        padding-bottom: 0.2rem !important;
+        margin-bottom: 0.35rem !important;
+        border-bottom: 1.5px solid #0f172a !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+
+        .sheet-org {
+          font-size: 1.1rem !important;
+        }
+        .sheet-doc-title {
+          font-size: 0.76rem !important;
+          margin-top: 0.1rem !important;
+        }
+      }
+
+      .sheet-week-block {
+        margin-bottom: 0.3rem !important;
+        page-break-inside: avoid !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      .sheet-table {
+        font-size: 8.5px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        table-layout: fixed !important;
+
+        th, td {
+          padding: 2px 6px !important;
+          line-height: 1.15 !important;
+          box-sizing: border-box !important;
+          word-break: break-word !important;
+        }
+
+        .row-week-header th {
+          font-size: 8.8px !important;
+          padding: 2.5px 6px !important;
+        }
+
+        .col-role { width: 33% !important; }
+        .col-assigned { width: 67% !important; }
       }
     }
 
@@ -1568,20 +1615,23 @@ export class AsignacionListComponent implements OnInit {
     });
   }
 
-  getAsignacionForDiaAndTipo(diaSemana: number, tipoId: string): Asignacion | null {
+  getAsignacionForTipo(tipoId: string): Asignacion | null {
     const map = this.asignacionMap();
-    return map.get(`${diaSemana}-${tipoId}`) || null;
+    for (const val of map.values()) {
+      if (val.tipo_asignacion_id === tipoId) {
+        return val;
+      }
+    }
+    return null;
+  }
+
+  getAsignacionForDiaAndTipo(diaSemana: number, tipoId: string): Asignacion | null {
+    return this.getAsignacionForTipo(tipoId);
   }
 
   getAssignmentsForDia(diaSemana: number): Asignacion[] {
     const map = this.asignacionMap();
-    const result: Asignacion[] = [];
-    map.forEach((val) => {
-      if (val.dia_semana === diaSemana) {
-        result.push(val);
-      }
-    });
-    return result;
+    return Array.from(map.values());
   }
 
   getTotalAsignacionesSemana(): number {
@@ -1589,14 +1639,49 @@ export class AsignacionListComponent implements OnInit {
   }
 
   getDiasConAsignacionesCount(): number {
-    const dias = new Set<number>();
-    this.asignacionMap().forEach((val) => dias.add(val.dia_semana));
-    return dias.size;
+    return this.asignacionMap().size > 0 ? 1 : 0;
   }
 
   getDiaNombre(diaSemana: number): string {
-    const d = this.diasSemana.find(item => item.numero === diaSemana);
-    return d ? d.nombre : '';
+    return 'Semanal';
+  }
+
+  getWeekDisplayTitleForPdf(weekData: any): string {
+    if (!weekData || !weekData.semana) return '';
+    const sem = weekData.semana;
+    if (sem.fecha_inicio && sem.fecha_fin) {
+      const partsStart = sem.fecha_inicio.substring(0, 10).split('-');
+      const partsEnd = sem.fecha_fin.substring(0, 10).split('-');
+      if (partsStart.length === 3 && partsEnd.length === 3) {
+        const months = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+        const dayStart = parseInt(partsStart[2], 10);
+        const dayEnd = parseInt(partsEnd[2], 10);
+        const monthIndex = parseInt(partsEnd[1], 10) - 1;
+        const monthName = months[monthIndex] || '';
+        return `Semana del ${dayStart} al ${dayEnd} ${monthName}`;
+      }
+    }
+    return sem.nombre || '';
+  }
+
+  getPreviewAsignadoSemanal(weekData: any, tipoId: string): string {
+    if (!weekData || !weekData.asignaciones) return '—';
+    const asigs: Asignacion[] = weekData.asignaciones.filter((a: Asignacion) => a.tipo_asignacion_id === tipoId);
+    if (asigs.length === 0) return '—';
+
+    const names: string[] = [];
+    for (const asig of asigs) {
+      if (asig.grupo) {
+        names.push(`Grupo ${asig.grupo.numero ? asig.grupo.numero + ' - ' : ''}${asig.grupo.nombre}`);
+      } else if (asig.user && asig.user.nombre) {
+        names.push(asig.user.nombre);
+      } else if (asig.user_id) {
+        const u = this.users().find((usr: any) => usr.id === asig.user_id);
+        if (u) names.push(u.nombre);
+      }
+    }
+
+    return names.length > 0 ? names.join(' / ') : '—';
   }
 
   getTipoNombre(nombre: string): string {
@@ -1619,22 +1704,22 @@ export class AsignacionListComponent implements OnInit {
   getTiposList(): TipoAsignacion[] {
     const t = this.tipos();
     if (Array.isArray(t) && t.length > 0) {
-      return [...t].sort((a, b) => {
-        const order: Record<string, number> = {
-          'PRESIDENTE': 1,
-          'LECTOR_ATALAYA': 2,
-          'MICROFONO_IZQ': 3,
-          'MICROFONO_DER': 4,
-          'MICROFONO': 4.5,
-          'PLATAFORMA': 5,
-          'ACOMODADOR_1': 6,
-          'ACOMODADOR_2': 7,
-          'ACOMODADOR_SALON': 7.5,
-          'PARQUEADERO': 8,
-          'ASEO_SALON': 9
-        };
-        return (order[a.nombre] ?? 99) - (order[b.nombre] ?? 99);
-      });
+      return t
+        .filter(item => item.nombre !== 'MICROFONO' && item.nombre !== 'ACOMODADOR_SALON')
+        .sort((a, b) => {
+          const order: Record<string, number> = {
+            'PRESIDENTE': 1,
+            'LECTOR_ATALAYA': 2,
+            'MICROFONO_IZQ': 3,
+            'MICROFONO_DER': 4,
+            'PLATAFORMA': 5,
+            'ACOMODADOR_1': 6,
+            'ACOMODADOR_2': 7,
+            'PARQUEADERO': 8,
+            'ASEO_SALON': 9
+          };
+          return (order[a.nombre] ?? 99) - (order[b.nombre] ?? 99);
+        });
     }
     return [
       { id: '1', nombre: 'PRESIDENTE', icono: '🎯', descripcion: 'Presidente' },
@@ -1872,9 +1957,15 @@ export class AsignacionListComponent implements OnInit {
   getOrderedSelectedWeeks(): string[] {
     const allSemanas = this.semanas();
     const selectedIds = this.selectedWeeksForExportSignal();
-    return allSemanas
-      .filter((s: Semana) => selectedIds.includes(s.id))
-      .map((s: Semana) => s.id);
+    const set = new Set<string>();
+    const result: string[] = [];
+    for (const s of allSemanas) {
+      if (selectedIds.includes(s.id) && !set.has(s.id)) {
+        set.add(s.id);
+        result.push(s.id);
+      }
+    }
+    return result;
   }
 
   getPreviewWeekData(semanaId: string): any {
