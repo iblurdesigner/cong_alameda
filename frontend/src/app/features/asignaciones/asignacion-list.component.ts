@@ -111,6 +111,10 @@ import { forkJoin, Observable } from 'rxjs';
               </div>
               <div class="day-header-right">
                 @if (authService.isSuperintendente() || authService.isSuperAdmin()) {
+                  <button class="btn-whatsapp-header" (click)="openWhatsAppModal()" title="Enviar recordatorios por WhatsApp">
+                    <span class="material-symbols-outlined icon">chat</span>
+                    <span>Recordatorios WhatsApp</span>
+                  </button>
                   <button class="edit-card-btn" (click)="openEditDiaModal(3)" title="Editar asignaciones de esta semana">
                     <span class="material-symbols-outlined">edit_note</span>
                     <span>Editar tarjeta semanal</span>
@@ -398,6 +402,83 @@ import { forkJoin, Observable } from 'rxjs';
                 <span class="material-symbols-outlined icon">print</span>
                 <span>Generar PDF / Imprimir</span>
               </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Modal de Recordatorios por WhatsApp -->
+      @if (showWhatsAppModal) {
+        <div class="modal-backdrop wa-modal-backdrop" (click)="closeWhatsAppModal()">
+          <div class="modal-card modal-lg wa-modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header wa-header">
+              <div class="wa-title-group">
+                <span class="material-symbols-outlined wa-icon">chat</span>
+                <div>
+                  <h2>Recordatorios por WhatsApp</h2>
+                  <p class="subtitle">Notifica a los hermanos asignados para {{ getSelectedWeekDisplayTitle() }}</p>
+                </div>
+              </div>
+              <button class="close-btn" (click)="closeWhatsAppModal()">
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div class="modal-body wa-modal-body">
+              @let assignedList = getAssignedListForWhatsApp();
+              @if (assignedList.length === 0) {
+                <div class="wa-empty-state">
+                  <span class="material-symbols-outlined icon">info</span>
+                  <p>No hay asignaciones registradas en esta semana para enviar recordatorios.</p>
+                </div>
+              } @else {
+                <div class="wa-cards-grid">
+                  @for (item of assignedList; track item.tipo_id) {
+                    <div class="wa-item-card">
+                      <div class="wa-item-header">
+                        <span class="wa-role-pill">{{ item.tipo_nombre }}</span>
+                        @if (item.telefono) {
+                          <span class="wa-phone-pill">
+                            <span class="material-symbols-outlined">phone</span>
+                            {{ item.telefono }}
+                          </span>
+                        } @else {
+                          <span class="wa-phone-pill no-phone">
+                            <span class="material-symbols-outlined">warning</span>
+                            Sin teléfono
+                          </span>
+                        }
+                      </div>
+
+                      <div class="wa-person-info">
+                        <span class="material-symbols-outlined icon">person</span>
+                        <strong class="person-name">{{ item.nombre_asignado }}</strong>
+                      </div>
+
+                      <div class="wa-message-preview">
+                        <label>Mensaje a enviar:</label>
+                        <div class="message-box">{{ item.mensaje_preview }}</div>
+                      </div>
+
+                      <div class="wa-item-actions">
+                        <button 
+                          class="btn-send-wa" 
+                          (click)="sendWhatsAppReminder(item)" 
+                          [disabled]="!item.telefono"
+                          [title]="item.telefono ? 'Abrir chat de WhatsApp con el mensaje' : 'El usuario no tiene teléfono registrado'"
+                        >
+                          <span class="material-symbols-outlined">send</span>
+                          <span>Enviar WhatsApp</span>
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="modal-footer">
+              <button class="pill-btn btn-secondary" (click)="closeWhatsAppModal()">Cerrar</button>
             </div>
           </div>
         </div>
@@ -746,6 +827,29 @@ import { forkJoin, Observable } from 'rxjs';
       display: flex;
       align-items: center;
       gap: 0.5rem;
+    }
+
+    .btn-whatsapp-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 0.85rem;
+      background: #25d366;
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #1eb956;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+      }
+
+      .icon { font-size: 1.05rem; }
     }
 
     .edit-card-btn {
@@ -1311,6 +1415,160 @@ import { forkJoin, Observable } from 'rxjs';
       }
     }
 
+    /* Modal WhatsApp */
+    .wa-modal-card {
+      max-width: 780px;
+    }
+
+    .wa-header {
+      .wa-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+
+        .wa-icon {
+          font-size: 2rem;
+          color: #25d366;
+          background: rgba(37, 211, 102, 0.12);
+          padding: 0.5rem;
+          border-radius: 50%;
+        }
+
+        h2 { margin: 0; font-size: 1.3rem; }
+        .subtitle { margin: 0.2rem 0 0 0; color: var(--text-secondary); font-size: 0.85rem; }
+      }
+    }
+
+    .wa-modal-body {
+      max-height: 62vh;
+      overflow-y: auto;
+      padding: 1.25rem;
+    }
+
+    .wa-cards-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .wa-item-card {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+
+      .wa-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        .wa-role-pill {
+          font-weight: 800;
+          font-size: 0.82rem;
+          color: var(--primary-color);
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+
+        .wa-phone-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #10b981;
+          background: rgba(16, 185, 129, 0.1);
+          padding: 0.2rem 0.6rem;
+          border-radius: var(--radius-pill);
+
+          .material-symbols-outlined { font-size: 0.9rem; }
+
+          &.no-phone {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+          }
+        }
+      }
+
+      .wa-person-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+
+        .icon { color: var(--text-secondary); }
+        .person-name { color: var(--text-primary); font-weight: 700; }
+      }
+
+      .wa-message-preview {
+        label {
+          display: block;
+          font-size: 0.73rem;
+          font-weight: 700;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          margin-bottom: 0.3rem;
+        }
+
+        .message-box {
+          background: var(--background-color);
+          border: 1px dashed var(--border-color);
+          border-radius: var(--radius-sm);
+          padding: 0.75rem 1rem;
+          font-size: 0.84rem;
+          color: var(--text-primary);
+          white-space: pre-line;
+          line-height: 1.45;
+        }
+      }
+
+      .wa-item-actions {
+        display: flex;
+        justify-content: flex-end;
+
+        .btn-send-wa {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          padding: 0.45rem 1.1rem;
+          background: #25d366;
+          color: #ffffff;
+          border: none;
+          border-radius: var(--radius-pill);
+          font-size: 0.84rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: background 0.2s ease, transform 0.15s ease;
+
+          &:hover:not(:disabled) {
+            background: #1eb956;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+          }
+
+          &:disabled {
+            background: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+          }
+
+          .material-symbols-outlined { font-size: 1.05rem; }
+        }
+      }
+    }
+
+    .wa-empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+
+      .icon { font-size: 3rem; margin-bottom: 0.75rem; color: #94a3b8; }
+      p { font-size: 0.95rem; margin: 0; }
+    }
+
     /* Reglas especiales de Impresión / PDF A4 Estricto */
     @media print {
       @page {
@@ -1438,6 +1696,7 @@ export class AsignacionListComponent implements OnInit {
   showAssignModal = false;
   showEditDiaModal = false;
   showPdfExportModal = false;
+  showWhatsAppModal = false;
   showBulkModal = false;
   savingDia = false;
 
@@ -1992,5 +2251,78 @@ export class AsignacionListComponent implements OnInit {
 
   generatePdfWithSelection() {
     window.print();
+  }
+
+  openWhatsAppModal() {
+    this.showWhatsAppModal = true;
+  }
+
+  closeWhatsAppModal() {
+    this.showWhatsAppModal = false;
+  }
+
+  getAssignedListForWhatsApp(): any[] {
+    const tipos = this.getTiposList();
+    const result: any[] = [];
+    const semanaTitle = this.getSelectedWeekDisplayTitle();
+
+    tipos.forEach(tipo => {
+      const asig = this.getAsignacionForTipo(tipo.id);
+      if (asig) {
+        let nombreAsignado = '';
+        let telefono = '';
+
+        if (asig.grupo) {
+          nombreAsignado = `Grupo ${asig.grupo.numero ? asig.grupo.numero + ' - ' : ''}${asig.grupo.nombre}`;
+        } else if (asig.user && asig.user.nombre) {
+          nombreAsignado = asig.user.nombre;
+          telefono = asig.user.telefono || '';
+          if (!telefono && asig.user?.id) {
+            const u = this.users().find((usr: any) => usr.id === asig.user?.id);
+            if (u && u.telefono) telefono = u.telefono;
+          }
+        } else if (asig.user_id) {
+          const u = this.users().find((usr: any) => usr.id === asig.user_id);
+          if (u) {
+            nombreAsignado = u.nombre;
+            telefono = u.telefono || '';
+          }
+        }
+
+        if (nombreAsignado) {
+          const tipoNombre = this.getTipoNombre(tipo.nombre);
+          const msg = `Hola *${nombreAsignado}*, te recordamos tu asignación en la Congregación Alameda para la *${semanaTitle}*:\n\n📌 *Función:* ${tipoNombre}\n🗓️ *Período:* ${semanaTitle}\n\n¡Muchas gracias por tu colaboración y apoyo! 🙏`;
+          result.push({
+            tipo_id: tipo.id,
+            tipo_nombre: tipoNombre,
+            nombre_asignado: nombreAsignado,
+            telefono: telefono,
+            mensaje_raw: msg,
+            mensaje_preview: msg
+          });
+        }
+      }
+    });
+
+    return result;
+  }
+
+  cleanPhoneNumber(phone: string): string {
+    if (!phone) return '';
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) {
+      cleaned = cleaned.substring(1);
+    } else if (cleaned.startsWith('0')) {
+      cleaned = '593' + cleaned.substring(1);
+    }
+    return cleaned;
+  }
+
+  sendWhatsAppReminder(item: any) {
+    if (!item.telefono) return;
+    const phone = this.cleanPhoneNumber(item.telefono);
+    const encoded = encodeURIComponent(item.mensaje_raw);
+    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+    window.open(url, '_blank');
   }
 }

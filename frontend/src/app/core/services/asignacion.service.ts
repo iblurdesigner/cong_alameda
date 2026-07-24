@@ -19,7 +19,7 @@ export interface Asignacion {
   dia_semana: number;
   observaciones?: string;
   tipo_asignacion?: TipoAsignacion;
-  user?: { id: string; nombre: string; email?: string; rol?: string };
+  user?: { id: string; nombre: string; email?: string; rol?: string; telefono?: string };
   grupo?: { id: string; nombre: string; numero?: number };
   created_at: string;
 }
