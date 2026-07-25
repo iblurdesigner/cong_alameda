@@ -119,7 +119,7 @@ func TestAsignacionService_Create_AseoSalonWithUserRejected(t *testing.T) {
 	tipoRepo := newMockTipoAsignRepo()
 	tipoRepo.byID[aseoSalonUUID()] = &models.TipoAsignacion{ID: aseoSalonUUID(), Nombre: "ASEO_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	grupoNil := (*uuid.UUID)(nil)
 	err := svc.Create(context.Background(), &models.AsignacionSemanal{
@@ -146,7 +146,7 @@ func TestAsignacionService_Create_AseoSalonWithGrupoSucceeds(t *testing.T) {
 	tipoRepo := newMockTipoAsignRepo()
 	tipoRepo.byID[aseoSalonUUID()] = &models.TipoAsignacion{ID: aseoSalonUUID(), Nombre: "ASEO_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	grupoID := uuid.New()
 	err := svc.Create(context.Background(), &models.AsignacionSemanal{
@@ -174,7 +174,7 @@ func TestAsignacionService_Create_NonAseoWithUserSucceeds(t *testing.T) {
 	otherID := uuid.New()
 	tipoRepo.byID[otherID] = &models.TipoAsignacion{ID: otherID, Nombre: "ACOMODADOR_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	err := svc.Create(context.Background(), &models.AsignacionSemanal{
 		SemanaID:         uuid.New(),
@@ -204,7 +204,7 @@ func TestAsignacionService_Update_AseoSalonWithUserRejected(t *testing.T) {
 		TipoAsignacionID: aseoSalonUUID(),
 	}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	err := svc.Update(context.Background(), existingID, uuid.New(), nil, nil)
 	if err == nil {
@@ -220,7 +220,7 @@ func TestAsignacionService_BulkCreate_AseoSalonWithUserRejected(t *testing.T) {
 	tipoRepo := newMockTipoAsignRepo()
 	tipoRepo.byID[aseoSalonUUID()] = &models.TipoAsignacion{ID: aseoSalonUUID(), Nombre: "ASEO_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	err := svc.BulkCreate(context.Background(), []*models.AsignacionSemanal{
 		{

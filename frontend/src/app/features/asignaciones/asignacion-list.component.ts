@@ -5,6 +5,7 @@ import { AsignacionService, Asignacion, TipoAsignacion } from '../../core/servic
 import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { forkJoin, Observable } from 'rxjs';
 
 @Component({
@@ -1683,6 +1684,7 @@ export class AsignacionListComponent implements OnInit {
   private semanaService = inject(SemanaService);
   public authService = inject(AuthService);
   private grupoService = inject(GrupoService);
+  private notificationService = inject(NotificationService);
 
   semanas = signal<Semana[]>([]);
   users = signal<any[]>([]);
@@ -2063,6 +2065,7 @@ export class AsignacionListComponent implements OnInit {
     this.asignacionService.createAsignacion(asignacion as any).subscribe({
       next: () => {
         this.loadSemana();
+        this.notificationService.loadNotifications().subscribe();
         this.closeAssignModal();
       }
     });
@@ -2123,12 +2126,14 @@ export class AsignacionListComponent implements OnInit {
         next: () => {
           this.savingDia = false;
           this.loadSemana();
+          this.notificationService.loadNotifications().subscribe();
           this.closeEditDiaModal();
         },
         error: (err) => {
           console.error('Error guardando asignaciones del día', err);
           this.savingDia = false;
           this.loadSemana();
+          this.notificationService.loadNotifications().subscribe();
           this.closeEditDiaModal();
         }
       });

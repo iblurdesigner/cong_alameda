@@ -104,7 +104,7 @@ func main() {
 	asignacionRepo := repositories.NewAsignacionRepository(db.Pool)
 
 	// Initialize Fase 3 services
-	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo)
+	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo, notifService)
 
 	// Initialize Fase 3 handlers
 	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)

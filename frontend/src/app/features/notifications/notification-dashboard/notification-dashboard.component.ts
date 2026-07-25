@@ -1,13 +1,15 @@
 import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NotificationService, Notificacion } from '../../../core/services/notification.service';
 
-interface NotificacionTipo {
+export interface CategoriaNotificacion {
   key: string;
   label: string;
   icon: string;
   color: string;
+  tiposBackend: string[];
 }
 
 @Component({
@@ -15,102 +17,133 @@ interface NotificacionTipo {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="dashboard-container">
-      <header class="page-header">
-        <div class="header-content">
-          <h1>Notificaciones</h1>
-          <p class="header-subtitle">{{ notificationService.unreadCount() }} sin leer</p>
+    <div class="notifications-container">
+      <!-- Calescence Header -->
+      <header class="top-header">
+        <div class="title-section">
+          <div class="icon-badge">
+            <span class="material-symbols-outlined">notifications</span>
+          </div>
+          <div>
+            <h1>Notificaciones y Tareas</h1>
+            <p class="subtitle">
+              Centro unificado de avisos y asignaciones
+              @if (notificationService.unreadCount() > 0) {
+                <span class="unread-pill">{{ notificationService.unreadCount() }} sin leer</span>
+              }
+            </p>
+          </div>
         </div>
-        <button class="btn btn-outline" (click)="markAllRead()" [disabled]="notificationService.unreadCount() === 0">
-          Marcar todas como leídas
-        </button>
+
+        <div class="header-actions">
+          <button 
+            class="pill-btn btn-secondary" 
+            (click)="markAllRead()" 
+            [disabled]="notificationService.unreadCount() === 0"
+            title="Marcar todas las notificaciones como leídas"
+          >
+            <span class="material-symbols-outlined icon">done_all</span>
+            <span>Marcar todas como leídas</span>
+          </button>
+        </div>
       </header>
 
-      <!-- Filtros por tipo -->
-      <div class="filters-bar">
-        <div class="filter-cards">
+      <!-- Category Filter Pills Bar -->
+      <div class="category-pills-bar">
+        <button 
+          class="cat-pill" 
+          [class.active]="selectedCatKey() === 'TODOS'"
+          (click)="setCategory('TODOS')"
+        >
+          <span class="material-symbols-outlined icon">dashboard</span>
+          <span class="label">Todos</span>
+          <span class="count-badge">{{ getTotalCount() }}</span>
+        </button>
+
+        @for (cat of categorias; track cat.key) {
           <button 
-            class="filter-card" 
-            [class.active]="selectedTipo() === null"
-            (click)="setFilter(null)">
-            <span class="filter-icon">📋</span>
-            <span class="filter-label">Todos</span>
+            class="cat-pill" 
+            [class.active]="selectedCatKey() === cat.key"
+            [style.--cat-color]="cat.color"
+            (click)="setCategory(cat.key)"
+          >
+            <span class="material-symbols-outlined icon">{{ cat.icon }}</span>
+            <span class="label">{{ cat.label }}</span>
+            @if (getCatCount(cat.key) > 0) {
+              <span class="count-badge">{{ getCatCount(cat.key) }}</span>
+            }
           </button>
-          @for (tipo of tipos; track tipo.key) {
-            <button 
-              class="filter-card" 
-              [class.active]="selectedTipo() === tipo.key"
-              [style.--card-color]="tipo.color"
-              (click)="setFilter(tipo.key)">
-              <span class="filter-icon">{{ tipo.icon }}</span>
-              <span class="filter-label">{{ tipo.label }}</span>
-              @if (getCountByTipo(tipo.key) > 0) {
-                <span class="filter-count">{{ getCountByTipo(tipo.key) }}</span>
-              }
-            </button>
-          }
-        </div>
+        }
       </div>
 
+      <!-- Main Content Area -->
       @if (notificationService.loading()) {
-        <div class="loader-container">
-          <div class="loader"></div>
-          <p>Cargando notificaciones...</p>
+        <div class="loading-state-card">
+          <span class="material-symbols-outlined spin">sync</span>
+          <p>Cargando notificaciones y tareas...</p>
         </div>
       } @else if (filteredNotificaciones().length === 0) {
-        <!-- Empty State -->
-        <div class="empty-state">
-          <div class="empty-icon">🔔</div>
+        <div class="empty-state-card">
+          <div class="empty-icon-circle">
+            <span class="material-symbols-outlined">notifications_off</span>
+          </div>
           <h3>No hay notificaciones</h3>
-          <p>{{ selectedTipo() ? 'No hay notificaciones de tipo ' + getTipoLabel(selectedTipo()!) : 'No tienes notificaciones aún' }}</p>
+          <p>{{ selectedCatKey() !== 'TODOS' ? 'No tienes notificaciones en la categoría ' + getCatLabel(selectedCatKey()) : 'Estás al día. No tienes notificaciones pendientes.' }}</p>
         </div>
       } @else {
-        <!-- Agrupado por tipo -->
-        @for (group of groupedNotificaciones(); track group.tipo) {
-          <div class="notif-group">
-            <h3 class="group-title" [style.color]="getTipoConfig(group.tipo)?.color">
-              <span class="group-icon">{{ getTipoConfig(group.tipo)?.icon }}</span>
-              {{ getTipoLabel(group.tipo) }}
-              <span class="group-count">({{ group.notificaciones.length }})</span>
-            </h3>
-            <div class="notif-list">
-              @for (notif of group.notificaciones; track notif.id) {
-                <div 
-                  class="notif-card" 
-                  [class.unread]="!notif.leida"
-                  [style.--tipo-color]="getTipoConfig(notif.tipo)?.color"
-                  (click)="markRead(notif)">
-                  <div class="notif-icon" [style.background]="getTipoConfig(notif.tipo)?.color + '20'">
-                    {{ getTipoConfig(notif.tipo)?.icon }}
-                  </div>
-                  <div class="notif-content">
-                    <p class="notif-mensaje">{{ notif.mensaje }}</p>
-                    <span class="notif-fecha">{{ formatDate(notif.created_at) }}</span>
-                  </div>
-                  @if (!notif.leida) {
-                    <div class="unread-badge">Nuevo</div>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-        }
+        <div class="notif-feed-list">
+          @for (notif of pagedNotificaciones(); track notif.id) {
+            @let meta = getNotifMetadata(notif.tipo);
+            <div 
+              class="notif-card-item" 
+              [class.unread]="!notif.leida"
+              [style.--item-accent]="meta.color"
+              (click)="goToAction(notif)"
+            >
+              <div class="notif-icon-box" [style.background]="meta.color + '18'" [style.color]="meta.color">
+                <span class="material-symbols-outlined">{{ meta.icon }}</span>
+              </div>
 
-        <!-- Paginación -->
+              <div class="notif-info-content">
+                <div class="notif-top-row">
+                  <span class="notif-cat-tag" [style.color]="meta.color">{{ meta.label }}</span>
+                  <span class="notif-date-stamp">{{ formatDate(notif.created_at) }}</span>
+                </div>
+                <p class="notif-message-text">{{ notif.mensaje }}</p>
+              </div>
+
+              <div class="notif-action-side">
+                @if (!notif.leida) {
+                  <span class="unread-dot-badge">Nuevo</span>
+                }
+                <button class="action-arrow-btn" (click)="$event.stopPropagation(); goToAction(notif)" title="Ver detalle o sección">
+                  <span>Ver</span>
+                  <span class="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Pagination -->
         @if (totalPages() > 1) {
-          <div class="pagination">
+          <div class="pagination-bar">
             <button 
-              class="page-btn" 
+              class="page-nav-btn" 
               (click)="prevPage()" 
-              [disabled]="currentPage() === 1">
-              ← Anterior
+              [disabled]="currentPage() === 1"
+            >
+              <span class="material-symbols-outlined">chevron_left</span>
+              <span>Anterior</span>
             </button>
-            <span class="page-info">Página {{ currentPage() }} de {{ totalPages() }}</span>
+            <span class="page-count-text">Página {{ currentPage() }} de {{ totalPages() }}</span>
             <button 
-              class="page-btn" 
+              class="page-nav-btn" 
               (click)="nextPage()" 
-              [disabled]="currentPage() === totalPages()">
-              Siguiente →
+              [disabled]="currentPage() === totalPages()"
+            >
+              <span>Siguiente</span>
+              <span class="material-symbols-outlined">chevron_right</span>
             </button>
           </div>
         }
@@ -118,289 +151,465 @@ interface NotificacionTipo {
     </div>
   `,
   styles: [`
-    .dashboard-container { max-width: 800px; margin: 0 auto; }
-    
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      
-      h1 { font-size: 1.75rem; font-weight: 700; }
-      .header-subtitle { color: var(--text-secondary); margin-top: 0.25rem; }
-    }
-    
-    .filters-bar {
-      margin-bottom: 1.5rem;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-    }
-    
-    .filter-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.75rem;
-    }
-    
-    .filter-card {
+    .notifications-container {
+      max-width: 1100px;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      background: var(--surface-color);
-      font-size: 0.875rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      
-      &:hover {
-        border-color: var(--card-color, var(--primary-color));
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        transform: translateY(-2px);
-      }
-      
-      &.active {
-        background: var(--card-color, var(--primary-color));
-        border-color: var(--card-color, var(--primary-color));
-        color: white;
-        
-        .filter-count { background: rgba(255,255,255,0.25); color: white; }
-      }
+      gap: 1.5rem;
     }
-    
-    .filter-icon { font-size: 1.5rem; }
-    .filter-label { font-weight: 500; text-align: center; }
-    .filter-count {
-      background: var(--card-color, var(--primary-color));
-      color: white;
-      padding: 0.125rem 0.5rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-    }
-    
-    .loading, .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
-    .loader-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 3rem; }
-    .loader { width: 40px; height: 40px; border: 3px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .empty-state { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; 
-      .empty-icon { font-size: 3rem; opacity: 0.5; }
-      h3 { margin: 0; color: var(--text-primary); }
-      p { margin: 0; }
-    }
-    
-    .notif-group { margin-bottom: 2rem; }
-    
-    .group-title {
+
+    .top-header {
       display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .title-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .icon-badge {
+        width: 48px;
+        height: 48px;
+        background: #121316;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--accent-lime);
+        box-shadow: var(--shadow-sm);
+
+        span { font-size: 1.6rem; }
+      }
+
+      h1 {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 1.85rem;
+        font-weight: 800;
+        margin: 0;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+      }
+
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .unread-pill {
+        background: #ef4444;
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.15rem 0.55rem;
+        border-radius: var(--radius-pill);
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .pill-btn {
+      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 1rem;
+      padding: 0.65rem 1.35rem;
+      border-radius: var(--radius-pill);
+      font-size: 0.88rem;
       font-weight: 600;
-      margin-bottom: 0.75rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--border-color);
-      
-      .group-icon { font-size: 1.25rem; }
-      .group-count { font-weight: 400; color: var(--text-secondary); font-size: 0.875rem; }
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+
+      .icon { font-size: 1.15rem; }
+
+      &.btn-secondary {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+
+        &:hover:not(:disabled) {
+          border-color: var(--primary-color);
+          color: var(--primary-color);
+          background: var(--background-color);
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
     }
-    
-    .notif-list { display: flex; flex-direction: column; gap: 0.5rem; }
-    
-    .notif-card {
+
+    /* Category Pills Bar */
+    .category-pills-bar {
       display: flex;
       align-items: center;
-      gap: 0.875rem;
-      padding: 0.875rem 1rem;
+      gap: 0.6rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      scrollbar-width: thin;
+    }
+
+    .cat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 1.1rem;
       background: var(--surface-color);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-pill);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      
+      white-space: nowrap;
+      transition: all 0.2s ease;
+
+      .icon { font-size: 1.1rem; color: var(--cat-color, var(--primary-color)); }
+
+      .count-badge {
+        background: var(--background-color);
+        color: var(--text-primary);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.15rem 0.5rem;
+        border-radius: var(--radius-pill);
+      }
+
       &:hover {
-        border-color: var(--tipo-color, var(--primary-color));
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: var(--cat-color, var(--primary-color));
+        color: var(--text-primary);
         transform: translateY(-1px);
       }
-      
-      &.unread { 
-        border-left: 3px solid var(--tipo-color, var(--primary-color));
-        background: linear-gradient(90deg, #f8f3ff 0%, var(--surface-color) 30%);
+
+      &.active {
+        background: var(--cat-color, #2563eb);
+        border-color: var(--cat-color, #2563eb);
+        color: #ffffff;
+
+        .icon { color: #ffffff; }
+        .count-badge { background: rgba(255, 255, 255, 0.25); color: #ffffff; }
       }
     }
-    
-    .notif-icon {
-      width: 40px;
-      height: 40px;
+
+    /* Feed & Cards */
+    .notif-feed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .notif-card-item {
+      background: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 1.1rem 1.35rem;
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+
+      &:hover {
+        border-color: var(--item-accent, var(--primary-color));
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+
+        .action-arrow-btn {
+          background: var(--item-accent, var(--primary-color));
+          color: #ffffff;
+          border-color: var(--item-accent, var(--primary-color));
+        }
+      }
+
+      &.unread {
+        border-left: 4px solid var(--item-accent, var(--primary-color));
+        background: linear-gradient(90deg, rgba(37, 99, 235, 0.03) 0%, var(--surface-color) 40%);
+      }
+    }
+
+    .notif-icon-box {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: var(--radius-md);
-      font-size: 1.25rem;
       flex-shrink: 0;
+
+      .material-symbols-outlined { font-size: 1.4rem; }
     }
-    
-    .notif-content {
+
+    .notif-info-content {
       flex: 1;
       min-width: 0;
-      
-      .notif-mensaje {
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.4;
+
+      .notif-top-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.25rem;
       }
-      
-      .notif-fecha {
-        display: block;
-        margin-top: 0.25rem;
+
+      .notif-cat-tag {
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .notif-date-stamp {
         font-size: 0.75rem;
         color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      .notif-message-text {
+        margin: 0;
+        font-size: 0.93rem;
+        color: var(--text-primary);
+        font-weight: 500;
+        line-height: 1.4;
       }
     }
-    
-    .unread-badge {
-      background: var(--tipo-color, var(--primary-color));
-      color: white;
-      padding: 0.25rem 0.625rem;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
+
+    .notif-action-side {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       flex-shrink: 0;
     }
-    
-    .pagination {
+
+    .unread-dot-badge {
+      background: #ef4444;
+      color: #ffffff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-pill);
+      letter-spacing: 0.05em;
+    }
+
+    .action-arrow-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-pill);
+      background: var(--background-color);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      .material-symbols-outlined { font-size: 1rem; }
+    }
+
+    /* States */
+    .loading-state-card, .empty-state-card {
+      background: var(--surface-color);
+      border: 1px dashed var(--border-color);
+      border-radius: 24px;
+      padding: 4rem 2rem;
+      text-align: center;
+      color: var(--text-secondary);
+
+      .spin {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 0.75rem;
+        animation: spin 1s linear infinite;
+      }
+
+      .empty-icon-circle {
+        width: 64px;
+        height: 64px;
+        background: var(--background-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem auto;
+        color: var(--text-secondary);
+
+        .material-symbols-outlined { font-size: 2.2rem; }
+      }
+
+      h3 {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        color: var(--text-primary);
+        font-size: 1.25rem;
+        margin-bottom: 0.4rem;
+      }
+
+      p { margin: 0; font-size: 0.92rem; }
+    }
+
+    /* Pagination */
+    .pagination-bar {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 1rem;
-      margin-top: 2rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border-color);
+      padding-top: 1rem;
     }
-    
-    .page-btn {
-      padding: 0.5rem 1rem;
+
+    .page-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.45rem 1rem;
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-pill);
       background: var(--surface-color);
+      color: var(--text-primary);
+      font-size: 0.84rem;
+      font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s;
-      
-      &:hover:not(:disabled) { border-color: var(--primary-color); }
-      &:disabled { opacity: 0.5; cursor: not-allowed; }
-    }
-    
-    .page-info { font-size: 0.875rem; color: var(--text-secondary); }
-    
-    @media (max-width: 768px) {
-      .page-header { flex-direction: column; 
-        h1 { font-size: 1.5rem; }
-        .btn { width: 100%; justify-content: center; }
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
       }
-      .chip { padding: 0.375rem 0.75rem; font-size: 0.8rem; }
-      .notif-card { padding: 0.75rem; }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
     }
+
+    .page-count-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
   `]
 })
 export class NotificationDashboardComponent implements OnInit {
   notificationService = inject(NotificationService);
-  
-  // Config de tipos con iconos y colores
-  tipos: NotificacionTipo[] = [
-    { key: 'CASA_REGISTRADA', label: 'Casas', icon: '🏠', color: '#22c55e' },
-    { key: 'VISITA_PROGRAMADA', label: 'Visitas', icon: '📅', color: '#3b82f6' },
-    { key: 'VISITA_COMPLETADA', label: 'Completadas', icon: '✅', color: '#10b981' },
-    { key: 'PERSONA_REQUIERE_VISITA', label: 'Requiere Visita', icon: '🤝', color: '#f59e0b' },
-    { key: 'ASIGNACION_CREADA', label: 'Asignación Nueva', icon: '🎤', color: '#8b5cf6' },
-    { key: 'ASIGNACION_ACTUALIZADA', label: 'Asignación Actualizada', icon: '🔄', color: '#ec4899' },
-    { key: 'ASIGNACION_COMPLETADA', label: 'Asignación Completada', icon: '🎯', color: '#14b8a6' },
-  ];
-  
-  PAGE_SIZE = 50;
-  
-  selectedTipo = signal<string | null>(null);
-  currentPage = signal(1);
-  
-  // Notificaciones filtradas por tipo
-  filteredNotificaciones = computed(() => {
-    const tipo = this.selectedTipo();
-    let notifs = this.notificationService.notificaciones();
-    if (tipo) {
-      notifs = notifs.filter(n => n.tipo === tipo);
+  private router = inject(Router);
+
+  categorias: CategoriaNotificacion[] = [
+    {
+      key: 'ASIGNACIONES',
+      label: 'Asignaciones de Reunión',
+      icon: 'assignment',
+      color: '#8b5cf6',
+      tiposBackend: ['ASIGNACION_CREADA', 'ASIGNACION_ACTUALIZADA', 'ASIGNACION_COMPLETADA']
+    },
+    {
+      key: 'VISITAS',
+      label: 'Visitas',
+      icon: 'event_available',
+      color: '#3b82f6',
+      tiposBackend: ['VISITA_PROGRAMADA', 'VISITA_COMPLETADA']
+    },
+    {
+      key: 'CASAS',
+      label: 'Casas',
+      icon: 'home',
+      color: '#22c55e',
+      tiposBackend: ['CASA_REGISTRADA']
+    },
+    {
+      key: 'ALERTAS',
+      label: 'Requiere Atención',
+      icon: 'warning',
+      color: '#f59e0b',
+      tiposBackend: ['PERSONA_REQUIERE_VISITA']
     }
-    return notifs;
+  ];
+
+  PAGE_SIZE = 30;
+
+  selectedCatKey = signal<string>('TODOS');
+  currentPage = signal(1);
+
+  filteredNotificaciones = computed(() => {
+    const key = this.selectedCatKey();
+    const all = this.notificationService.notificaciones();
+    if (key === 'TODOS') return all;
+
+    const catConfig = this.categorias.find(c => c.key === key);
+    if (!catConfig) return all;
+
+    return all.filter(n => catConfig.tiposBackend.includes(n.tipo));
   });
-  
-  // Total de páginas
+
   totalPages = computed(() => {
-    return Math.ceil(this.filteredNotificaciones().length / this.PAGE_SIZE);
+    return Math.ceil(this.filteredNotificaciones().length / this.PAGE_SIZE) || 1;
   });
-  
-  // Notificaciones paginadas y agrupadas
-  groupedNotificaciones = computed(() => {
+
+  pagedNotificaciones = computed(() => {
     const notifs = this.filteredNotificaciones();
     const page = this.currentPage();
     const start = (page - 1) * this.PAGE_SIZE;
-    const paged = notifs.slice(start, start + this.PAGE_SIZE);
-    
-    // Agrupar por tipo
-    const groups: { tipo: string; notificaciones: Notificacion[] }[] = [];
-    const grouped = new Map<string, Notificacion[]>();
-    
-    for (const notif of paged) {
-      const existing = grouped.get(notif.tipo) || [];
-      existing.push(notif);
-      grouped.set(notif.tipo, existing);
-    }
-    
-    grouped.forEach((notificaciones, tipo) => {
-      groups.push({ tipo, notificaciones });
-    });
-    
-    // Ordenar por tipo
-    return groups.sort((a, b) => a.tipo.localeCompare(b.tipo));
+    return notifs.slice(start, start + this.PAGE_SIZE);
   });
-  
+
   ngOnInit() {
     this.notificationService.loadNotifications().subscribe();
   }
-  
-  setFilter(tipo: string | null) {
-    this.selectedTipo.set(tipo);
+
+  setCategory(key: string) {
+    this.selectedCatKey.set(key);
     this.currentPage.set(1);
   }
-  
-  getCountByTipo(tipo: string): number {
-    return this.notificationService.notificaciones().filter(n => n.tipo === tipo).length;
+
+  getTotalCount(): number {
+    return this.notificationService.notificaciones().length;
   }
-  
-  getTipoConfig(tipo: string): NotificacionTipo | undefined {
-    return this.tipos.find(t => t.key === tipo);
+
+  getCatCount(key: string): number {
+    const catConfig = this.categorias.find(c => c.key === key);
+    if (!catConfig) return 0;
+    return this.notificationService.notificaciones().filter(n => catConfig.tiposBackend.includes(n.tipo)).length;
   }
-  
-  getTipoLabel(tipo: string): string {
-    const config = this.getTipoConfig(tipo);
-    return config?.label || tipo;
+
+  getCatLabel(key: string): string {
+    const cat = this.categorias.find(c => c.key === key);
+    return cat?.label || key;
   }
-  
+
+  getNotifMetadata(tipo: string): { icon: string; color: string; label: string } {
+    for (const cat of this.categorias) {
+      if (cat.tiposBackend.includes(tipo)) {
+        return { icon: cat.icon, color: cat.color, label: cat.label };
+      }
+    }
+    return { icon: 'notifications', color: '#64748b', label: 'Notificación' };
+  }
+
   markRead(notif: Notificacion) {
     if (!notif.leida) {
       this.notificationService.markAsRead(notif.id).subscribe();
     }
   }
-  
+
   markAllRead() {
     this.notificationService.markAllAsRead().subscribe();
   }
-  
+
   formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleString('es-ES', { 
       day: 'numeric', 
@@ -409,13 +618,24 @@ export class NotificationDashboardComponent implements OnInit {
       minute: '2-digit' 
     });
   }
-  
+
+  goToAction(notif: Notificacion) {
+    this.markRead(notif);
+    if (notif.tipo.startsWith('ASIGNACION_')) {
+      this.router.navigate(['/asignaciones']);
+    } else if (notif.tipo.startsWith('VISITA_') || notif.tipo === 'PERSONA_REQUIERE_VISITA') {
+      this.router.navigate(['/visitas']);
+    } else if (notif.tipo.startsWith('CASA_') || notif.casa_id) {
+      this.router.navigate(['/casas']);
+    }
+  }
+
   prevPage() {
     if (this.currentPage() > 1) {
       this.currentPage.update(p => p - 1);
     }
   }
-  
+
   nextPage() {
     if (this.currentPage() < this.totalPages()) {
       this.currentPage.update(p => p + 1);
