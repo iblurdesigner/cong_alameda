@@ -18,7 +18,7 @@
     "module": "ES2022",
     "lib": ["ES2022", "dom"],
     "useDefineForClassFields": false,
-    "types": ["google.maps"]
+    "types": ["google.maps", "jest", "node"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

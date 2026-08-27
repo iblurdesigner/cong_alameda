@@ -34,11 +34,16 @@ func (r *AsignacionRepository) Create(ctx context.Context, asignacion *models.As
 		asignacion.ID = uuid.New()
 	}
 
+	var userID *uuid.UUID
+	if asignacion.UserID != uuid.Nil {
+		userID = &asignacion.UserID
+	}
+
 	_, err := r.db.Exec(ctx, query,
 		asignacion.ID,
 		asignacion.SemanaID,
 		asignacion.TipoAsignacionID,
-		asignacion.UserID,
+		userID,
 		asignacion.GrupoID,
 		asignacion.DiaSemana,
 		asignacion.Observaciones,
@@ -245,7 +250,7 @@ func (r *AsignacionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 	`
 
 	a := &models.AsignacionSemanal{}
-	var tempUserID uuid.UUID
+	var tempUserID *uuid.UUID
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&a.ID, &a.SemanaID, &a.TipoAsignacionID, &tempUserID, &a.GrupoID, &a.DiaSemana,
 		&a.Observaciones, &a.CreatedAt, &a.UpdatedAt,
@@ -256,7 +261,9 @@ func (r *AsignacionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mode
 		}
 		return nil, err
 	}
-	a.UserID = tempUserID
+	if tempUserID != nil {
+		a.UserID = *tempUserID
+	}
 	return a, nil
 }
 
@@ -267,7 +274,12 @@ func (r *AsignacionRepository) Update(ctx context.Context, id uuid.UUID, userID 
 		WHERE id = $5
 	`
 
-	_, err := r.db.Exec(ctx, query, userID, grupoID, observaciones, time.Now(), id)
+	var uid *uuid.UUID
+	if userID != uuid.Nil {
+		uid = &userID
+	}
+
+	_, err := r.db.Exec(ctx, query, uid, grupoID, observaciones, time.Now(), id)
 	return err
 }
 

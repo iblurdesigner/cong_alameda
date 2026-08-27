@@ -1847,8 +1847,37 @@ export class AsignacionListComponent implements OnInit {
         if (res.data.length > 0) {
           let selected = res.data.find((s: Semana) => s.id === this.selectedSemanaId);
           if (!selected) {
-            selected = res.data.find((s: Semana) => !s.archivado) || res.data[0];
-            this.selectedSemanaId = selected.id;
+            const todayISO = this.formatDateToISO(new Date());
+            const mondayISO = this.formatDateToISO(this.getMonday(new Date()));
+
+            // 1. Semana del lunes actual
+            selected = res.data.find((s: Semana) => !s.archivado && s.fecha_inicio.substring(0, 10) === mondayISO);
+
+            // 2. O semana que abarca la fecha actual
+            if (!selected) {
+              selected = res.data.find((s: Semana) => {
+                if (s.archivado) return false;
+                const start = s.fecha_inicio.substring(0, 10);
+                const end = s.fecha_fin ? s.fecha_fin.substring(0, 10) : '';
+                return start <= todayISO && (!end || todayISO <= end);
+              });
+            }
+
+            // 3. O la semana activa más cercana a hoy
+            if (!selected) {
+              const activeSemanas = res.data.filter((s: Semana) => !s.archivado);
+              const candidates = activeSemanas.length > 0 ? activeSemanas : res.data;
+              const todayTime = new Date().getTime();
+              selected = candidates.reduce((prev: Semana, curr: Semana) => {
+                const prevDist = Math.abs(this.parseLocalDate(prev.fecha_inicio).getTime() - todayTime);
+                const currDist = Math.abs(this.parseLocalDate(curr.fecha_inicio).getTime() - todayTime);
+                return currDist < prevDist ? curr : prev;
+              }, candidates[0]);
+            }
+
+            if (selected) {
+              this.selectedSemanaId = selected.id;
+            }
           }
           if (selected && selected.fecha_inicio) {
             this.currentRefDate = this.parseLocalDate(selected.fecha_inicio);
@@ -2139,26 +2168,33 @@ export class AsignacionListComponent implements OnInit {
 
     for (const tipo of tipos) {
       const form = this.dayFormMap[tipo.id];
-      if (form && (form.user_id || form.grupo_id)) {
-        const existing = this.getAsignacionForDiaAndTipo(this.editingDiaSemana, tipo.id);
+      const existing = this.getAsignacionForDiaAndTipo(this.editingDiaSemana, tipo.id);
+      const isAseo = tipo.nombre === 'ASEO_SALON';
+
+      const selectedUserId = !isAseo && form?.user_id ? form.user_id : undefined;
+      const selectedGrupoId = isAseo && form?.grupo_id ? form.grupo_id : undefined;
+
+      if (selectedUserId || selectedGrupoId) {
         if (existing) {
           requests.push(this.asignacionService.updateAsignacion(
             existing.id,
-            form.user_id || undefined,
-            form.grupo_id || undefined,
-            form.observaciones || undefined
+            selectedUserId,
+            selectedGrupoId,
+            form?.observaciones || undefined
           ));
         } else {
           const payload = {
             semana_id: this.selectedSemanaId,
             tipo_asignacion_id: tipo.id,
-            user_id: form.user_id || undefined,
-            grupo_id: form.grupo_id || undefined,
+            user_id: selectedUserId || null,
+            grupo_id: selectedGrupoId || null,
             dia_semana: this.editingDiaSemana,
-            observaciones: form.observaciones || undefined
+            observaciones: form?.observaciones || undefined
           };
           requests.push(this.asignacionService.createAsignacion(payload as any));
         }
+      } else if (existing) {
+        requests.push(this.asignacionService.deleteAsignacion(existing.id));
       }
     }
 

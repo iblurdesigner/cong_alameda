@@ -180,6 +180,24 @@ describe('AsignacionListComponent', () => {
       expect(payload.grupo_id).toBe('grupo-123');
       expect(payload.user_id).toBeUndefined();
     });
+
+    it('should send grupo_id (not user_id) for ASEO_SALON in saveDiaAsignaciones', () => {
+      component.selectedSemanaId = 'week-1';
+      component.openEditDiaModal(3);
+      component.dayFormMap[ASEO_SALON_UUID] = {
+        user_id: '',
+        grupo_id: 'grupo-456',
+        observaciones: 'Limpieza general'
+      };
+      component.saveDiaAsignaciones();
+
+      expect(mockAsignacionService.createAsignacion).toHaveBeenCalled();
+      const createCalls = mockAsignacionService.createAsignacion.mock.calls;
+      const aseoCall = createCalls.find((call: any[]) => call[0].tipo_asignacion_id === ASEO_SALON_UUID);
+      expect(aseoCall).toBeDefined();
+      expect(aseoCall[0].grupo_id).toBe('grupo-456');
+      expect(aseoCall[0].user_id).toBeNull();
+    });
   });
 
   describe('Req 3 - select week from route queryParam (semana_id)', () => {
@@ -205,6 +223,43 @@ describe('AsignacionListComponent', () => {
 
       expect(f.componentInstance.selectedSemanaId).toBe('XYZ');
       expect(mockAsignacionService.loadAsignacionesBySemana).toHaveBeenCalledWith('XYZ');
+    });
+
+    it('should pick the week closest to current date when no queryParam is provided', () => {
+      queryParamsSubject.next({});
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const currentDay = String(now.getDate()).padStart(2, '0');
+      const todayISO = `${currentYear}-${currentMonth}-${currentDay}`;
+
+      mockSemanaService.loadSemanas.mockReturnValue(
+        of({
+          data: [
+            {
+              id: 'DEC_WEEK',
+              nombre: 'Semana Diciembre',
+              fecha_inicio: '2026-12-28',
+              fecha_fin: '2027-01-03',
+              archivado: false,
+              created_at: new Date().toISOString(),
+            },
+            {
+              id: 'CURRENT_WEEK',
+              nombre: 'Semana Actual',
+              fecha_inicio: todayISO,
+              fecha_fin: todayISO,
+              archivado: false,
+              created_at: new Date().toISOString(),
+            }
+          ],
+        })
+      );
+
+      const f = TestBed.createComponent(AsignacionListComponent);
+      f.detectChanges();
+
+      expect(f.componentInstance.selectedSemanaId).toBe('CURRENT_WEEK');
     });
   });
 });
