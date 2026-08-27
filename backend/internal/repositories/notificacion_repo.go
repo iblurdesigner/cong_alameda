@@ -89,7 +89,7 @@ func (r *NotificacionRepository) GetByID(ctx context.Context, id uuid.UUID) (*mo
 func (r *NotificacionRepository) GetByUserID(ctx context.Context, userID uuid.UUID, leida *bool, tipo string) ([]*models.Notificacion, int, error) {
 	// Get notifications for user via notificacion_usuario
 	baseQuery := `
-		SELECT n.id, n.tipo, n.casa_id, n.destinatarios, n.mensaje, nu.leida, n.created_at
+		SELECT n.id, n.tipo, n.casa_id, n.destinatarios, n.mensaje, nu.leida, n.created_at, n.referencia_id, n.referencia_tipo
 		FROM notificaciones n
 		JOIN notificacion_usuario nu ON n.id = nu.notificacion_id
 		WHERE nu.usuario_id = $1
@@ -140,6 +140,8 @@ func (r *NotificacionRepository) GetByUserID(ctx context.Context, userID uuid.UU
 			&notif.Mensaje,
 			&notif.Leida,
 			&notif.CreatedAt,
+			&notif.ReferenciaID,
+			&notif.ReferenciaTipo,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("error scanning notificacion: %w", err)

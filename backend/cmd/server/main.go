@@ -22,8 +22,8 @@ import (
 )
 
 func main() {
-	// Load .env file if exists
-	if err := godotenv.Load(); err != nil {
+	// Load .env file if exists (overriding system vars if present)
+	if err := godotenv.Overload(); err != nil {
 		log.Println("No .env file found, using environment variables")
 	}
 
@@ -38,6 +38,11 @@ func main() {
 	defer db.Close()
 
 	log.Println("Connected to database successfully")
+
+	// Run database migrations
+	if err := database.RunMigrations(db.Pool, "./migrations"); err != nil {
+		log.Printf("Warning executing migrations: %v\n", err)
+	}
 
 	// Initialize JWT manager
 	jwtManager := jwt.NewJWTManager(cfg.JWTSecret, cfg.JWTExpiry)
@@ -99,7 +104,7 @@ func main() {
 	asignacionRepo := repositories.NewAsignacionRepository(db.Pool)
 
 	// Initialize Fase 3 services
-	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo)
+	asignacionService := services.NewAsignacionService(asignacionRepo, tipoAsignRepo, semanaRepo, diaRepo, userRepo, notifService)
 
 	// Initialize Fase 3 handlers
 	asignacionHandler := handlers.NewAsignacionHandler(asignacionService)

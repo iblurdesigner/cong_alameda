@@ -18,7 +18,7 @@ import { environment } from '../../../environments/environment';
           <a routerLink="/grupos" class="back-link">← Volver a Grupos</a>
           @if (grupo()) {
             <h1>{{ grupo()!.nombre }}</h1>
-            <p>Grupo #{{ grupo()!.numero }} • {{ grupo()!.territorios?.length || 0 }} territorios</p>
+            <p>Grupo #{{ grupo()!.numero }} • {{ grupo()!.territorios.length || 0 }} territorios</p>
           }
         </div>
         @if ((authService.isSuperintendente() || authService.isSuperAdmin()) && grupo()) {
@@ -425,7 +425,7 @@ export class GrupoDetailComponent implements OnInit {
   
   closePreview() {
     this.previewTerritorio.set(null);
-    this.previewUrl.set('' as SafeResourceUrl);
+    this.previewUrl.set('');
   }
   
   deleteTerritorio(territorio: Territorio) {

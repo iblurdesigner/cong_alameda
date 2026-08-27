@@ -56,6 +56,7 @@ type AsignacionService struct {
 	semanaRepo     semanaRepo
 	diaRepo        diaRepo
 	userRepo       userRepo
+	notifService   *NotificacionService
 }
 
 func NewAsignacionService(
@@ -64,6 +65,7 @@ func NewAsignacionService(
 	semanaRepo semanaRepo,
 	diaRepo diaRepo,
 	userRepo userRepo,
+	notifService *NotificacionService,
 ) *AsignacionService {
 	return &AsignacionService{
 		asignacionRepo: asignacionRepo,
@@ -71,6 +73,7 @@ func NewAsignacionService(
 		semanaRepo:     semanaRepo,
 		diaRepo:        diaRepo,
 		userRepo:       userRepo,
+		notifService:   notifService,
 	}
 }
 
@@ -137,6 +140,46 @@ func (s *AsignacionService) enforceAseoSalonPolicy(ctx context.Context, tipoID u
 	return nil
 }
 
+func (s *AsignacionService) notifyAsignacion(ctx context.Context, tipoNotif models.NotificacionTipo, userID uuid.UUID, tipoID uuid.UUID, semanaID uuid.UUID) {
+	if s.notifService == nil || userID == uuid.Nil {
+		return
+	}
+
+	var tipoNombre string
+	if tipo, err := s.tipoAsignRepo.GetByID(ctx, tipoID); err == nil && tipo != nil {
+		tipoNombre = tipo.Nombre
+	}
+
+	var semanaNombre string
+	if semana, err := s.semanaRepo.GetByID(ctx, semanaID); err == nil && semana != nil && semana.Nombre != nil {
+		semanaNombre = *semana.Nombre
+	}
+
+	var msg string
+	if tipoNotif == models.NotifTipoAsignacionCreada {
+		if tipoNombre != "" && semanaNombre != "" {
+			msg = "Se te ha asignado la función '" + tipoNombre + "' para la semana '" + semanaNombre + "'."
+		} else {
+			msg = "Se te ha asignado una nueva función en el programa semanal."
+		}
+	} else {
+		if tipoNombre != "" && semanaNombre != "" {
+			msg = "Se ha actualizado tu asignación: función '" + tipoNombre + "' para la semana '" + semanaNombre + "'."
+		} else {
+			msg = "Se ha actualizado tu asignación en el programa semanal."
+		}
+	}
+
+	refTipo := models.RefTipoAsignacion
+	_ = s.notifService.CreateConReferencia(ctx, &models.Notificacion{
+		Tipo:           tipoNotif,
+		Destinatarios:  []uuid.UUID{userID},
+		Mensaje:        msg,
+		ReferenciaID:   &semanaID,
+		ReferenciaTipo: &refTipo,
+	})
+}
+
 func (s *AsignacionService) Create(ctx context.Context, asignacion *models.AsignacionSemanal) error {
 	// Enforce ASEO_SALON group-only rule before any other validation.
 	if err := s.enforceAseoSalonPolicy(ctx, asignacion.TipoAsignacionID, asignacion.UserID, asignacion.GrupoID); err != nil {
@@ -157,7 +200,11 @@ func (s *AsignacionService) Create(ctx context.Context, asignacion *models.Asign
 		return err
 	}
 
-	return s.asignacionRepo.Create(ctx, asignacion)
+	err = s.asignacionRepo.Create(ctx, asignacion)
+	if err == nil && asignacion.UserID != uuid.Nil {
+		s.notifyAsignacion(ctx, models.NotifTipoAsignacionCreada, asignacion.UserID, asignacion.TipoAsignacionID, asignacion.SemanaID)
+	}
+	return err
 }
 
 func (s *AsignacionService) Update(ctx context.Context, id uuid.UUID, userID uuid.UUID, grupoID *uuid.UUID, observaciones *string) error {
@@ -182,7 +229,11 @@ func (s *AsignacionService) Update(ctx context.Context, id uuid.UUID, userID uui
 		}
 	}
 
-	return s.asignacionRepo.Update(ctx, id, userID, grupoID, observaciones)
+	err = s.asignacionRepo.Update(ctx, id, userID, grupoID, observaciones)
+	if err == nil && userID != uuid.Nil {
+		s.notifyAsignacion(ctx, models.NotifTipoAsignacionActualizada, userID, existing.TipoAsignacionID, existing.SemanaID)
+	}
+	return err
 }
 
 func (s *AsignacionService) Delete(ctx context.Context, id uuid.UUID) error {
@@ -202,6 +253,9 @@ func (s *AsignacionService) BulkCreate(ctx context.Context, asignaciones []*mode
 		}
 		if err := s.asignacionRepo.Create(ctx, a); err != nil {
 			return err
+		}
+		if a.UserID != uuid.Nil {
+			s.notifyAsignacion(ctx, models.NotifTipoAsignacionCreada, a.UserID, a.TipoAsignacionID, a.SemanaID)
 		}
 	}
 	return nil

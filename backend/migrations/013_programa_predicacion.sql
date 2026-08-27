@@ -21,12 +21,13 @@ CREATE TABLE IF NOT EXISTS programas_predicacion (
 -- Tabla de relación muchos a muchos para territorios
 CREATE TABLE IF NOT EXISTS programa_predicacion_territorios (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    programa_predicacion_id UUID NOT NULL REFERENCES programas_predicacion(id) ON DELETE CASCADE,
+    programa_predicacion_id UUID REFERENCES programas_predicacion(id) ON DELETE CASCADE,
     territorio_id UUID NOT NULL REFERENCES territorios(id) ON DELETE CASCADE,
     orden INT NOT NULL DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    UNIQUE(programa_predicacion_id, territorio_id)
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE programa_predicacion_territorios ADD COLUMN IF NOT EXISTS programa_predicacion_id UUID REFERENCES programas_predicacion(id) ON DELETE CASCADE;
 
 -- Index para buscar por fecha
 CREATE INDEX IF NOT EXISTS idx_programas_predicacion_fecha ON programas_predicacion(fecha DESC);

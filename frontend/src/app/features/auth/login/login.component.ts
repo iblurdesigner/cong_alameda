@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, LoginResponse } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -182,7 +182,7 @@ export class LoginComponent {
   error = signal<string | null>(null);
   
   goToRecovery() {
-    this.router.navigate(['/recovery']);
+    void this.router.navigate(['/recovery']);
   }
 
   onSubmit() {
@@ -195,11 +195,11 @@ export class LoginComponent {
     this.error.set(null);
     
     this.authService.login(this.email, this.password).subscribe({
-      next: (response) => {
+      next: (response: LoginResponse) => {
         this.authService.setAuth(response.token, response.user);
-        this.router.navigate(['/dashboard']);
+        void this.router.navigate(['/dashboard']);
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Credenciales inválidas');
       }

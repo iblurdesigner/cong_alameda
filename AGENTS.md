@@ -49,8 +49,8 @@ Cuando detectes un pedido de cambio:
 
 ## Stack Detectado
 
-- **Backend**: Go (Gin), PostgreSQL, JWT auth
-- **Frontend**: Angular 17+, SCSS, Jest testing
+- **Backend**: Go (Fiber), PostgreSQL, JWT auth
+- **Frontend**: Angular 21, SCSS, Jest testing
 - **DevOps**: Docker, Nginx
 
 ---

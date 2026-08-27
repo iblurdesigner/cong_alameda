@@ -390,8 +390,8 @@ export class ProfileComponent implements OnInit {
   }
 
   loadCurrentUser() {
-    this.http.get<any>(`${environment.apiUrl}/auth/me`).subscribe({
-      next: (user) => {
+    this.http.get<User>(`${environment.apiUrl}/auth/me`).subscribe({
+      next: (user: User) => {
         this.formData = {
           nombre: user.nombre || '',
           telefono: user.telefono || '',
@@ -429,13 +429,13 @@ export class ProfileComponent implements OnInit {
     this.successMessage.set(null);
     this.errorMessage.set(null);
 
-    this.http.put<any>(`${environment.apiUrl}/auth/profile`, {
+    this.http.put<User>(`${environment.apiUrl}/auth/profile`, {
       nombre: this.formData.nombre,
       telefono: this.formData.telefono || null,
       notificaciones_email: this.formData.notificaciones_email,
       notificaciones_whatsapp: this.formData.notificaciones_whatsapp
     }).subscribe({
-      next: (user) => {
+      next: (user: User) => {
         // Update local storage with new user data
         const currentUser = this.authService.currentUser();
         if (currentUser) {

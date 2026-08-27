@@ -188,7 +188,7 @@ export class CasaFormComponent implements OnInit {
     if (this.casaId) {
       this.isEdit.set(true);
       this.casaService.getCasa(this.casaId).subscribe({
-        next: (casa) => {
+        next: (casa: Casa) => {
           this.formData = { ...casa };
           // Si tiene foto, mostrarla
           if (casa.foto_url) {
@@ -196,7 +196,7 @@ export class CasaFormComponent implements OnInit {
           }
         },
         error: () => {
-          this.router.navigate(['/casas']);
+          void this.router.navigate(['/casas']);
         }
       });
     }
@@ -217,7 +217,7 @@ export class CasaFormComponent implements OnInit {
       : this.casaService.createCasa(this.formData);
     
     operation.subscribe({
-      next: (casa) => {
+      next: (casa: Casa) => {
         // Si hay foto seleccionada, subirla
         if (this.selectedFile && casa.id) {
           this.casaService.uploadFoto(casa.id, this.selectedFile).subscribe({
@@ -236,7 +236,7 @@ export class CasaFormComponent implements OnInit {
           this.successMessage.set('Casa guardada exitosamente!');
         }
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.loading.set(false);
         this.error.set(err.error?.message || 'Error al guardar');
       }
@@ -262,6 +262,6 @@ export class CasaFormComponent implements OnInit {
   }
 
   goToList() {
-    this.router.navigate(['/casas']);
+    void this.router.navigate(['/casas']);
   }
 }

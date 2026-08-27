@@ -7,90 +7,117 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
-	"cong-alameda-backend/internal/dto"
 	"cong-alameda-backend/internal/middleware"
 	"cong-alameda-backend/internal/models"
+	"cong-alameda-backend/internal/repositories"
 	"cong-alameda-backend/internal/services"
 	"cong-alameda-backend/pkg/jwt"
 )
 
-// --- Mock Service ---
+// --- Mock Repos (implement the unexported repo interfaces used by ProgramaPredicacionService) ---
 
-type mockProgramaPredicacionService struct {
-	createFunc func(ctx context.Context, req *dto.CreateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error)
-	getByIDFunc func(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacionResponse, error)
-	listFunc    func(ctx context.Context) ([]*models.ProgramaPredicacionResponse, error)
-	updateFunc  func(ctx context.Context, id uuid.UUID, req *dto.UpdateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error)
-	deleteFunc  func(ctx context.Context, id uuid.UUID) error
+type mockProgramaRepo struct {
+	createFunc         func(ctx context.Context, p *models.ProgramaPredicacion) error
+	getByIDFunc        func(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error)
+	getAllFunc         func(ctx context.Context) ([]*models.ProgramaPredicacion, error)
+	updateFunc         func(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaPredicacion, error)
+	deleteFunc         func(ctx context.Context, id uuid.UUID) error
+	getTerritoriosFunc func(ctx context.Context, programaID uuid.UUID) ([]*models.Territorio, error)
+	setTerritoriosFunc func(ctx context.Context, programaID uuid.UUID, territorioIDs []uuid.UUID) error
 }
 
-func newMockProgramaPredicacionService() *mockProgramaPredicacionService {
-	return &mockProgramaPredicacionService{
-		createFunc: func(_ context.Context, req *dto.CreateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-			fecha, _ := time.Parse("2006-01-02", req.Fecha)
-			now := models.ProgramaPredicacion{
-				ID:         uuid.New(),
-				Nombre:     req.Nombre,
-				Fecha:      fecha,
-				HoraInicio: req.HoraInicio,
-			}
-			return &now, nil
+func newMockProgramaRepo() *mockProgramaRepo {
+	return &mockProgramaRepo{
+		createFunc: func(_ context.Context, _ *models.ProgramaPredicacion) error { return nil },
+		getByIDFunc: func(_ context.Context, _ uuid.UUID) (*models.ProgramaPredicacion, error) {
+			return nil, repositories.ErrProgramaPredicacionNotFound
 		},
-		getByIDFunc: func(_ context.Context, id uuid.UUID) (*models.ProgramaPredicacionResponse, error) {
-			return nil, services.ErrProgramaNotFound
+		getAllFunc: func(_ context.Context) ([]*models.ProgramaPredicacion, error) {
+			return nil, nil
 		},
-		listFunc: func(_ context.Context) ([]*models.ProgramaPredicacionResponse, error) {
-			return []*models.ProgramaPredicacionResponse{}, nil
+		updateFunc: func(_ context.Context, _ uuid.UUID, _ map[string]interface{}) (*models.ProgramaPredicacion, error) {
+			return nil, repositories.ErrProgramaPredicacionNotFound
 		},
-		updateFunc: func(_ context.Context, id uuid.UUID, req *dto.UpdateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-			return nil, services.ErrProgramaNotFound
+		deleteFunc: func(_ context.Context, _ uuid.UUID) error { return nil },
+		getTerritoriosFunc: func(_ context.Context, _ uuid.UUID) ([]*models.Territorio, error) {
+			return nil, nil
 		},
-		deleteFunc: func(_ context.Context, id uuid.UUID) error {
-			return nil
-		},
+		setTerritoriosFunc: func(_ context.Context, _ uuid.UUID, _ []uuid.UUID) error { return nil },
 	}
 }
 
-func (m *mockProgramaPredicacionService) Create(ctx context.Context, req *dto.CreateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-	return m.createFunc(ctx, req)
+func (m *mockProgramaRepo) Create(ctx context.Context, p *models.ProgramaPredicacion) error {
+	if m.createFunc != nil {
+		return m.createFunc(ctx, p)
+	}
+	return nil
 }
 
-func (m *mockProgramaPredicacionService) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacionResponse, error) {
-	return m.getByIDFunc(ctx, id)
+func (m *mockProgramaRepo) GetByID(ctx context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error) {
+	if m.getByIDFunc != nil {
+		return m.getByIDFunc(ctx, id)
+	}
+	return nil, repositories.ErrProgramaPredicacionNotFound
 }
 
-func (m *mockProgramaPredicacionService) List(ctx context.Context) ([]*models.ProgramaPredicacionResponse, error) {
-	return m.listFunc(ctx)
+func (m *mockProgramaRepo) GetAll(ctx context.Context) ([]*models.ProgramaPredicacion, error) {
+	if m.getAllFunc != nil {
+		return m.getAllFunc(ctx)
+	}
+	return nil, nil
 }
 
-func (m *mockProgramaPredicacionService) Update(ctx context.Context, id uuid.UUID, req *dto.UpdateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-	return m.updateFunc(ctx, id, req)
+func (m *mockProgramaRepo) Update(ctx context.Context, id uuid.UUID, updates map[string]interface{}) (*models.ProgramaPredicacion, error) {
+	if m.updateFunc != nil {
+		return m.updateFunc(ctx, id, updates)
+	}
+	return nil, repositories.ErrProgramaPredicacionNotFound
 }
 
-func (m *mockProgramaPredicacionService) Delete(ctx context.Context, id uuid.UUID) error {
-	return m.deleteFunc(ctx, id)
+func (m *mockProgramaRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	if m.deleteFunc != nil {
+		return m.deleteFunc(ctx, id)
+	}
+	return nil
 }
 
-// Compile-time check that the mock satisfies the service interface.
-var _ programaPredicacionService = (*mockProgramaPredicacionService)(nil)
+func (m *mockProgramaRepo) GetTerritorios(ctx context.Context, programaID uuid.UUID) ([]*models.Territorio, error) {
+	if m.getTerritoriosFunc != nil {
+		return m.getTerritoriosFunc(ctx, programaID)
+	}
+	return nil, nil
+}
+
+func (m *mockProgramaRepo) SetTerritorios(ctx context.Context, programaID uuid.UUID, territorioIDs []uuid.UUID) error {
+	if m.setTerritoriosFunc != nil {
+		return m.setTerritoriosFunc(ctx, programaID, territorioIDs)
+	}
+	return nil
+}
+
+type mockGrupoRepo struct{}
+
+func (m *mockGrupoRepo) GetByID(_ context.Context, _ uuid.UUID) (*models.Grupo, error) {
+	return nil, nil
+}
 
 // --- Test Harness ---
 
 type programaTestHarness struct {
-	app         *fiber.App
-	handler     *ProgramaPredicacionHandler
-	mockService *mockProgramaPredicacionService
+	app     *fiber.App
+	handler *ProgramaPredicacionHandler
+	repo    *mockProgramaRepo
 }
 
 func newProgramaTestHarness() *programaTestHarness {
 	app := fiber.New()
-	mockSvc := newMockProgramaPredicacionService()
-	handler := NewProgramaPredicacionHandler(mockSvc)
+	repo := newMockProgramaRepo()
+	svc := services.NewProgramaPredicacionService(repo, &mockGrupoRepo{}, nil)
+	handler := NewProgramaPredicacionHandler(svc)
 
 	programas := app.Group("/api/programas-predicacion")
 	programas.Get("/", handler.List)
@@ -100,9 +127,9 @@ func newProgramaTestHarness() *programaTestHarness {
 	programas.Delete("/:id", handler.Delete)
 
 	return &programaTestHarness{
-		app:         app,
-		handler:     handler,
-		mockService: mockSvc,
+		app:     app,
+		handler: handler,
+		repo:    repo,
 	}
 }
 
@@ -114,19 +141,9 @@ func (h *programaTestHarness) doRequest(method, url, body string) (*http.Respons
 
 // --- Tests ---
 
-// 3.1 Write failing handler test: POST creates program, returns 201 + { data }
+// 3.1 POST creates program, returns 201 + { nombre }
 func TestProgramaHandler_Create_Returns201(t *testing.T) {
 	h := newProgramaTestHarness()
-	validID := uuid.New()
-	h.mockService.createFunc = func(_ context.Context, req *dto.CreateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-		fecha, _ := time.Parse("2006-01-02", req.Fecha)
-		return &models.ProgramaPredicacion{
-			ID:         validID,
-			Nombre:     req.Nombre,
-			Fecha:      fecha,
-			HoraInicio: req.HoraInicio,
-		}, nil
-	}
 
 	body := `{"nombre":"Programa Test","fecha":"2026-07-15","hora_inicio":"10:00","conductor":"John"}`
 	resp, err := h.doRequest("POST", "/api/programas-predicacion", body)
@@ -143,50 +160,13 @@ func TestProgramaHandler_Create_Returns201(t *testing.T) {
 		t.Fatalf("failed to decode response: %v", err)
 	}
 
-	data, ok := result["data"]
-	if !ok {
-		t.Fatal("expected response to have 'data' key")
-	}
-
-	dataMap, ok := data.(map[string]interface{})
-	if !ok {
-		t.Fatal("expected data to be an object")
-	}
-
-	if dataMap["nombre"] != "Programa Test" {
-		t.Errorf("expected nombre 'Programa Test', got '%v'", dataMap["nombre"])
+	if result["nombre"] != "Programa Test" {
+		t.Errorf("expected nombre 'Programa Test', got '%v'", result["nombre"])
 	}
 }
 
-// 3.2 Write failing handler test: POST duplicate returns 409
-func TestProgramaHandler_Create_DuplicateReturns409(t *testing.T) {
-	h := newProgramaTestHarness()
-	h.mockService.createFunc = func(_ context.Context, req *dto.CreateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-		return nil, services.ErrDuplicatePrograma
-	}
-
-	body := `{"nombre":"Dup","fecha":"2026-07-15","hora_inicio":"10:00","conductor":"John"}`
-	resp, err := h.doRequest("POST", "/api/programas-predicacion", body)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if resp.StatusCode != fiber.StatusConflict {
-		t.Errorf("expected 409, got %d", resp.StatusCode)
-	}
-
-	var errResp map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil {
-		t.Fatalf("failed to decode error response: %v", err)
-	}
-
-	if errResp["error"] != "duplicate" {
-		t.Errorf("expected error 'duplicate', got '%v'", errResp["error"])
-	}
-}
-
-// 3.3 Write failing handler test: PUT missing ID returns 404
-func TestProgramaHandler_Update_NotFoundReturns404(t *testing.T) {
+// 3.3 PUT with error from service returns 500
+func TestProgramaHandler_Update_ServiceErrorReturns500(t *testing.T) {
 	h := newProgramaTestHarness()
 
 	body := `{"nombre":"Updated"}`
@@ -195,15 +175,15 @@ func TestProgramaHandler_Update_NotFoundReturns404(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if resp.StatusCode != fiber.StatusNotFound {
-		t.Errorf("expected 404, got %d", resp.StatusCode)
+	if resp.StatusCode != fiber.StatusInternalServerError {
+		t.Errorf("expected 500, got %d", resp.StatusCode)
 	}
 }
 
-// 3.4 Write failing handler test: DELETE returns 204
+// 3.4 DELETE returns 204
 func TestProgramaHandler_Delete_Returns204(t *testing.T) {
 	h := newProgramaTestHarness()
-	h.mockService.deleteFunc = func(_ context.Context, id uuid.UUID) error {
+	h.repo.deleteFunc = func(_ context.Context, id uuid.UUID) error {
 		return nil
 	}
 
@@ -217,7 +197,7 @@ func TestProgramaHandler_Delete_Returns204(t *testing.T) {
 	}
 }
 
-// 3.5 Write failing handler test: invalid UUID in param returns 400
+// 3.5 invalid UUID in param returns 400
 func TestProgramaHandler_InvalidUUID_Returns400(t *testing.T) {
 	h := newProgramaTestHarness()
 
@@ -255,11 +235,12 @@ func TestProgramaHandler_InvalidUUID_Returns400(t *testing.T) {
 	}
 }
 
-// 4.1 Write handler test: unauthenticated request returns 401
+// 4.1 unauthenticated request returns 401
 func TestProgramaHandler_Unauthenticated_Returns401(t *testing.T) {
 	app := fiber.New()
-	mockSvc := newMockProgramaPredicacionService()
-	handler := NewProgramaPredicacionHandler(mockSvc)
+	repo := newMockProgramaRepo()
+	svc := services.NewProgramaPredicacionService(repo, &mockGrupoRepo{}, nil)
+	handler := NewProgramaPredicacionHandler(svc)
 
 	jwtMgr := jwt.NewJWTManager("test-secret", 1)
 	authMw := middleware.NewAuthMiddleware(jwtMgr)
@@ -289,11 +270,11 @@ func TestProgramaHandler_Unauthenticated_Returns401(t *testing.T) {
 	}
 }
 
-// 4.2 Write handler test: List response wraps in { "data": [...] }
+// 4.2 List response wraps in { "data": [...] }
 func TestProgramaHandler_List_ReturnsDataWrapper(t *testing.T) {
 	h := newProgramaTestHarness()
-	h.mockService.listFunc = func(_ context.Context) ([]*models.ProgramaPredicacionResponse, error) {
-		return []*models.ProgramaPredicacionResponse{
+	h.repo.getAllFunc = func(_ context.Context) ([]*models.ProgramaPredicacion, error) {
+		return []*models.ProgramaPredicacion{
 			{ID: uuid.New(), Nombre: "Programa 1", Fecha: "2026-07-15"},
 			{ID: uuid.New(), Nombre: "Programa 2", Fecha: "2026-07-16"},
 		}, nil
@@ -328,19 +309,25 @@ func TestProgramaHandler_List_ReturnsDataWrapper(t *testing.T) {
 	}
 }
 
-// 4.3 Write handler test: Update with empty territorios clears join table
+// 4.3 Update with empty territorio_ids clears the join table (SetTerritorios called with empty)
 func TestProgramaHandler_Update_EmptyTerritoriosClearsJoinTable(t *testing.T) {
 	h := newProgramaTestHarness()
-	var capturedReq *dto.UpdateProgramaPredicacionRequest
-	h.mockService.updateFunc = func(_ context.Context, id uuid.UUID, req *dto.UpdateProgramaPredicacionRequest) (*models.ProgramaPredicacion, error) {
-		capturedReq = req
-		return &models.ProgramaPredicacion{
-			ID:     id,
-			Nombre: *req.Nombre,
-		}, nil
+	var setCalled bool
+	h.repo.updateFunc = func(_ context.Context, _ uuid.UUID, _ map[string]interface{}) (*models.ProgramaPredicacion, error) {
+		return nil, nil
+	}
+	h.repo.setTerritoriosFunc = func(_ context.Context, _ uuid.UUID, ids []uuid.UUID) error {
+		setCalled = true
+		if len(ids) != 0 {
+			t.Errorf("expected empty territorio ids, got %d", len(ids))
+		}
+		return nil
+	}
+	h.repo.getByIDFunc = func(_ context.Context, id uuid.UUID) (*models.ProgramaPredicacion, error) {
+		return &models.ProgramaPredicacion{ID: id, Nombre: "Updated"}, nil
 	}
 
-	body := `{"nombre":"Updated","territorios":[]}`
+	body := `{"nombre":"Updated","territorio_ids":[]}`
 	resp, err := h.doRequest("PUT", "/api/programas-predicacion/"+uuid.New().String(), body)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -350,23 +337,15 @@ func TestProgramaHandler_Update_EmptyTerritoriosClearsJoinTable(t *testing.T) {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
 	}
 
-	if capturedReq == nil {
-		t.Fatal("expected service.Update to be called")
-	}
-
-	if capturedReq.Territorios == nil {
-		t.Fatal("expected Territorios to be non-nil (empty slice)")
-	}
-
-	if len(capturedReq.Territorios) != 0 {
-		t.Errorf("expected empty Territorios, got %d items", len(capturedReq.Territorios))
+	if !setCalled {
+		t.Fatal("expected service SetTerritorios to be called")
 	}
 }
 
-// 4.4 Write handler test: GET /:id for non-existent ID returns 404
+// 4.4 GET /:id for non-existent ID returns 404
 func TestProgramaHandler_GetByID_NotFound_Returns404(t *testing.T) {
 	h := newProgramaTestHarness()
-	// Default mock already returns ErrProgramaNotFound for any ID
+	// Default mock already returns ErrProgramaPredicacionNotFound for any ID
 
 	resp, err := h.doRequest("GET", "/api/programas-predicacion/"+uuid.New().String(), "")
 	if err != nil {

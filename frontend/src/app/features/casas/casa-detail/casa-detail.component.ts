@@ -367,7 +367,7 @@ export class CasaDetailComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
-        this.router.navigate(['/casas']);
+        void this.router.navigate(['/casas']);
       }
     });
   }

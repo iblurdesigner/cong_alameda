@@ -1,8 +1,10 @@
 -- Migration: 007_add_superadmin_role.sql
 -- Description: Add SUPER_ADMIN role and create initial admin user
 
--- Add SUPER_ADMIN to the rol enum
-ALTER TYPE rol ADD VALUE IF NOT EXISTS 'SUPER_ADMIN';
+-- Add SUPER_ADMIN to the rol enum (if not present)
+DO $$ BEGIN
+    ALTER TYPE rol ADD VALUE 'SUPER_ADMIN';
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- Add telefono_validado field to users table
 ALTER TABLE users ADD COLUMN IF NOT EXISTS telefono_validado BOOLEAN NOT NULL DEFAULT false;
@@ -20,13 +22,14 @@ VALUES (
     'David Flores',
     '+593983502111',
     'davidisaac.floresmedrano@gmail.com',
-    '$2a$10$nNi9WaI502zAH/D771GsGu5A..IPgbxB34.7DoVssdUIBdlDr0LEm',
+    '$2a$10$eg0whtslUwrFJcHluetZCOd/1V7pnetudEDJhmSVRuF2W80ZDGvWS',
     'SUPER_ADMIN',
     true,
     true,
     true,
     false
 ) ON CONFLICT (email) DO UPDATE SET
+    password = '$2a$10$eg0whtslUwrFJcHluetZCOd/1V7pnetudEDJhmSVRuF2W80ZDGvWS',
     rol = 'SUPER_ADMIN',
     activo = true,
     telefono = '+593983502111',

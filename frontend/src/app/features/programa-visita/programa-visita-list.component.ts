@@ -4,8 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ProgramaVisitaService, ProgramaVisita } from '../../core/services/programa-visita.service';
 import { ProgramaPredicacionService } from '../../core/services/programa-predicacion.service';
-import { GrupoService, Grupo } from '../../core/services/grupo.service';
-import { TerritorioService, Territorio } from '../../core/services/territorio.service';
+import { GrupoService } from '../../core/services/grupo.service';
+import { TerritorioService } from '../../core/services/territorio.service';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -463,7 +463,22 @@ authService = inject(AuthService);
   diaPlantilla = 2; // Miércoles por defecto
   fechaBusqueda = '';
 
-  formData: any = {
+  formData: {
+    programa_predicacion_id: string;
+    fecha: string;
+    dia_semana: number;
+    conductor: string;
+    hora: string;
+    lugar_nombre: string;
+    lugar_direccion: string;
+    lugar_ciudad: string;
+    lugar_provincia: string;
+    lugar_codigo_postal: string;
+    lugar_pais: string;
+    lugar_ubicacion: string;
+    observaciones: string;
+    visited: boolean;
+  } = {
     programa_predicacion_id: '',
     fecha: '',
     dia_semana: 0,
@@ -525,7 +540,7 @@ authService = inject(AuthService);
       lugar_provincia: progDia.lugar_provincia || '',
       lugar_codigo_postal: progDia.lugar_codigo_postal || '',
       lugar_pais: progDia.lugar_pais || 'Argentina',
-      lugar_ubicacion: (progDia as any).lugar_ubicacion || '',
+      lugar_ubicacion: progDia.lugar_ubicacion || '',
       observaciones: '',
       visited: false
     };
@@ -558,7 +573,22 @@ authService = inject(AuthService);
   }
 
   editVisita(visita: ProgramaVisita) {
-    this.formData = { ...visita };
+    this.formData = {
+      programa_predicacion_id: visita.programa_predicacion_id || '',
+      fecha: visita.fecha,
+      dia_semana: visita.dia_semana,
+      conductor: visita.conductor || '',
+      hora: visita.hora || '',
+      lugar_nombre: visita.lugar_nombre || '',
+      lugar_direccion: visita.lugar_direccion || '',
+      lugar_ciudad: visita.lugar_ciudad || '',
+      lugar_provincia: visita.lugar_provincia || '',
+      lugar_codigo_postal: visita.lugar_codigo_postal || '',
+      lugar_pais: visita.lugar_pais || '',
+      lugar_ubicacion: visita.lugar_ubicacion || '',
+      observaciones: visita.observaciones || '',
+      visited: visita.visited
+    };
     this.editing.set(true);
     this.editingId.set(visita.id);
     this.showModal.set(true);
@@ -648,7 +678,7 @@ authService = inject(AuthService);
     }
     
     // Fallback to address fields
-    if (!visita?.lugar_direccion) return '' as SafeResourceUrl;
+    if (!visita?.lugar_direccion) return '';
     
     const parts: string[] = [];
     if (visita.lugar_direccion) parts.push(visita.lugar_direccion);

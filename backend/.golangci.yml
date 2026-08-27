@@ -1,4 +1,4 @@
-# .golangci.yml ΓÇö Configuration for golangci-lint
+# .golangci.yml — Configuration for golangci-lint
 # Gradual adoption: only flags issues in NEW code (diff from HEAD)
 # See https://golangci-lint.run/usage/configuration/
 

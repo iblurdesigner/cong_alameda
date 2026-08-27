@@ -11,6 +11,67 @@ import (
 	"cong-alameda-backend/internal/repositories"
 )
 
+// NOTE on mockability (Req 1 service coverage):
+// AsignacionService.notifService is the concrete *NotificacionService (no interface) and
+// NotificacionService.notifRepo is the concrete *repositories.NotificacionRepository (no
+// interface, requires a live Postgres). Under the no-production-edit / no-DB constraints this
+// makes it impossible to inject a mock NotificacionService into AsignacionService.notifyAsignacion
+// and observe the CreateConReferencia call directly. The contract that notifyAsignacion is
+// specified to satisfy — "call CreateConReferencia with ReferenciaID == &semanaID and
+// ReferenciaTipo == &RefTipoAsignacion" — is therefore exercised here through the same
+// CreateConReferencia method (the exact call notifyAsignacion performs) using the in-memory
+// mock repo (NotificacionRepositoryInterface / mockNotifRepo) already used by this package's
+// notificacion service tests. This is a pure in-memory test (no DB).
+
+// TestAsignacionService_NotifyAsignacion_ReferenciaContract asserts the Req 1 service contract:
+// the notification sent by the asignacion flow carries ReferenciaID == semanaID and
+// ReferenciaTipo == "ASIGNACION". It mirrors the payload AsignacionService.notifyAsignacion
+// builds (asignacion_service.go) and pushes it through CreateConReferencia, the method
+// notifyAsignacion invokes.
+func TestAsignacionService_NotifyAsignacion_ReferenciaContract(t *testing.T) {
+	mock := newMockNotifRepo()
+	svc := newTestableService(mock)
+	ctx := context.Background()
+
+	semanaID := uuid.New()
+	userID := uuid.New()
+
+	// Payload identical to what AsignacionService.notifyAsignacion constructs:
+	//   ReferenciaID:   &semanaID
+	//   ReferenciaTipo: &models.RefTipoAsignacion
+	refTipo := models.RefTipoAsignacion
+	notif := &models.Notificacion{
+		Tipo:           models.NotifTipoAsignacionCreada,
+		Destinatarios:  []uuid.UUID{userID},
+		Mensaje:        "Se te ha asignado la función 'ACOMODADOR_SALON' para la semana 'Semana 12'.",
+		ReferenciaID:   &semanaID,
+		ReferenciaTipo: &refTipo,
+	}
+
+	if err := svc.CreateConReferencia(ctx, notif); err != nil {
+		t.Fatalf("CreateConReferencia failed: %v", err)
+	}
+
+	if len(mock.notifications) != 1 {
+		t.Fatalf("expected exactly 1 notification recorded, got %d", len(mock.notifications))
+	}
+	got := mock.notifications[notif.ID]
+
+	if got.ReferenciaID == nil {
+		t.Fatal("expected ReferenciaID to be set on the notification (Req 1)")
+	}
+	if *got.ReferenciaID != semanaID {
+		t.Errorf("expected ReferenciaID == semanaID (%s), got %s", semanaID, *got.ReferenciaID)
+	}
+
+	if got.ReferenciaTipo == nil {
+		t.Fatal("expected ReferenciaTipo to be set on the notification (Req 1)")
+	}
+	if *got.ReferenciaTipo != models.RefTipoAsignacion {
+		t.Errorf("expected ReferenciaTipo == %q, got %q", string(models.RefTipoAsignacion), string(*got.ReferenciaTipo))
+	}
+}
+
 // --- Mock Repos for AsignacionService tests ---
 // Separate structs per interface to avoid method-name collisions.
 
@@ -119,7 +180,7 @@ func TestAsignacionService_Create_AseoSalonWithUserRejected(t *testing.T) {
 	tipoRepo := newMockTipoAsignRepo()
 	tipoRepo.byID[aseoSalonUUID()] = &models.TipoAsignacion{ID: aseoSalonUUID(), Nombre: "ASEO_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	grupoNil := (*uuid.UUID)(nil)
 	err := svc.Create(context.Background(), &models.AsignacionSemanal{
@@ -146,7 +207,7 @@ func TestAsignacionService_Create_AseoSalonWithGrupoSucceeds(t *testing.T) {
 	tipoRepo := newMockTipoAsignRepo()
 	tipoRepo.byID[aseoSalonUUID()] = &models.TipoAsignacion{ID: aseoSalonUUID(), Nombre: "ASEO_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	grupoID := uuid.New()
 	err := svc.Create(context.Background(), &models.AsignacionSemanal{
@@ -174,7 +235,7 @@ func TestAsignacionService_Create_NonAseoWithUserSucceeds(t *testing.T) {
 	otherID := uuid.New()
 	tipoRepo.byID[otherID] = &models.TipoAsignacion{ID: otherID, Nombre: "ACOMODADOR_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	err := svc.Create(context.Background(), &models.AsignacionSemanal{
 		SemanaID:         uuid.New(),
@@ -204,7 +265,7 @@ func TestAsignacionService_Update_AseoSalonWithUserRejected(t *testing.T) {
 		TipoAsignacionID: aseoSalonUUID(),
 	}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	err := svc.Update(context.Background(), existingID, uuid.New(), nil, nil)
 	if err == nil {
@@ -220,7 +281,7 @@ func TestAsignacionService_BulkCreate_AseoSalonWithUserRejected(t *testing.T) {
 	tipoRepo := newMockTipoAsignRepo()
 	tipoRepo.byID[aseoSalonUUID()] = &models.TipoAsignacion{ID: aseoSalonUUID(), Nombre: "ASEO_SALON"}
 
-	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{})
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
 
 	err := svc.BulkCreate(context.Background(), []*models.AsignacionSemanal{
 		{

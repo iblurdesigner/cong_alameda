@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { CasaService, Casa } from '../../../core/services/casa.service';
+import { CasaService } from '../../../core/services/casa.service';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -523,7 +523,7 @@ export class CasaListComponent implements OnInit {
   sectores = signal<string[]>([]);
   confirmDelete = signal<string | null>(null);
   
-  private searchTimeout: any;
+  private searchTimeout: ReturnType<typeof setTimeout> | undefined;
   
   ngOnInit() {
     this.loadCasas();

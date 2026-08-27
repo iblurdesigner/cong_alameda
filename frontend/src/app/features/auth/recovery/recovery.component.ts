@@ -223,7 +223,7 @@ export class RecoveryComponent implements OnInit {
 
   ngOnInit() {
     // Get token from query params
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params: Record<string, string>) => {
       this.token = params['token'] || '';
       if (!this.token) {
         this.error.set('Token inválido o expirado');
@@ -253,7 +253,7 @@ export class RecoveryComponent implements OnInit {
         this.loading.set(false);
         this.success.set(true);
       },
-      error: (err) => {
+      error: (err: { error?: { error?: string; message?: string } }) => {
         this.loading.set(false);
         if (err.error?.error === 'token_expired') {
           this.error.set('El enlace ha expirado. Solicita uno nuevo.');
@@ -267,6 +267,6 @@ export class RecoveryComponent implements OnInit {
   }
 
   goToLogin() {
-    this.router.navigate(['/login']);
+    void this.router.navigate(['/login']);
   }
 }

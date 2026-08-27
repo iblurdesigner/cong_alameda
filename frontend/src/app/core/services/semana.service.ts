@@ -1,5 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { tap } from 'rxjs/operators';
 
@@ -38,9 +38,10 @@ export class SemanaService {
 
   constructor(private http: HttpClient) {}
 
-  loadSemanas() {
+  loadSemanas(includeArchived: boolean = true) {
     this.loadingSignal.set(true);
-    return this.http.get<{ data: Semana[] }>(`${environment.apiUrl}/semanas`)
+    const params = includeArchived ? new HttpParams().set('include_archived', 'true') : new HttpParams();
+    return this.http.get<{ data: Semana[] }>(`${environment.apiUrl}/semanas`, { params })
       .pipe(
         tap(response => {
           this.semanasSignal.set(response?.data || []);

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { ProgramaPredicacionService, ProgramaPredicacion } from '../../core/services/programa-predicacion.service';
+import { ProgramaPredicacionService, ProgramaPredicacion, TerritorioSimple } from '../../core/services/programa-predicacion.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 import { TerritorioService, Territorio } from '../../core/services/territorio.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -795,7 +795,25 @@ export class ProgramaPredicacionListComponent implements OnInit {
   viewingPrograma = signal<ProgramaPredicacion | null>(null);
   editingPrograma = signal<ProgramaPredicacion | null>(null);
   
-  formData: any = {
+  formData: {
+    nombre: string;
+    fecha: string;
+    dia_semana: number;
+    conductor: string;
+    hora_inicio: string;
+    hora_fin: string;
+    lugar_nombre: string;
+    lugar_direccion: string;
+    lugar_ciudad: string;
+    lugar_provincia: string;
+    lugar_codigo_postal: string;
+    lugar_pais: string;
+    lugar_ubicacion: string;
+    lugar_contacto: string;
+    lugar_telefono: string;
+    grupo_id: string;
+    territorio_ids: string[];
+  } = {
     nombre: '',
     fecha: '',
     dia_semana: 0,
@@ -826,11 +844,11 @@ export class ProgramaPredicacionListComponent implements OnInit {
     });
     
     this.grupoService.loadGrupos().subscribe({
-      next: (res) => this.grupos.set(res.data)
+      next: (res: { data: Grupo[] }) => this.grupos.set(res.data)
     });
     
     this.territorioService.loadTerritorios().subscribe({
-      next: (res) => this.territorios.set(res.data)
+      next: (res: { data: Territorio[] }) => this.territorios.set(res.data)
     });
   }
   
@@ -902,11 +920,11 @@ export class ProgramaPredicacionListComponent implements OnInit {
   
   hasExactLocation(prog: ProgramaPredicacion | null): boolean {
     if (!prog) return false;
-    return !!(prog as any).lugar_ubicacion;
+    return !!prog.lugar_ubicacion;
   }
   
   getExactLocationUrl(prog: ProgramaPredicacion): string {
-    const coords = (prog as any).lugar_ubicacion;
+    const coords = prog.lugar_ubicacion;
     if (coords) {
       return `https://www.google.com/maps?q=${encodeURIComponent(coords)}&z=17`;
     }
@@ -915,7 +933,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   
   getGoogleMapsEmbedUrl(prog: ProgramaPredicacion): SafeResourceUrl {
     // Priority: coordenadas > address
-    const coords = (prog as any).lugar_ubicacion;
+    const coords = prog.lugar_ubicacion;
     
     // If coordinates, use them directly
     if (coords && coords.includes(',') && /^-?[\d.-]+,\s*-?[\d.-]+$/.test(coords.trim())) {
@@ -924,14 +942,14 @@ export class ProgramaPredicacionListComponent implements OnInit {
     }
     
     // Fallback to address fields
-    if (!prog?.lugar_direccion) return '' as SafeResourceUrl;
+    if (!prog?.lugar_direccion) return '';
     
     const parts: string[] = [];
     if (prog.lugar_direccion) parts.push(prog.lugar_direccion);
-    if ((prog as any).lugar_ciudad) parts.push((prog as any).lugar_ciudad);
-    if ((prog as any).lugar_provincia) parts.push((prog as any).lugar_provincia);
-    if ((prog as any).lugar_codigo_postal) parts.push((prog as any).lugar_codigo_postal);
-    if ((prog as any).lugar_pais) parts.push((prog as any).lugar_pais);
+    if (prog.lugar_ciudad) parts.push(prog.lugar_ciudad);
+    if (prog.lugar_provincia) parts.push(prog.lugar_provincia);
+    if (prog.lugar_codigo_postal) parts.push(prog.lugar_codigo_postal);
+    if (prog.lugar_pais) parts.push(prog.lugar_pais);
     
     const fullAddress = parts.length > 0 ? parts.join(', ') : prog.lugar_direccion;
     const encoded = encodeURIComponent(fullAddress);
@@ -970,8 +988,14 @@ export class ProgramaPredicacionListComponent implements OnInit {
       dia_semana: 0,
       conductor: '',
       hora_inicio: '',
+      hora_fin: '',
       lugar_nombre: 'Salón del Reino',
       lugar_direccion: '',
+      lugar_ciudad: '',
+      lugar_provincia: '',
+      lugar_codigo_postal: '',
+      lugar_pais: '',
+      lugar_ubicacion: '',
       lugar_contacto: '',
       lugar_telefono: '',
       grupo_id: '',
@@ -1006,13 +1030,18 @@ export class ProgramaPredicacionListComponent implements OnInit {
       dia_semana: prog.dia_semana,
       conductor: prog.conductor,
       hora_inicio: prog.hora_inicio,
+      hora_fin: prog.hora_fin || '',
       lugar_nombre: prog.lugar_nombre,
       lugar_direccion: prog.lugar_direccion,
+      lugar_ciudad: prog.lugar_ciudad || '',
+      lugar_provincia: prog.lugar_provincia || '',
+      lugar_codigo_postal: prog.lugar_codigo_postal || '',
+      lugar_pais: prog.lugar_pais || '',
       lugar_ubicacion: prog.lugar_ubicacion || '',
       lugar_contacto: prog.lugar_contacto,
       lugar_telefono: prog.lugar_telefono,
       grupo_id: prog.grupo?.id || '',
-      territorio_ids: territorios.map((t: any) => t.id)
+      territorio_ids: territorios.map((t: TerritorioSimple) => t.id)
     };
     console.log('[editPrograma] formData:', JSON.stringify(this.formData));
     this.showModal.set(true);
@@ -1024,7 +1053,7 @@ export class ProgramaPredicacionListComponent implements OnInit {
   }
   
   savePrograma() {
-    const data: any = {
+    const data: Partial<ProgramaPredicacion> & { grupo_id: string | null; territorio_ids: string[] } = {
       nombre: this.formData.nombre || `Programa ${this.formData.fecha}`,
       fecha: this.formData.fecha,
       dia_semana: this.formData.dia_semana,

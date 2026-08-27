@@ -182,12 +182,14 @@ type VisitaFilter struct {
 // ========== Notificacion DTOs ==========
 
 type NotificacionResponse struct {
-	ID        uuid.UUID  `json:"id"`
-	Tipo      string     `json:"tipo"`
-	CasaID    *uuid.UUID `json:"casa_id,omitempty"`
-	Mensaje   string     `json:"mensaje"`
-	Leida     bool       `json:"leida"`
-	CreatedAt string     `json:"created_at"`
+	ID             uuid.UUID  `json:"id"`
+	Tipo           string     `json:"tipo"`
+	CasaID         *uuid.UUID `json:"casa_id,omitempty"`
+	Mensaje        string     `json:"mensaje"`
+	Leida          bool       `json:"leida"`
+	ReferenciaID   *uuid.UUID `json:"referencia_id,omitempty"`
+	ReferenciaTipo *string    `json:"referencia_tipo,omitempty"`
+	CreatedAt      string     `json:"created_at"`
 }
 
 type NotificacionListResponse struct {

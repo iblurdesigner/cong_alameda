@@ -27,6 +27,11 @@ func (s *NotificacionService) Create(ctx context.Context, notif *models.Notifica
 	return s.notifRepo.Create(ctx, notif)
 }
 
+func (s *NotificacionService) CreateConReferencia(ctx context.Context, notif *models.Notificacion) error {
+	notif.Leida = false
+	return s.notifRepo.CreateConReferencia(ctx, notif)
+}
+
 func (s *NotificacionService) GetByID(ctx context.Context, id uuid.UUID) (*models.Notificacion, error) {
 	return s.notifRepo.GetByID(ctx, id)
 }
@@ -47,14 +52,14 @@ func (s *NotificacionService) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.notifRepo.Delete(ctx, id)
 }
 
-// CreateAsignacionNotification creates a notification linked to an assignment
-func (s *NotificacionService) CreateAsignacionNotification(ctx context.Context, tipo models.NotificacionTipo, destinatarios []uuid.UUID, mensaje string, asignacionID uuid.UUID) error {
+// CreateAsignacionNotification creates a notification linked to an assignment week
+func (s *NotificacionService) CreateAsignacionNotification(ctx context.Context, tipo models.NotificacionTipo, destinatarios []uuid.UUID, mensaje string, semanaID uuid.UUID) error {
 	notif := &models.Notificacion{
 		Tipo:          tipo,
 		Destinatarios: destinatarios,
 		Mensaje:       mensaje,
 		Leida:         false,
-		ReferenciaID:  &asignacionID,
+		ReferenciaID:  &semanaID,
 		ReferenciaTipo: func() *models.ReferenciaTipo {
 			rt := models.RefTipoAsignacion
 			return &rt

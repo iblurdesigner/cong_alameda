@@ -1,15 +1,15 @@
-Esto es lo que necesit├ís para que levante en Linux:
+Esto es lo que necesitás para que levante en Linux:
 1. Pre-requisitos en tu Linux
 - Docker + Docker Compose (o Docker Engine con plugin compose)
 - Git (obvio)
-- OPCIONAL: Go 1.21+ y Node 18+/npm si quer├⌐s desarrollo local sin Docker
+- OPCIONAL: Go 1.21+ y Node 18+/npm si querés desarrollo local sin Docker
 2. Clonar y levantar
 git clone <repo-url> ~/cong_alameda
 cd ~/cong_alameda
 docker compose up -d
-El docker-compose.yml ya tiene todo: PostgreSQL, backend Go, frontend Angular con nginx. En Linux los vol├║menes con rutas absolutas de Windows no joden, as├¡ que andan de una.
+El docker-compose.yml ya tiene todo: PostgreSQL, backend Go, frontend Angular con nginx. En Linux los volúmenes con rutas absolutas de Windows no joden, así que andan de una.
 3. Ajustes post-levantamiento
-- Las migraciones SQL est├ín en backend/migrations/ ΓÇö las aplic├ís conect├índote al contenedor de la DB o configurando el backend para que las corra al iniciar.
+- Las migraciones SQL están en backend/migrations/ — las aplicás conectándote al contenedor de la DB o configurando el backend para que las corra al iniciar.
 - Los PDFs subidos van a ./uploads/territorios/, el volumen mapeado funciona igual en Linux.
 - El .env del backend: si la URL de la DB apunta a db (nombre del servicio Docker), funciona sin cambios.
 4. Backend .env (copiar .env.example a .env):
@@ -18,8 +18,8 @@ JWT_SECRET=tu-secreto
 FRONTEND_URL=http://localhost:4200
 PORT=8080
 ENV=development
-5. Despu├⌐s de levantar
-- Backend corre migraciones? Si no, conectate al contenedor de la DB y ejecut├í los .sql de backend/migrations/.
+5. Después de levantar
+- Backend corre migraciones? Si no, conectate al contenedor de la DB y ejecutá los .sql de backend/migrations/.
 
 
 
@@ -27,14 +27,14 @@ ENV=development
 
 
 El plan entonces
-1. Copi├ís todo el proyecto a tu Fedora (ej: ~/cong_alameda/)
-2. Instal├ís OpenCode + las skills (copiando ~/.config/opencode/ de Windows a ~/.config/opencode/ en Linux para mantener las skills)
-3. Abr├¡s el proyecto en OpenCode en Linux
-4. Me dec├¡s: "carg├í los artifacts de openspec/changes/ en Engram"
+1. Copiás todo el proyecto a tu Fedora (ej: ~/cong_alameda/)
+2. Instalás OpenCode + las skills (copiando ~/.config/opencode/ de Windows a ~/.config/opencode/ en Linux para mantener las skills)
+3. Abrís el proyecto en OpenCode en Linux
+4. Me decís: "cargá los artifacts de openspec/changes/ en Engram"
 Y yo hago esto:
 - Leo todos los archivos de openspec/changes/ (cada cambio: password-recovery, dashboard-notificaciones-asignaciones, user-update-fix)
 - Los guardo en Engram con mem_save y sus topic_key originales (sdd/{change-name}/{artifact})
-- Busco en el c├│digo el stack actual y lo guardo como sdd-init/cong_alameda
+- Busco en el código el stack actual y lo guardo como sdd-init/cong_alameda
 
 
 
@@ -43,10 +43,10 @@ Y yo hago esto:
 
 
 
-Qu├⌐ hacer en Linux despu├⌐s de copiar
-1. Copi├ís esas tres carpetas/archivos a ~/.config/opencode/ en Fedora (solo skills/, prompts/sdd/, AGENTS.md)
-2. En opencode.json de Linux, ten├⌐s que agregar la definici├│n del agente gentle-orchestrator y los subagentes. O directamente sobreescribimos la secci├│n agent de tu opencode.json en Linux sin tocar el resto (MCP, permisos, etc.)
-3. Copi├ís el proyecto a ~/cong_alameda/
-4. Abr├¡s el proyecto en OpenCode
-5. Me dec├¡s "carg├í los artifacts de openspec/changes/ en Engram" y yo hago el resto
-┬┐Te sirve? Si quer├⌐s, apenas copies los archivos y abras Linux, te ayudo a mergear la config de agentes en tu opencode.json de Fedora sin romper nada.
+Qué hacer en Linux después de copiar
+1. Copiás esas tres carpetas/archivos a ~/.config/opencode/ en Fedora (solo skills/, prompts/sdd/, AGENTS.md)
+2. En opencode.json de Linux, tenés que agregar la definición del agente gentle-orchestrator y los subagentes. O directamente sobreescribimos la sección agent de tu opencode.json en Linux sin tocar el resto (MCP, permisos, etc.)
+3. Copiás el proyecto a ~/cong_alameda/
+4. Abrís el proyecto en OpenCode
+5. Me decís "cargá los artifacts de openspec/changes/ en Engram" y yo hago el resto
+¿Te sirve? Si querés, apenas copies los archivos y abras Linux, te ayudo a mergear la config de agentes en tu opencode.json de Fedora sin romper nada.
