@@ -142,6 +142,14 @@ func (s *testableService) Create(ctx context.Context, notif *models.Notificacion
 	return s.repo.Create(ctx, notif)
 }
 
+// CreateConReferencia mirrors NotificacionService.CreateConReferencia (the exact method
+// AsignacionService.notifyAsignacion invokes) so tests can assert the referencia contract
+// through the mock repository.
+func (s *testableService) CreateConReferencia(ctx context.Context, notif *models.Notificacion) error {
+	notif.Leida = false
+	return s.repo.CreateConReferencia(ctx, notif)
+}
+
 func (s *testableService) CreateAsignacionNotification(
 	ctx context.Context,
 	tipo models.NotificacionTipo,

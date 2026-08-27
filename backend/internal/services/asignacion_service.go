@@ -170,10 +170,13 @@ func (s *AsignacionService) notifyAsignacion(ctx context.Context, tipoNotif mode
 		}
 	}
 
-	_ = s.notifService.Create(ctx, &models.Notificacion{
-		Tipo:          tipoNotif,
-		Destinatarios: []uuid.UUID{userID},
-		Mensaje:       msg,
+	refTipo := models.RefTipoAsignacion
+	_ = s.notifService.CreateConReferencia(ctx, &models.Notificacion{
+		Tipo:           tipoNotif,
+		Destinatarios:  []uuid.UUID{userID},
+		Mensaje:        msg,
+		ReferenciaID:   &semanaID,
+		ReferenciaTipo: &refTipo,
 	})
 }
 

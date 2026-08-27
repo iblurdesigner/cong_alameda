@@ -77,13 +77,20 @@ func (h *NotificacionHandler) List(c *fiber.Ctx) error {
 }
 
 func (h *NotificacionHandler) notifToResponse(n *models.Notificacion) dto.NotificacionResponse {
+	var refTipoStr *string
+	if n.ReferenciaTipo != nil {
+		s := string(*n.ReferenciaTipo)
+		refTipoStr = &s
+	}
 	return dto.NotificacionResponse{
-		ID:        n.ID,
-		Tipo:      string(n.Tipo),
-		CasaID:    n.CasaID,
-		Mensaje:   n.Mensaje,
-		Leida:     n.Leida,
-		CreatedAt: n.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		ID:             n.ID,
+		Tipo:           string(n.Tipo),
+		CasaID:         n.CasaID,
+		Mensaje:        n.Mensaje,
+		Leida:          n.Leida,
+		ReferenciaID:   n.ReferenciaID,
+		ReferenciaTipo: refTipoStr,
+		CreatedAt:      n.CreatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
