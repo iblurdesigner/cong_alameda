@@ -10,6 +10,8 @@ export interface Notificacion {
   casa_id?: string;
   mensaje: string;
   leida: boolean;
+  referencia_id?: string;
+  referencia_tipo?: string;
   created_at: string;
 }
 

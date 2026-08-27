@@ -621,8 +621,12 @@ export class NotificationDashboardComponent implements OnInit {
 
   goToAction(notif: Notificacion) {
     this.markRead(notif);
-    if (notif.tipo.startsWith('ASIGNACION_')) {
-      this.router.navigate(['/asignaciones']);
+    if (notif.tipo.startsWith('ASIGNACION_') || notif.referencia_tipo === 'ASIGNACION') {
+      if (notif.referencia_id) {
+        this.router.navigate(['/asignaciones'], { queryParams: { semana_id: notif.referencia_id } });
+      } else {
+        this.router.navigate(['/asignaciones']);
+      }
     } else if (notif.tipo.startsWith('VISITA_') || notif.tipo === 'PERSONA_REQUIERE_VISITA') {
       this.router.navigate(['/visitas']);
     } else if (notif.tipo.startsWith('CASA_') || notif.casa_id) {

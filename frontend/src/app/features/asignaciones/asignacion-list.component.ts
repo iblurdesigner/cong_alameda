@@ -6,6 +6,7 @@ import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 
 @Component({
@@ -1685,6 +1686,7 @@ export class AsignacionListComponent implements OnInit {
   public authService = inject(AuthService);
   private grupoService = inject(GrupoService);
   private notificationService = inject(NotificationService);
+  private route = inject(ActivatedRoute);
 
   semanas = signal<Semana[]>([]);
   users = signal<any[]>([]);
@@ -1720,7 +1722,12 @@ export class AsignacionListComponent implements OnInit {
   ];
 
   ngOnInit() {
-    this.loadSemanas();
+    this.route.queryParams.subscribe(params => {
+      if (params['semana_id']) {
+        this.selectedSemanaId = params['semana_id'];
+      }
+      this.loadSemanas();
+    });
     this.loadTipos();
     this.loadUsers();
     this.loadGrupos();
@@ -1824,16 +1831,28 @@ export class AsignacionListComponent implements OnInit {
     }
   }
 
+  parseLocalDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    const parts = dateStr.substring(0, 10).split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(dateStr);
+  }
+
   loadSemanas() {
     this.semanaService.loadSemanas().subscribe({
       next: (res) => {
         this.semanas.set(res.data);
-        if (res.data.length > 0 && !this.selectedSemanaId) {
-          const active = res.data.find((s: Semana) => !s.archivado) || res.data[0];
-          this.selectedSemanaId = active.id;
-          if (active.fecha_inicio) {
-            this.currentRefDate = new Date(active.fecha_inicio);
-            this.selectedDateInput = active.fecha_inicio.substring(0, 10);
+        if (res.data.length > 0) {
+          let selected = res.data.find((s: Semana) => s.id === this.selectedSemanaId);
+          if (!selected) {
+            selected = res.data.find((s: Semana) => !s.archivado) || res.data[0];
+            this.selectedSemanaId = selected.id;
+          }
+          if (selected && selected.fecha_inicio) {
+            this.currentRefDate = this.parseLocalDate(selected.fecha_inicio);
+            this.selectedDateInput = selected.fecha_inicio.substring(0, 10);
           }
           this.loadSemana();
         }
@@ -1887,7 +1906,9 @@ export class AsignacionListComponent implements OnInit {
   }
 
   getAsignacionForDiaAndTipo(diaSemana: number, tipoId: string): Asignacion | null {
-    return this.getAsignacionForTipo(tipoId);
+    const map = this.asignacionMap();
+    const key = `${diaSemana}-${tipoId}`;
+    return map.get(key) || this.getAsignacionForTipo(tipoId);
   }
 
   getAssignmentsForDia(diaSemana: number): Asignacion[] {
@@ -2007,7 +2028,7 @@ export class AsignacionListComponent implements OnInit {
 
   getFechaForDia(diaSemana: number): string {
     if (!this.semanaActual || !this.semanaActual.semana) return '';
-    const start = new Date(this.semanaActual.semana.fecha_inicio);
+    const start = this.parseLocalDate(this.semanaActual.semana.fecha_inicio);
     const date = new Date(start);
     date.setDate(start.getDate() + diaSemana);
     return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
@@ -2015,7 +2036,7 @@ export class AsignacionListComponent implements OnInit {
 
   isTodayDia(diaSemana: number): boolean {
     if (!this.semanaActual || !this.semanaActual.semana) return false;
-    const start = new Date(this.semanaActual.semana.fecha_inicio);
+    const start = this.parseLocalDate(this.semanaActual.semana.fecha_inicio);
     const date = new Date(start);
     date.setDate(start.getDate() + diaSemana);
     const today = new Date();
@@ -2053,22 +2074,37 @@ export class AsignacionListComponent implements OnInit {
   saveAsignacion() {
     if (!this.assignForm.user_id && !this.assignForm.grupo_id) return;
 
-    const asignacion = {
-      semana_id: this.selectedSemanaId,
-      tipo_asignacion_id: this.editingTipo!.id,
-      user_id: this.assignForm.user_id || undefined,
-      grupo_id: this.assignForm.grupo_id || undefined,
-      dia_semana: this.editingDiaSemana,
-      observaciones: this.assignForm.observaciones || undefined
-    };
+    if (this.editingAsignacion) {
+      this.asignacionService.updateAsignacion(
+        this.editingAsignacion.id,
+        this.assignForm.user_id || undefined,
+        this.assignForm.grupo_id || undefined,
+        this.assignForm.observaciones || undefined
+      ).subscribe({
+        next: () => {
+          this.loadSemana();
+          this.notificationService.loadNotifications().subscribe();
+          this.closeAssignModal();
+        }
+      });
+    } else {
+      const asignacion = {
+        semana_id: this.selectedSemanaId,
+        tipo_asignacion_id: this.editingTipo!.id,
+        user_id: this.assignForm.user_id || undefined,
+        grupo_id: this.assignForm.grupo_id || undefined,
+        dia_semana: this.editingDiaSemana,
+        observaciones: this.assignForm.observaciones || undefined
+      };
 
-    this.asignacionService.createAsignacion(asignacion as any).subscribe({
-      next: () => {
-        this.loadSemana();
-        this.notificationService.loadNotifications().subscribe();
-        this.closeAssignModal();
-      }
-    });
+      this.asignacionService.createAsignacion(asignacion as any).subscribe({
+        next: () => {
+          this.loadSemana();
+          this.notificationService.loadNotifications().subscribe();
+          this.closeAssignModal();
+        }
+      });
+    }
   }
 
   openEditDiaModal(diaSemana: number) {
@@ -2104,15 +2140,25 @@ export class AsignacionListComponent implements OnInit {
     for (const tipo of tipos) {
       const form = this.dayFormMap[tipo.id];
       if (form && (form.user_id || form.grupo_id)) {
-        const payload = {
-          semana_id: this.selectedSemanaId,
-          tipo_asignacion_id: tipo.id,
-          user_id: form.user_id || undefined,
-          grupo_id: form.grupo_id || undefined,
-          dia_semana: this.editingDiaSemana,
-          observaciones: form.observaciones || undefined
-        };
-        requests.push(this.asignacionService.createAsignacion(payload as any));
+        const existing = this.getAsignacionForDiaAndTipo(this.editingDiaSemana, tipo.id);
+        if (existing) {
+          requests.push(this.asignacionService.updateAsignacion(
+            existing.id,
+            form.user_id || undefined,
+            form.grupo_id || undefined,
+            form.observaciones || undefined
+          ));
+        } else {
+          const payload = {
+            semana_id: this.selectedSemanaId,
+            tipo_asignacion_id: tipo.id,
+            user_id: form.user_id || undefined,
+            grupo_id: form.grupo_id || undefined,
+            dia_semana: this.editingDiaSemana,
+            observaciones: form.observaciones || undefined
+          };
+          requests.push(this.asignacionService.createAsignacion(payload as any));
+        }
       }
     }
 

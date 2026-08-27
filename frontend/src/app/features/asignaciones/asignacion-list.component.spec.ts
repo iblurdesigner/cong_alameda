@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import { of } from 'rxjs';
 
 import { AsignacionListComponent } from './asignacion-list.component';
@@ -7,12 +9,15 @@ import { AsignacionService, TipoAsignacion } from '../../core/services/asignacio
 import { SemanaService } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrupoService } from '../../core/services/grupo.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 const ASEO_SALON_UUID = 'b10c74a7-ba4c-4a71-b639-1248aa404eb4';
 
 describe('AsignacionListComponent', () => {
   let component: AsignacionListComponent;
   let fixture: ComponentFixture<AsignacionListComponent>;
+
+  const queryParamsSubject = new BehaviorSubject<{ [key: string]: any }>({});
 
   const mockTipos: TipoAsignacion[] = [
     { id: 't1', nombre: 'ACOMODADOR_SALON', icono: '🧹' },
@@ -34,6 +39,7 @@ describe('AsignacionListComponent', () => {
       of({ id: 's1', nombre: 'Semana 1', fecha_inicio: '2026-01-05', fecha_fin: '2026-01-11', dias: [], asignaciones: [] })
     ),
     createAsignacion: jest.fn().mockReturnValue(of({ id: 'a1' })),
+    updateAsignacion: jest.fn().mockReturnValue(of({ id: 'a1' })),
     bulkCreateAsignaciones: jest.fn().mockReturnValue(of(null)),
   };
   const mockSemanaService = {
@@ -47,9 +53,14 @@ describe('AsignacionListComponent', () => {
     loadGrupos: jest.fn().mockReturnValue(of({ data: [] })),
     grupos: jest.fn().mockReturnValue([]),
   };
+  const mockNotificationService = {
+    loadNotifications: jest.fn().mockReturnValue(of(null)),
+  } as unknown as NotificationService;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    queryParamsSubject.next({});
+
     await TestBed.configureTestingModule({
       imports: [FormsModule, AsignacionListComponent],
       providers: [
@@ -57,6 +68,8 @@ describe('AsignacionListComponent', () => {
         { provide: SemanaService, useValue: mockSemanaService },
         { provide: AuthService, useValue: mockAuthService },
         { provide: GrupoService, useValue: mockGrupoService },
+        { provide: NotificationService, useValue: mockNotificationService },
+        { provide: ActivatedRoute, useValue: { queryParams: queryParamsSubject } },
       ],
     }).compileComponents();
 
@@ -70,25 +83,26 @@ describe('AsignacionListComponent', () => {
       expect(component).toBeTruthy();
     });
 
-    it('should render the assignment modal with person select and observaciones textarea when opened', () => {
+    it('should render the assignment modal with person select and observaciones input when opened', () => {
       component.selectedSemanaId = 'some-semana';
       component.openAssignModal(mockTipos[0], 0);
       fixture.detectChanges();
 
-      const nuevaPersona = fixture.nativeElement.querySelector('#nuevaPersona');
-      const observaciones = fixture.nativeElement.querySelector('#observaciones');
-      const agregarBtn = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
-        .find(b => b.textContent?.includes('Agregar'));
+      const userSelect = fixture.nativeElement.querySelector('#userSelect');
+      const observaciones = fixture.nativeElement.querySelector('#obsInput');
+      const guardarBtn = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+        .find(b => b.textContent?.includes('Guardar'));
 
-      expect(nuevaPersona).toBeTruthy();
+      expect(userSelect).toBeTruthy();
       expect(observaciones).toBeTruthy();
-      expect(agregarBtn).toBeTruthy();
-      expect(nuevaPersona.querySelectorAll('option').length).toBeGreaterThan(1);
+      expect(guardarBtn).toBeTruthy();
+      expect(userSelect.querySelectorAll('option').length).toBeGreaterThan(1);
     });
 
     it('should wire saveAsignacion to AsignacionService.createAsignacion', () => {
+      component.selectedSemanaId = 'some-semana';
       component.openAssignModal(mockTipos[0], 2);
-      component.assignForm = { user_id: 'u1', grupo_id: '', observaciones: 'Temprano', tipo_id: 't1', isEditing: false };
+      component.assignForm = { user_id: 'u1', grupo_id: '', observaciones: 'Temprano', tipo_id: 't1' };
 
       component.saveAsignacion();
 
@@ -103,9 +117,9 @@ describe('AsignacionListComponent', () => {
       });
     });
 
-    it('should NOT call createAsignacion when user_id is empty', () => {
+    it('should NOT call createAsignacion when user_id and grupo_id are empty', () => {
       component.openAssignModal(mockTipos[0], 2);
-      component.assignForm = { user_id: '', grupo_id: '', observaciones: '', tipo_id: '', isEditing: false };
+      component.assignForm = { user_id: '', grupo_id: '', observaciones: '', tipo_id: '' };
 
       component.saveAsignacion();
 
@@ -120,20 +134,19 @@ describe('AsignacionListComponent', () => {
       fixture.detectChanges();
     }
 
-    it('should render both group and person selectors for ASEO_SALON type', () => {
+    it('should render ONLY the group selector for ASEO_SALON type', () => {
       openAseoSalonModal();
 
       const grupoSelect = fixture.nativeElement.querySelector('#grupoSelect');
-      const personaSelect = fixture.nativeElement.querySelector('#nuevaPersona');
+      const personaSelect = fixture.nativeElement.querySelector('#userSelect');
 
       expect(grupoSelect).toBeTruthy();
-      expect(personaSelect).toBeTruthy();
-      expect(fixture.nativeElement.textContent).toContain('O seleccionar Persona');
+      expect(personaSelect).toBeNull();
     });
 
     it('should keep observaciones visible for ASEO_SALON', () => {
       openAseoSalonModal();
-      const observaciones = fixture.nativeElement.querySelector('#observaciones');
+      const observaciones = fixture.nativeElement.querySelector('#obsInput');
       expect(observaciones).toBeTruthy();
     });
 
@@ -151,7 +164,7 @@ describe('AsignacionListComponent', () => {
       fixture.detectChanges();
 
       const grupoSelect = fixture.nativeElement.querySelector('#grupoSelect');
-      const personaSelect = fixture.nativeElement.querySelector('#nuevaPersona');
+      const personaSelect = fixture.nativeElement.querySelector('#userSelect');
 
       expect(personaSelect).toBeTruthy();
       expect(grupoSelect).toBeNull();
@@ -165,15 +178,33 @@ describe('AsignacionListComponent', () => {
       expect(mockAsignacionService.createAsignacion).toHaveBeenCalledTimes(1);
       const payload = mockAsignacionService.createAsignacion.mock.calls[0][0];
       expect(payload.grupo_id).toBe('grupo-123');
-      expect(payload.user_id).toBeNull();
+      expect(payload.user_id).toBeUndefined();
     });
+  });
 
-    it('onTipoChange should reset both user_id and grupo_id', () => {
-      component.assignForm.user_id = 'u1';
-      component.assignForm.grupo_id = 'g1';
-      component.onTipoChange();
-      expect(component.assignForm.user_id).toBe('');
-      expect(component.assignForm.grupo_id).toBe('');
+  describe('Req 3 - select week from route queryParam (semana_id)', () => {
+    it('should set selectedSemanaId from queryParams and load that week', () => {
+      queryParamsSubject.next({ semana_id: 'XYZ' });
+      mockSemanaService.loadSemanas.mockReturnValue(
+        of({
+          data: [
+            {
+              id: 'XYZ',
+              nombre: 'Semana XYZ',
+              fecha_inicio: '2026-02-02',
+              fecha_fin: '2026-02-08',
+              archivado: false,
+              created_at: new Date().toISOString(),
+            },
+          ],
+        })
+      );
+
+      const f = TestBed.createComponent(AsignacionListComponent);
+      f.detectChanges();
+
+      expect(f.componentInstance.selectedSemanaId).toBe('XYZ');
+      expect(mockAsignacionService.loadAsignacionesBySemana).toHaveBeenCalledWith('XYZ');
     });
   });
 });
