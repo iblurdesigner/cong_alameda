@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AsignacionService, Asignacion, TipoAsignacion } from '../../core/services/asignacion.service';
@@ -312,15 +312,27 @@ import { forkJoin, Observable } from 'rxjs';
                 <!-- Sidebar de selección de semanas -->
                 <div class="pdf-sidebar">
                   <div class="sidebar-actions">
-                    <span class="sidebar-label">Semanas ({{ selectedWeeksForExportSignal().length }}):</span>
-                    <div class="sidebar-btns">
-                      <button type="button" class="text-btn" (click)="selectAllWeeksForExport()">Todas</button>
-                      <span class="sep">|</span>
-                      <button type="button" class="text-btn" (click)="deselectAllWeeksForExport()">Ninguna</button>
+                    <div class="sidebar-header-row">
+                      <span class="sidebar-label">Semanas ({{ selectedWeeksForExportSignal().length }}):</span>
+                      <div class="sidebar-btns">
+                        <button type="button" class="text-btn" (click)="selectAllWeeksForExport()">Todas</button>
+                        <span class="sep">|</span>
+                        <button type="button" class="text-btn" (click)="deselectAllWeeksForExport()">Ninguna</button>
+                      </div>
+                    </div>
+                    <div class="sidebar-quick-filters">
+                      <button type="button" class="filter-chip-btn" (click)="selectCurrentMonthWeeks()">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        <span>Mes Actual</span>
+                      </button>
+                      <button type="button" class="filter-chip-btn" (click)="selectNext4Weeks()">
+                        <span class="material-symbols-outlined">date_range</span>
+                        <span>Próximas 4</span>
+                      </button>
                     </div>
                   </div>
                   <div class="weeks-checklist">
-                    @for (semana of semanas(); track semana.id) {
+                    @for (semana of deduplicatedSemanas(); track semana.id) {
                       <label class="week-checkbox-row" [class.selected]="isSemanaSelectedForExport(semana.id)">
                         <input 
                           type="checkbox" 
@@ -328,7 +340,12 @@ import { forkJoin, Observable } from 'rxjs';
                           (change)="toggleSemanaSelection(semana.id)"
                         />
                         <div class="week-info">
-                          <span class="week-row-name">{{ semana.nombre }}</span>
+                          <div class="week-title-row">
+                            <span class="week-row-name">{{ getWeekFormattedTitle(semana) }}</span>
+                            @if (isCurrentWeek(semana)) {
+                              <span class="current-week-badge">Actual</span>
+                            }
+                          </div>
                           <span class="week-row-date">{{ formatDate(semana.fecha_inicio) }} - {{ formatDate(semana.fecha_fin) }}</span>
                         </div>
                       </label>
@@ -1202,10 +1219,16 @@ import { forkJoin, Observable } from 'rxjs';
 
     .sidebar-actions {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 0.5rem;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding-bottom: 0.75rem;
       border-bottom: 1px solid var(--border-color);
+
+      .sidebar-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
       .sidebar-label {
         font-weight: 700;
@@ -1231,6 +1254,37 @@ import { forkJoin, Observable } from 'rxjs';
 
         &:hover { text-decoration: underline; }
       }
+
+      .sidebar-quick-filters {
+        display: flex;
+        gap: 0.4rem;
+
+        .filter-chip-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          padding: 0.3rem 0.6rem;
+          background: var(--background-color);
+          border: 1px solid var(--border-color);
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          .material-symbols-outlined {
+            font-size: 0.95rem;
+            color: var(--primary-color);
+          }
+
+          &:hover {
+            background: rgba(37, 99, 235, 0.08);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+          }
+        }
+      }
     }
 
     .weeks-checklist {
@@ -1245,7 +1299,7 @@ import { forkJoin, Observable } from 'rxjs';
 
     .week-checkbox-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 0.75rem;
       padding: 0.65rem 0.85rem;
       background: var(--background-color);
@@ -1266,6 +1320,7 @@ import { forkJoin, Observable } from 'rxjs';
       input[type="checkbox"] {
         width: 18px;
         height: 18px;
+        margin-top: 0.15rem;
         accent-color: var(--primary-color);
         cursor: pointer;
       }
@@ -1273,10 +1328,41 @@ import { forkJoin, Observable } from 'rxjs';
       .week-info {
         display: flex;
         flex-direction: column;
+        gap: 0.15rem;
+        flex: 1;
+        min-width: 0;
       }
 
-      .week-row-name { font-weight: 600; font-size: 0.88rem; color: var(--text-primary); }
-      .week-row-date { font-size: 0.78rem; color: var(--text-secondary); }
+      .week-title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .week-row-name {
+        font-weight: 600;
+        font-size: 0.84rem;
+        color: var(--text-primary);
+        line-height: 1.25;
+      }
+
+      .current-week-badge {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 0.1rem 0.45rem;
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        border-radius: 9999px;
+        white-space: nowrap;
+      }
+
+      .week-row-date {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
     }
 
     .pdf-preview-container {
@@ -1689,6 +1775,24 @@ export class AsignacionListComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   semanas = signal<Semana[]>([]);
+  deduplicatedSemanas = computed(() => {
+    const list = this.semanas();
+    const seen = new Set<string>();
+    const result: Semana[] = [];
+    const sorted = [...list].sort((a, b) => {
+      const dateA = a.fecha_inicio ? a.fecha_inicio.substring(0, 10) : '';
+      const dateB = b.fecha_inicio ? b.fecha_inicio.substring(0, 10) : '';
+      return dateA.localeCompare(dateB);
+    });
+    for (const s of sorted) {
+      const key = s.fecha_inicio ? s.fecha_inicio.substring(0, 10) : s.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(s);
+      }
+    }
+    return result;
+  });
   users = signal<any[]>([]);
   tipos = signal<TipoAsignacion[]>([]);
   grupos = signal<Grupo[]>([]);
@@ -2052,7 +2156,28 @@ export class AsignacionListComponent implements OnInit {
 
   formatDate(dateStr: string): string {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    return this.parseLocalDate(dateStr).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
+
+  getWeekFormattedTitle(semana: Semana): string {
+    if (!semana || !semana.fecha_inicio) return semana?.nombre || '';
+    const start = this.parseLocalDate(semana.fecha_inicio);
+    const end = semana.fecha_fin ? this.parseLocalDate(semana.fecha_fin) : new Date(start.getTime() + 6 * 86400000);
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const startMonth = months[start.getMonth()];
+    const endMonth = months[end.getMonth()];
+    const year = end.getFullYear();
+
+    if (start.getMonth() === end.getMonth()) {
+      return `Semana del ${start.getDate()} al ${end.getDate()} de ${startMonth} ${year}`;
+    }
+    return `Semana del ${start.getDate()} de ${startMonth} al ${end.getDate()} de ${endMonth} ${year}`;
+  }
+
+  isCurrentWeek(semana: Semana): boolean {
+    if (!semana || !semana.fecha_inicio) return false;
+    const mondayISO = this.formatDateToISO(this.getMonday(new Date()));
+    return semana.fecha_inicio.substring(0, 10) === mondayISO;
   }
 
   getFechaForDia(diaSemana: number): string {
@@ -2252,8 +2377,35 @@ export class AsignacionListComponent implements OnInit {
     this.fetchPreviewDataForSelectedWeeks();
   }
 
+  selectCurrentMonthWeeks() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const monthIds = this.deduplicatedSemanas()
+      .filter((s: Semana) => {
+        if (!s.fecha_inicio) return false;
+        const d = this.parseLocalDate(s.fecha_inicio);
+        return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+      })
+      .map((s: Semana) => s.id);
+
+    this.selectedWeeksForExportSignal.set(monthIds);
+    this.fetchPreviewDataForSelectedWeeks();
+  }
+
+  selectNext4Weeks() {
+    const todayMondayISO = this.formatDateToISO(this.getMonday(new Date()));
+    const upcoming = this.deduplicatedSemanas()
+      .filter((s: Semana) => (s.fecha_inicio ? s.fecha_inicio.substring(0, 10) >= todayMondayISO : false))
+      .slice(0, 4)
+      .map((s: Semana) => s.id);
+
+    this.selectedWeeksForExportSignal.set(upcoming.length > 0 ? upcoming : this.deduplicatedSemanas().slice(0, 4).map(s => s.id));
+    this.fetchPreviewDataForSelectedWeeks();
+  }
+
   selectAllWeeksForExport() {
-    const allIds = this.semanas().map((s: Semana) => s.id);
+    const allIds = this.deduplicatedSemanas().map((s: Semana) => s.id);
     this.selectedWeeksForExportSignal.set(allIds);
     this.fetchPreviewDataForSelectedWeeks();
   }
@@ -2301,7 +2453,7 @@ export class AsignacionListComponent implements OnInit {
   }
 
   getOrderedSelectedWeeks(): string[] {
-    const allSemanas = this.semanas();
+    const allSemanas = this.deduplicatedSemanas();
     const selectedIds = this.selectedWeeksForExportSignal();
     const set = new Set<string>();
     const result: string[] = [];

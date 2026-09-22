@@ -29,6 +29,11 @@ func (s *SemanaService) Create(ctx context.Context, fechaInicio time.Time, nombr
 		return nil, fmt.Errorf("la fecha de inicio debe ser un lunes")
 	}
 
+	existing, err := s.semanaRepo.GetByFechaInicio(ctx, fechaInicio)
+	if err == nil && existing != nil {
+		return existing, nil
+	}
+
 	fechaFin := fechaInicio.AddDate(0, 0, 6)
 
 	semana := &models.SemanaVisita{

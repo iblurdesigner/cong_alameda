@@ -42,6 +42,19 @@ func (r *SemanaRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.S
 	return s, nil
 }
 
+func (r *SemanaRepository) GetByFechaInicio(ctx context.Context, fechaInicio time.Time) (*models.SemanaVisita, error) {
+	query := `SELECT id, fecha_inicio, fecha_fin, nombre, archivado, created_at, updated_at FROM semanas_visita WHERE fecha_inicio = $1 LIMIT 1`
+	s := &models.SemanaVisita{}
+	err := r.db.QueryRow(ctx, query, fechaInicio).Scan(&s.ID, &s.FechaInicio, &s.FechaFin, &s.Nombre, &s.Archivado, &s.CreatedAt, &s.UpdatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrSemanaNotFound
+		}
+		return nil, err
+	}
+	return s, nil
+}
+
 func (r *SemanaRepository) List(ctx context.Context, includeArchived bool) ([]*models.SemanaVisita, error) {
 	query := `SELECT id, fecha_inicio, fecha_fin, nombre, archivado, created_at, updated_at FROM semanas_visita`
 	if !includeArchived {

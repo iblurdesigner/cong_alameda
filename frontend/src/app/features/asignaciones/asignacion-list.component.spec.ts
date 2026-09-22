@@ -262,4 +262,36 @@ describe('AsignacionListComponent', () => {
       expect(f.componentInstance.selectedSemanaId).toBe('CURRENT_WEEK');
     });
   });
+
+  describe('PDF export weeks deduplication and quick selection', () => {
+    it('should deduplicate weeks sharing the same fecha_inicio in deduplicatedSemanas', () => {
+      const fixture = TestBed.createComponent(AsignacionListComponent);
+      const comp = fixture.componentInstance;
+      comp.semanas.set([
+        { id: 'dup-1', fecha_inicio: '2026-12-28', fecha_fin: '2027-01-03', nombre: 'Semana Dup 1', archivado: false, created_at: '' },
+        { id: 'dup-2', fecha_inicio: '2026-12-28', fecha_fin: '2027-01-03', nombre: 'Semana Dup 2', archivado: false, created_at: '' },
+        { id: 'unique-1', fecha_inicio: '2026-08-24', fecha_fin: '2026-08-30', nombre: 'Semana Agosto', archivado: false, created_at: '' },
+      ]);
+
+      const result = comp.deduplicatedSemanas();
+      expect(result.length).toBe(2);
+      expect(result.map(s => s.fecha_inicio.substring(0, 10))).toEqual(['2026-08-24', '2026-12-28']);
+    });
+
+    it('should select current month weeks with selectCurrentMonthWeeks', () => {
+      const fixture = TestBed.createComponent(AsignacionListComponent);
+      const comp = fixture.componentInstance;
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+
+      comp.semanas.set([
+        { id: 'this-month-1', fecha_inicio: `${year}-${month}-03`, fecha_fin: `${year}-${month}-09`, nombre: 'Mes Actual 1', archivado: false, created_at: '' },
+        { id: 'other-month', fecha_inicio: '2025-01-05', fecha_fin: '2025-01-11', nombre: 'Otro Mes', archivado: false, created_at: '' }
+      ]);
+
+      comp.selectCurrentMonthWeeks();
+      expect(comp.selectedWeeksForExportSignal()).toEqual(['this-month-1']);
+    });
+  });
 });
