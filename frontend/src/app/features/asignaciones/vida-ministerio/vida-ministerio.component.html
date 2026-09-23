@@ -1,0 +1,662 @@
+<div class="vym-layout">
+  <!-- Cabecera y Navegación de Pestañas -->
+  <header class="top-header no-print">
+    <div class="header-main">
+      <div class="title-section">
+        <div class="icon-badge">
+          <span class="material-symbols-outlined">menu_book</span>
+        </div>
+        <div>
+          <h1>Programa Vida y Ministerio</h1>
+          <p class="subtitle">Gestión y generación de programa para reunión de entre semana (2 copias en A4)</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="pill-btn btn-secondary" (click)="exportWord()" title="Descargar documento de Word">
+          <span class="material-symbols-outlined icon">description</span>
+          <span>Word</span>
+        </button>
+        <button class="pill-btn btn-secondary" (click)="printProgram()" title="Imprimir o guardar como PDF en 1 sola hoja A4">
+          <span class="material-symbols-outlined icon">print</span>
+          <span>Imprimir / PDF</span>
+        </button>
+        @if (authService.isSuperintendente() || authService.isSuperAdmin() || authService.isAnciano()) {
+          <button class="pill-btn btn-primary" (click)="savePrograma()" [disabled]="saving()">
+            <span class="material-symbols-outlined icon">save</span>
+            <span>{{ saving() ? 'Guardando...' : 'Guardar Programa' }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Pestañas de subnavegación -->
+    <div class="nav-subtabs">
+      <a routerLink="/asignaciones" class="subtab-item">
+        <span class="material-symbols-outlined">assignment</span>
+        <span>Funciones de Reunión</span>
+      </a>
+      <a routerLink="/asignaciones/vida-y-ministerio" class="subtab-item active">
+        <span class="material-symbols-outlined">menu_book</span>
+        <span>Vida y Ministerio ("Seamos Mejores Maestros")</span>
+      </a>
+    </div>
+
+    <!-- Historial rápido del último mes (para reemplazos rápidos) -->
+    <div class="recent-weeks-bar">
+      <div class="recent-label">
+        <span class="material-symbols-outlined">history</span>
+        <span>Historial (Reemplazos rápidos):</span>
+      </div>
+      <div class="chips-container">
+        @for (sem of semanasRecientes(); track sem.id) {
+          <button 
+            type="button"
+            class="week-chip" 
+            [class.active]="selectedSemanaId() === sem.id"
+            (click)="selectSemana(sem.id)">
+            <span class="chip-title">{{ sem.nombre }}</span>
+            <span class="chip-dates">{{ formatDateRange(sem) }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Alertas y Feedback -->
+    @if (statusMessage()) {
+      <div class="feedback-banner" [class.success]="statusMessage()?.type === 'success'" [class.error]="statusMessage()?.type === 'error'">
+        <span class="material-symbols-outlined">
+          {{ statusMessage()?.type === 'success' ? 'check_circle' : 'error' }}
+        </span>
+        <span>{{ statusMessage()?.text }}</span>
+      </div>
+    }
+  </header>
+
+  <!-- Contenedor Principal: Editor a la Izquierda + Preview a la Derecha -->
+  <div class="app-workspace">
+    <!-- PANEL EDITOR -->
+    <aside class="editor-panel no-print">
+      <div class="editor-header">
+        <h2>Editar Contenido</h2>
+
+        <!-- Selector de Programa 1 vs Programa 2 -->
+        <div class="copy-selector-card">
+          <div class="copy-tabs">
+            <button 
+              type="button" 
+              class="copy-tab" 
+              [class.active]="activeCopy() === 'program1'" 
+              (click)="activeCopy.set('program1')">
+              <span class="badge">1</span>
+              <span>Copia 1 (Arriba)</span>
+            </button>
+            <button 
+              type="button" 
+              class="copy-tab" 
+              [class.active]="activeCopy() === 'program2'" 
+              (click)="activeCopy.set('program2')">
+              <span class="badge">2</span>
+              <span>Copia 2 (Abajo)</span>
+            </button>
+          </div>
+
+          <div class="copy-actions">
+            @if (activeCopy() === 'program1') {
+              <button type="button" class="btn-sync" (click)="cloneP1toP2()" title="Copiar todo el Programa 1 al Programa 2">
+                <span class="material-symbols-outlined">content_copy</span>
+                <span>Copiar P1 a P2</span>
+              </button>
+            } @else {
+              <button type="button" class="btn-sync" (click)="cloneP2toP1()" title="Copiar todo el Programa 2 al Programa 1">
+                <span class="material-symbols-outlined">content_copy</span>
+                <span>Copiar P2 a P1</span>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-content">
+        <!-- CABECERA DE LA REUNIÓN -->
+        <fieldset class="group-fieldset">
+          <legend>
+            <span class="material-symbols-outlined legend-icon">info</span>
+            <span>Información General</span>
+          </legend>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="vm-congregacion">Congregación</label>
+              <input id="vm-congregacion" type="text" [(ngModel)]="current.nombre_congregacion" placeholder="ALAMEDA">
+            </div>
+            <div class="form-group flex-1">
+              <label for="vm-lectura">Lectura Semanal</label>
+              <input id="vm-lectura" type="text" [(ngModel)]="current.lectura_semanal" placeholder="Ej: Salmos 1 a 5">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="vm-presidente">Presidente</label>
+              <input id="vm-presidente" type="text" [(ngModel)]="current.presidente" list="publishersList" placeholder="Seleccionar o escribir hermano">
+            </div>
+            <div class="form-group flex-1">
+              <label for="vm-consejero">Consejero Sala Auxiliar</label>
+              <input id="vm-consejero" type="text" [(ngModel)]="current.consejero_auxiliar" list="publishersList" placeholder="Seleccionar o escribir hermano">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- INICIO -->
+        <fieldset class="group-fieldset">
+          <legend>
+            <span class="material-symbols-outlined legend-icon">play_circle</span>
+            <span>Inicio de la Reunión</span>
+          </legend>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="vm-cancion-inicio">Canción Inicial (N°)</label>
+              <input id="vm-cancion-inicio" type="text" [(ngModel)]="current.cancion_inicio" placeholder="Ej: 15">
+            </div>
+            <div class="form-group w-time">
+              <label for="vm-hora-cancion-inicio">Hora</label>
+              <input id="vm-hora-cancion-inicio" type="time" [(ngModel)]="current.hora_cancion_inicio">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="vm-oracion-inicio">Oración de Inicio</label>
+              <input id="vm-oracion-inicio" type="text" [(ngModel)]="current.oracion_inicio" list="publishersList" placeholder="Hermano que ora">
+            </div>
+            <div class="form-group w-time">
+              <label for="vm-hora-oracion-inicio">Hora</label>
+              <input id="vm-hora-oracion-inicio" type="time" [(ngModel)]="current.hora_oracion_inicio">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- TESOROS DE LA BIBLIA (Gris) -->
+        <fieldset class="group-fieldset section-treasures">
+          <legend class="legend-treasures">
+            <span class="material-symbols-outlined legend-icon">diamond</span>
+            <span>Tesoros de la Biblia</span>
+          </legend>
+
+          <!-- Discurso 10 min -->
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="vm-tesoros-titulo">1. Título del Discurso (10 mins.)</label>
+              <input id="vm-tesoros-titulo" type="text" [(ngModel)]="current.tesoros_titulo" placeholder="Título de la primera parte">
+            </div>
+            <div class="form-group flex-1">
+              <label for="vm-tesoros-discursante">Discursante</label>
+              <input id="vm-tesoros-discursante" type="text" [(ngModel)]="current.tesoros_discursante" list="publishersList" placeholder="Hermano">
+            </div>
+          </div>
+
+          <!-- Perlas 10 min -->
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="vm-perlas-fijo">2. Busquemos perlas escondidas (10 mins.)</label>
+              <input id="vm-perlas-fijo" type="text" value="Busquemos perlas escondidas" readonly class="readonly-input">
+            </div>
+            <div class="form-group flex-1">
+              <label for="vm-perlas-discursante">Encargado</label>
+              <input id="vm-perlas-discursante" type="text" [(ngModel)]="current.perlas_discursante" list="publishersList" placeholder="Hermano">
+            </div>
+          </div>
+
+          <!-- Lectura de la Biblia 4 min -->
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label for="vm-lectura-fijo">3. Lectura de la Biblia (4 mins.)</label>
+              <input id="vm-lectura-fijo" type="text" value="Lectura de la Biblia" readonly class="readonly-input">
+            </div>
+            <div class="form-group flex-1">
+              <label for="vm-lectura-estudiante">Estudiante</label>
+              <input id="vm-lectura-estudiante" type="text" [(ngModel)]="current.lectura_estudiante" list="publishersList" placeholder="Estudiante">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- SEAMOS MEJORES MAESTROS - AUDITORIO PRINCIPAL (Dorado) -->
+        <fieldset class="group-fieldset section-ministry">
+          <legend class="legend-ministry">
+            <span class="material-symbols-outlined legend-icon">school</span>
+            <span>Seamos Mejores Maestros — Auditorio Principal</span>
+          </legend>
+
+          <div class="dynamic-list">
+            @for (item of current.seamos_maestros_auditorio; track $index) {
+              <div class="item-card">
+                <div class="item-card-header">
+                  <span class="item-number">{{ $index + 4 }}.</span>
+                  <input type="time" [(ngModel)]="item.startTime" class="input-time">
+                  <input type="text" [(ngModel)]="item.title" placeholder="Título de la asignación" class="input-title">
+                  <input type="text" [(ngModel)]="item.time" placeholder="mins." class="input-duration">
+                  <button type="button" class="btn-del" (click)="removeMinistryItemAuditorio($index)" title="Eliminar asignación">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+                <div class="item-card-body">
+                  <span class="material-symbols-outlined input-icon">person</span>
+                  <input type="text" [(ngModel)]="item.student" list="publishersList" placeholder="Estudiante / Ayudante">
+                </div>
+              </div>
+            }
+          </div>
+
+          <button type="button" class="btn-add-item" (click)="addMinistryItemAuditorio()">
+            <span class="material-symbols-outlined">add</span>
+            <span>Agregar Asignación (Auditorio)</span>
+          </button>
+        </fieldset>
+
+        <!-- SEAMOS MEJORES MAESTROS - SALA AUXILIAR (Dorado) -->
+        <fieldset class="group-fieldset section-ministry">
+          <legend class="legend-ministry">
+            <span class="material-symbols-outlined legend-icon">meeting_room</span>
+            <span>Seamos Mejores Maestros — Sala Auxiliar</span>
+          </legend>
+
+          <div class="dynamic-list">
+            @for (item of current.seamos_maestros_auxiliar; track $index) {
+              <div class="item-card">
+                <div class="item-card-header">
+                  <span class="item-number">{{ $index + 4 }}.</span>
+                  <input type="time" [(ngModel)]="item.startTime" class="input-time">
+                  <input type="text" [(ngModel)]="item.title" placeholder="Título de la asignación" class="input-title">
+                  <input type="text" [(ngModel)]="item.time" placeholder="mins." class="input-duration">
+                  <button type="button" class="btn-del" (click)="removeMinistryItemAuxiliar($index)" title="Eliminar asignación">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+                <div class="item-card-body">
+                  <span class="material-symbols-outlined input-icon">person</span>
+                  <input type="text" [(ngModel)]="item.student" list="publishersList" placeholder="Estudiante / Ayudante">
+                </div>
+              </div>
+            }
+          </div>
+
+          <button type="button" class="btn-add-item" (click)="addMinistryItemAuxiliar()">
+            <span class="material-symbols-outlined">add</span>
+            <span>Agregar Asignación (Sala Auxiliar)</span>
+          </button>
+        </fieldset>
+
+        <!-- NUESTRA VIDA CRISTIANA (Rojo) -->
+        <fieldset class="group-fieldset section-christian">
+          <legend class="legend-christian">
+            <span class="material-symbols-outlined legend-icon">favorite</span>
+            <span>Nuestra Vida Cristiana</span>
+          </legend>
+
+          <!-- Canción intermedia -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="vm-cancion-medio">Canción Intermedia (N°)</label>
+              <input id="vm-cancion-medio" type="text" [(ngModel)]="current.cancion_medio" placeholder="Ej: 85">
+            </div>
+            <div class="form-group w-time">
+              <label for="vm-hora-cancion-medio">Hora</label>
+              <input id="vm-hora-cancion-medio" type="time" [(ngModel)]="current.cancion_medio_tiempo">
+            </div>
+          </div>
+
+          <!-- Partes dinámicas -->
+          <div class="dynamic-list">
+            @for (item of current.vida_cristiana_partes; track $index) {
+              <div class="item-card">
+                <div class="item-card-header">
+                  <span class="item-number">{{ getChristianLifeStartIndex(current) + $index + 1 }}.</span>
+                  <input type="time" [(ngModel)]="item.startTime" class="input-time" aria-label="Hora de inicio de parte">
+                  <input type="text" [(ngModel)]="item.title" placeholder="Título de la parte" class="input-title" aria-label="Título de parte">
+                  <input type="text" [(ngModel)]="item.time" placeholder="mins." class="input-duration" aria-label="Duración de parte">
+                  <button type="button" class="btn-del" (click)="removeChristianLifeItem($index)" title="Eliminar parte">
+                    <span class="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+                <div class="item-card-body">
+                  <span class="material-symbols-outlined input-icon">record_voice_over</span>
+                  <input type="text" [(ngModel)]="item.speaker" list="publishersList" placeholder="Encargado" aria-label="Encargado de la parte">
+                </div>
+              </div>
+            }
+          </div>
+
+          <button type="button" class="btn-add-item" (click)="addChristianLifeItem()">
+            <span class="material-symbols-outlined">add</span>
+            <span>Agregar Parte de Vida Cristiana</span>
+          </button>
+
+          <!-- Estudio Bíblico -->
+          <div class="study-card">
+            <div class="study-title">
+              {{ getCongregationStudyNumber(current) }}. Estudio bíblico de la congregación (30 mins.)
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="vm-estudio-conductor">Conductor</label>
+                <input id="vm-estudio-conductor" type="text" [(ngModel)]="current.estudio_conductor" list="publishersList" placeholder="Hermano conductor">
+              </div>
+              <div class="form-group flex-1">
+                <label for="vm-estudio-lector">Lector</label>
+                <input id="vm-estudio-lector" type="text" [(ngModel)]="current.estudio_lector" list="publishersList" placeholder="Hermano lector">
+              </div>
+            </div>
+          </div>
+
+          <!-- Conclusión y Cierre -->
+          <div class="form-row" style="margin-top: 1rem;">
+            <div class="form-group flex-1">
+              <label for="vm-cancion-fin">Canción Final (N°)</label>
+              <input id="vm-cancion-fin" type="text" [(ngModel)]="current.cancion_fin" placeholder="Ej: 140">
+            </div>
+            <div class="form-group w-time">
+              <label for="vm-hora-cancion-fin">Hora</label>
+              <input id="vm-hora-cancion-fin" type="time" [(ngModel)]="current.cancion_fin_tiempo">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="vm-oracion-fin">Oración Final</label>
+              <input id="vm-oracion-fin" type="text" [(ngModel)]="current.oracion_fin" list="publishersList" placeholder="Hermano que ora">
+            </div>
+          </div>
+        </fieldset>
+      </div>
+    </aside>
+
+    <!-- PANEL DE PREVIEW (HOJA A4 CON 2 COPIAS VERTICALES) -->
+    <main class="preview-container">
+      <div class="preview-toolbar no-print">
+        <div class="preview-badge">
+          <span class="material-symbols-outlined">preview</span>
+          <span>Previsualización A4 en tiempo real</span>
+        </div>
+        <div class="preview-hint">
+          2 programas verticales con línea de corte lista para imprimir
+        </div>
+      </div>
+
+      <div class="sheet-a4" id="sheetA4">
+        <!-- COPIA 1 (SUPERIOR) -->
+        <article class="program-card">
+          <header class="header-row">
+            <div class="congregation-name">{{ p1().nombre_congregacion || 'ALAMEDA' }}</div>
+            <div class="program-title">Programa para la reunión de entre semana</div>
+          </header>
+
+          <div class="top-info">
+            <div class="info-line">
+              <span class="label">Presidente:</span>
+              <span class="value">{{ p1().presidente || '[Nombre]' }}</span>
+            </div>
+            <div class="info-line">
+              <span class="label">Consejero de la sala auxiliar:</span>
+              <span class="value">{{ p1().consejero_auxiliar || '[Nombre]' }}</span>
+            </div>
+          </div>
+
+          <div class="date-row">
+            <span>{{ formatDateRange(selectedSemana()) }} | {{ p1().lectura_semanal }}</span>
+          </div>
+
+          <!-- Canción Inicial & Introducción -->
+          <div class="program-item song">
+            <div class="time">{{ p1().hora_cancion_inicio }}</div>
+            <div>Canción {{ p1().cancion_inicio || '[N°]' }}</div>
+          </div>
+          <div class="program-item">
+            <div class="time">{{ p1().hora_oracion_inicio }}</div>
+            <div>Palabras de introducción (1 min.)</div>
+            <div class="role-label">Oración:</div>
+            <div class="name">{{ p1().oracion_inicio || '[Nombre]' }}</div>
+          </div>
+
+          <!-- Tesoros de la Biblia -->
+          <div class="section-header bg-grey">
+            <span>TESOROS DE LA BIBLIA</span>
+          </div>
+          <div class="treasures-grid">
+            <div class="program-item">
+              <div class="time">{{ p1().hora_cancion_inicio || '19:05' }}</div>
+              <div><strong>1. {{ p1().tesoros_titulo || '[Título]' }}</strong> (10 mins.)</div>
+              <div class="role-label"></div>
+              <div class="name">{{ p1().tesoros_discursante || '[Nombre]' }}</div>
+            </div>
+            <div class="program-item">
+              <div class="time">19:15</div>
+              <div><strong>2. Busquemos perlas escondidas</strong> (10 mins.)</div>
+              <div class="role-label"></div>
+              <div class="name">{{ p1().perlas_discursante || '[Nombre]' }}</div>
+            </div>
+            <div class="program-item">
+              <div class="time">19:25</div>
+              <div><strong>3. Lectura de la Biblia</strong> (4 mins.)</div>
+              <div class="role-label">Estudiante:</div>
+              <div class="name">{{ p1().lectura_estudiante || '[Nombre]' }}</div>
+            </div>
+          </div>
+
+          <!-- Seamos Mejores Maestros -->
+          <div class="section-header bg-gold">
+            <span>SEAMOS MEJORES MAESTROS</span>
+          </div>
+          <div class="ministry-grid">
+            <div class="room-title">Auditorio Principal</div>
+            @for (item of p1().seamos_maestros_auditorio; track $index) {
+              <div class="program-item">
+                <div class="time">{{ item.startTime || '0:00' }}</div>
+                <div><strong>{{ $index + 4 }}. {{ item.title }}</strong> ({{ item.time }})</div>
+                <div class="role-label">Estudiante/Ayudante:</div>
+                <div class="name">{{ item.student || '[Nombre]' }}</div>
+              </div>
+            }
+
+            @if (p1().seamos_maestros_auxiliar.length > 0) {
+              <div class="room-title">Sala Auxiliar</div>
+              @for (item of p1().seamos_maestros_auxiliar; track $index) {
+                <div class="program-item">
+                  <div class="time">{{ item.startTime || '0:00' }}</div>
+                  <div><strong>{{ $index + 4 }}. {{ item.title }}</strong> ({{ item.time }})</div>
+                  <div class="role-label">Estudiante/Ayudante:</div>
+                  <div class="name">{{ item.student || '[Nombre]' }}</div>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Nuestra Vida Cristiana -->
+          <div class="section-header bg-red">
+            <span>NUESTRA VIDA CRISTIANA</span>
+          </div>
+          <div class="christian-life-grid">
+            <div class="program-item song">
+              <div class="time">{{ p1().cancion_medio_tiempo }}</div>
+              <div>Canción {{ p1().cancion_medio || '[N°]' }}</div>
+            </div>
+
+            @for (item of p1().vida_cristiana_partes; track $index) {
+              <div class="program-item">
+                <div class="time">{{ item.startTime || '0:00' }}</div>
+                <div><strong>{{ getChristianLifeStartIndex(p1()) + $index + 1 }}. {{ item.title }}</strong> ({{ item.time }})</div>
+                <div class="role-label"></div>
+                <div class="name">{{ item.speaker || '[Nombre]' }}</div>
+              </div>
+            }
+
+            <div class="program-item">
+              <div class="time">{{ p1().cancion_medio_tiempo || '20:03' }}</div>
+              <div><strong>{{ getCongregationStudyNumber(p1()) }}. Estudio bíblico de la congregación</strong> ({{ p1().estudio_tiempo }})</div>
+              <div class="role-label">Conductor/Lector:</div>
+              <div class="name">
+                {{ p1().estudio_conductor || '[Conductor]' }}<br>
+                {{ p1().estudio_lector || '[Lector]' }}
+              </div>
+            </div>
+
+            <div class="program-item">
+              <div class="time">{{ p1().conclusion_tiempo }}</div>
+              <div>Palabras de conclusión (3 min.)</div>
+            </div>
+
+            <div class="program-item song">
+              <div class="time">{{ p1().cancion_fin_tiempo }}</div>
+              <div>Canción {{ p1().cancion_fin || '[N°]' }}</div>
+              <div class="role-label">Oración:</div>
+              <div class="name">{{ p1().oracion_fin || '[Nombre]' }}</div>
+            </div>
+          </div>
+        </article>
+
+        <!-- LÍNEA DE CORTE -->
+        <div class="cut-line">
+          <span class="cut-scissors">✂</span>
+        </div>
+
+        <!-- COPIA 2 (INFERIOR) -->
+        <article class="program-card">
+          <header class="header-row">
+            <div class="congregation-name">{{ p2().nombre_congregacion || 'ALAMEDA' }}</div>
+            <div class="program-title">Programa para la reunión de entre semana</div>
+          </header>
+
+          <div class="top-info">
+            <div class="info-line">
+              <span class="label">Presidente:</span>
+              <span class="value">{{ p2().presidente || '[Nombre]' }}</span>
+            </div>
+            <div class="info-line">
+              <span class="label">Consejero de la sala auxiliar:</span>
+              <span class="value">{{ p2().consejero_auxiliar || '[Nombre]' }}</span>
+            </div>
+          </div>
+
+          <div class="date-row">
+            <span>{{ formatDateRange(selectedSemana()) }} | {{ p2().lectura_semanal }}</span>
+          </div>
+
+          <!-- Canción Inicial & Introducción -->
+          <div class="program-item song">
+            <div class="time">{{ p2().hora_cancion_inicio }}</div>
+            <div>Canción {{ p2().cancion_inicio || '[N°]' }}</div>
+          </div>
+          <div class="program-item">
+            <div class="time">{{ p2().hora_oracion_inicio }}</div>
+            <div>Palabras de introducción (1 min.)</div>
+            <div class="role-label">Oración:</div>
+            <div class="name">{{ p2().oracion_inicio || '[Nombre]' }}</div>
+          </div>
+
+          <!-- Tesoros de la Biblia -->
+          <div class="section-header bg-grey">
+            <span>TESOROS DE LA BIBLIA</span>
+          </div>
+          <div class="treasures-grid">
+            <div class="program-item">
+              <div class="time">{{ p2().hora_cancion_inicio || '19:05' }}</div>
+              <div><strong>1. {{ p2().tesoros_titulo || '[Título]' }}</strong> (10 mins.)</div>
+              <div class="role-label"></div>
+              <div class="name">{{ p2().tesoros_discursante || '[Nombre]' }}</div>
+            </div>
+            <div class="program-item">
+              <div class="time">19:15</div>
+              <div><strong>2. Busquemos perlas escondidas</strong> (10 mins.)</div>
+              <div class="role-label"></div>
+              <div class="name">{{ p2().perlas_discursante || '[Nombre]' }}</div>
+            </div>
+            <div class="program-item">
+              <div class="time">19:25</div>
+              <div><strong>3. Lectura de la Biblia</strong> (4 mins.)</div>
+              <div class="role-label">Estudiante:</div>
+              <div class="name">{{ p2().lectura_estudiante || '[Nombre]' }}</div>
+            </div>
+          </div>
+
+          <!-- Seamos Mejores Maestros -->
+          <div class="section-header bg-gold">
+            <span>SEAMOS MEJORES MAESTROS</span>
+          </div>
+          <div class="ministry-grid">
+            <div class="room-title">Auditorio Principal</div>
+            @for (item of p2().seamos_maestros_auditorio; track $index) {
+              <div class="program-item">
+                <div class="time">{{ item.startTime || '0:00' }}</div>
+                <div><strong>{{ $index + 4 }}. {{ item.title }}</strong> ({{ item.time }})</div>
+                <div class="role-label">Estudiante/Ayudante:</div>
+                <div class="name">{{ item.student || '[Nombre]' }}</div>
+              </div>
+            }
+
+            @if (p2().seamos_maestros_auxiliar.length > 0) {
+              <div class="room-title">Sala Auxiliar</div>
+              @for (item of p2().seamos_maestros_auxiliar; track $index) {
+                <div class="program-item">
+                  <div class="time">{{ item.startTime || '0:00' }}</div>
+                  <div><strong>{{ $index + 4 }}. {{ item.title }}</strong> ({{ item.time }})</div>
+                  <div class="role-label">Estudiante/Ayudante:</div>
+                  <div class="name">{{ item.student || '[Nombre]' }}</div>
+                </div>
+              }
+            }
+          </div>
+
+          <!-- Nuestra Vida Cristiana -->
+          <div class="section-header bg-red">
+            <span>NUESTRA VIDA CRISTIANA</span>
+          </div>
+          <div class="christian-life-grid">
+            <div class="program-item song">
+              <div class="time">{{ p2().cancion_medio_tiempo }}</div>
+              <div>Canción {{ p2().cancion_medio || '[N°]' }}</div>
+            </div>
+
+            @for (item of p2().vida_cristiana_partes; track $index) {
+              <div class="program-item">
+                <div class="time">{{ item.startTime || '0:00' }}</div>
+                <div><strong>{{ getChristianLifeStartIndex(p2()) + $index + 1 }}. {{ item.title }}</strong> ({{ item.time }})</div>
+                <div class="role-label"></div>
+                <div class="name">{{ item.speaker || '[Nombre]' }}</div>
+              </div>
+            }
+
+            <div class="program-item">
+              <div class="time">{{ p2().cancion_medio_tiempo || '20:03' }}</div>
+              <div><strong>{{ getCongregationStudyNumber(p2()) }}. Estudio bíblico de la congregación</strong> ({{ p2().estudio_tiempo }})</div>
+              <div class="role-label">Conductor/Lector:</div>
+              <div class="name">
+                {{ p2().estudio_conductor || '[Conductor]' }}<br>
+                {{ p2().estudio_lector || '[Lector]' }}
+              </div>
+            </div>
+
+            <div class="program-item">
+              <div class="time">{{ p2().conclusion_tiempo }}</div>
+              <div>Palabras de conclusión (3 min.)</div>
+            </div>
+
+            <div class="program-item song">
+              <div class="time">{{ p2().cancion_fin_tiempo }}</div>
+              <div>Canción {{ p2().cancion_fin || '[N°]' }}</div>
+              <div class="role-label">Oración:</div>
+              <div class="name">{{ p2().oracion_fin || '[Nombre]' }}</div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </main>
+  </div>
+
+  <!-- Datalist para autocompletado de publicadores/usuarios -->
+  <datalist id="publishersList">
+    @for (u of users(); track u.id) {
+      <option [value]="u.nombre">{{ u.rol }}</option>
+    }
+  </datalist>
+</div>

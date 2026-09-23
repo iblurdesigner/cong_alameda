@@ -1,0 +1,206 @@
+// Angular component styles extracted from asignacion-list.component.ts
+// Budget reduction: moves inline SCSS to separate file
+
+:root {
+  --radius-pill: 100px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --surface-color: #f8f9fa;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+  --border-color: #dee2e6;
+}
+
+/* Container and header */
+.asignaciones-container {
+  .top-header {
+    .title-section {
+      .icon-badge {
+        span.material-symbols-outlined { font-size: 2rem; }
+      }
+      h1 { margin: 0; font-size: 1.5rem; }
+      .subtitle { margin: 0.5rem 0 0; font-size: 0.875rem; }
+    }
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+  }
+
+  /* Buttons */
+  .pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.35rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-sm);
+    text-decoration: none;
+
+    span.icon { font-size: 1.15rem; }
+
+    &:hover { transform: translateY(-2px); }
+
+    &.btn-primary {
+      background: #121316;
+      color: #ffffff;
+
+      span.icon { color: var(--accent-lime); }
+      &:hover { box-shadow: 0 8px 20px rgba(18, 19, 22, 0.3); }
+    }
+
+    &.btn-secondary {
+      background: var(--surface-color);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      &:hover { background: #e9ecef; }
+    }
+  }
+
+  /* Week selector card */
+  .week-selector-card {
+    .week-nav-container {
+      // Navigator styles
+    }
+  }
+
+  /* Week checkbox rows */
+  .week-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    background: var(--background-color);
+    
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 0.15rem;
+      accent-color: var(--primary-color);
+      cursor: pointer;
+    }
+
+    .week-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .week-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .week-row-name {
+      font-weight: 600;
+      font-size: 0.84rem;
+      color: var(--text-primary);
+      line-height: 1.25;
+    }
+
+    .week-row-date {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .current-week-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.1rem 0.45rem;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      border-radius: 9999px;
+      white-space: nowrap;
+    }
+  }
+
+  /* PDF export modal */
+  .pdf-sidebar {
+    .sidebar-actions {
+      flex-direction: column;
+      gap: 0.6rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+
+      .sidebar-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .sidebar-label {
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+
+      .sidebar-btns {
+        display: flex;
+        gap: 0.4rem;
+
+        .text-btn {
+          display: inline-block;
+          padding: 0.3rem 0.6rem;
+          background: var(--background-color);
+          border: 1px solid var(--border-color);
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          .material-symbols-outlined { font-size: 0.95rem; color: var(--primary-color); }
+          &:hover {
+            background: rgba(37, 99, 235, 0.08);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+          }
+        }
+      }
+
+      .sidebar-quick-filters {
+        display: flex;
+        gap: 0.4rem;
+
+        .filter-chip-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.3rem;
+          padding: 0.3rem 0.6rem;
+          background: var(--background-color);
+          border: 1px solid var(--border-color);
+          border-radius: 9999px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--text-primary);
+          cursor: pointer;
+
+          .material-symbols-outlined { font-size: 0.95rem; color: var(--primary-color); }
+          &:hover {
+            background: rgba(37, 99, 235, 0.08);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+          }
+        }
+      }
+    }
+
+    .weeks-checklist {
+      .week-checkbox-row { /* redefined above */ }
+      .week-row-name { font-weight: 600; font-size: 0.88rem; color: var(--text-primary); }
+      .week-row-date { font-size: 0.78rem; color: var(--text-secondary); }
+    }
+  }
+}

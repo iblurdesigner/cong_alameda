@@ -119,6 +119,11 @@ func main() {
 	programaVisitaService := services.NewProgramaVisitaService(programaVisitaRepo, programaPredicacionRepo, grupoRepo, territorioRepo)
 	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaService)
 
+	// Initialize ProgramaVyM repo, service, handler
+	programaVyMRepo := repositories.NewProgramaVyMRepository(db.Pool)
+	programaVyMService := services.NewProgramaVyMService(programaVyMRepo)
+	programaVyMHandler := handlers.NewProgramaVyMHandler(programaVyMService)
+
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 
@@ -264,6 +269,12 @@ func main() {
 	visitasGroup.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.Update)
 	visitasGroup.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaVisitaHandler.Delete)
 	visitasGroup.Put("/:id/visited", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "OBSERVADOR"), programaVisitaHandler.SetVisited)
+
+	// ====== PROGRAMA VIDA Y MINISTERIO ROUTES ======
+	programasVyM := protected.Group("/programa-vym")
+	programasVyM.Get("/semana/:semana_id", programaVyMHandler.GetBySemana)
+	programasVyM.Post("/semana/:semana_id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "ANCIANO"), programaVyMHandler.Upsert)
+	programasVyM.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaVyMHandler.Delete)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)

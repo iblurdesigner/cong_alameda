@@ -91,9 +91,15 @@ import { ThemeService } from './core/services/theme.service';
               <span class="section-label">Asignaciones</span>
             </li>
             <li>
-              <a routerLink="/asignaciones" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+              <a routerLink="/asignaciones" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="closeSidebarOnMobile()">
                 <span class="material-symbols-outlined icon">assignment</span>
-                <span>Asignaciones</span>
+                <span>Funciones Reunión</span>
+              </a>
+            </li>
+            <li>
+              <a routerLink="/asignaciones/vida-y-ministerio" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+                <span class="material-symbols-outlined icon">menu_book</span>
+                <span>Vida y Ministerio</span>
               </a>
             </li>
             <!-- Backoffice - Solo SUPER_ADMIN -->

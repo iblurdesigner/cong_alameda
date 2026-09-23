@@ -6,13 +6,14 @@ import { SemanaService, Semana } from '../../core/services/semana.service';
 import { AuthService } from '../../core/services/auth.service';
 import { GrupoService, Grupo } from '../../core/services/grupo.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-asignacion-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
+  styleUrls: ['./asignacion-list.component.scss'],
   template: `
     <div class="asignaciones-container">
       <!-- Calescence Header -->
@@ -28,6 +29,10 @@ import { forkJoin, Observable } from 'rxjs';
         </div>
 
         <div class="header-actions">
+          <a routerLink="/asignaciones/vida-y-ministerio" class="pill-btn btn-secondary" style="text-decoration: none;">
+            <span class="material-symbols-outlined icon">menu_book</span>
+            <span>Vida y Ministerio</span>
+          </a>
           <button class="pill-btn btn-secondary" (click)="openPdfExportModal()">
             <span class="material-symbols-outlined icon">picture_as_pdf</span>
             <span>Exportar PDF</span>
