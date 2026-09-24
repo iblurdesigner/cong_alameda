@@ -11,6 +11,19 @@ import {
   createDefaultProgramaVyM 
 } from '../../../core/services/programa-vym.service';
 
+export interface EstudianteS89Item {
+  id: string;
+  numero: number;
+  titulo: string;
+  tiempo: string;
+  sala: 'Auditorio Principal' | 'Sala Auxiliar';
+  estudiante: string;
+  ayudante?: string;
+  telefono: string;
+  telefonoManual?: string;
+  mensajeRaw: string;
+}
+
 @Component({
   selector: 'app-vida-ministerio',
   standalone: true,
@@ -57,6 +70,137 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
   fitPreviewMobile = signal<boolean>(true);
   previewScale = signal<number>(1);
   private resizeObserver?: ResizeObserver;
+
+  // Centro de Notificaciones y Boletas S-89
+  showS89Modal = signal<boolean>(false);
+  filterS89Sala = signal<'todas' | 'Auditorio Principal' | 'Sala Auxiliar'>('todas');
+  selectedS89Preview = signal<EstudianteS89Item | null>(null);
+  copiedS89Id = signal<string | null>(null);
+
+  estudiantesS89 = computed<EstudianteS89Item[]>(() => {
+    const prog = this.activeCopy() === 'program1' ? this.p1() : this.p2();
+    const sem = this.selectedSemana();
+    const semTitle = sem ? this.formatDateRange(sem) : 'Esta semana';
+    const cong = prog.nombre_congregacion || 'Alameda';
+    const usersList = this.users();
+    const items: EstudianteS89Item[] = [];
+
+    const findPhone = (name: string): string => {
+      if (!name) return '';
+      const cleanName = name.trim().toLowerCase();
+      const u = usersList.find(usr => usr.nombre.trim().toLowerCase() === cleanName);
+      return u?.telefono || '';
+    };
+
+    // 1. Lectura de la Biblia (Asignación 3)
+    if (prog.lectura_estudiante && prog.lectura_estudiante.trim()) {
+      const tel = findPhone(prog.lectura_estudiante);
+      const msg = this.buildS89Message({
+        estudiante: prog.lectura_estudiante,
+        numero: 3,
+        titulo: 'Lectura de la Biblia',
+        tiempo: '4 min.',
+        sala: 'Auditorio Principal',
+        congregacion: cong,
+        semana: semTitle
+      });
+      items.push({
+        id: 'lectura-auditorio',
+        numero: 3,
+        titulo: 'Lectura de la Biblia',
+        tiempo: '4 min.',
+        sala: 'Auditorio Principal',
+        estudiante: prog.lectura_estudiante,
+        telefono: tel,
+        mensajeRaw: msg
+      });
+    }
+
+    // 2. Seamos Mejores Maestros - Auditorio Principal
+    (prog.seamos_maestros_auditorio || []).forEach((m, idx) => {
+      if (m.student && m.student.trim()) {
+        const num = idx + 4;
+        let studentName = m.student.trim();
+        let assistantName = m.assistant?.trim() || '';
+
+        if (!assistantName && studentName.includes('/')) {
+          const parts = studentName.split('/');
+          studentName = parts[0].trim();
+          assistantName = parts[1].trim();
+        }
+
+        const tel = findPhone(studentName);
+        const msg = this.buildS89Message({
+          estudiante: studentName,
+          ayudante: assistantName,
+          numero: num,
+          titulo: m.title || 'Asignación estudiantil',
+          tiempo: m.time || '3-4 min.',
+          sala: 'Auditorio Principal',
+          congregacion: cong,
+          semana: semTitle
+        });
+        items.push({
+          id: `ministry-aud-${idx}`,
+          numero: num,
+          titulo: m.title || 'Asignación estudiantil',
+          tiempo: m.time || '3-4 min.',
+          sala: 'Auditorio Principal',
+          estudiante: studentName,
+          ayudante: assistantName,
+          telefono: tel,
+          mensajeRaw: msg
+        });
+      }
+    });
+
+    // 3. Seamos Mejores Maestros - Sala Auxiliar
+    (prog.seamos_maestros_auxiliar || []).forEach((m, idx) => {
+      if (m.student && m.student.trim()) {
+        const num = idx + 4;
+        let studentName = m.student.trim();
+        let assistantName = m.assistant?.trim() || '';
+
+        if (!assistantName && studentName.includes('/')) {
+          const parts = studentName.split('/');
+          studentName = parts[0].trim();
+          assistantName = parts[1].trim();
+        }
+
+        const tel = findPhone(studentName);
+        const msg = this.buildS89Message({
+          estudiante: studentName,
+          ayudante: assistantName,
+          numero: num,
+          titulo: m.title || 'Asignación estudiantil',
+          tiempo: m.time || '3-4 min.',
+          sala: 'Sala Auxiliar',
+          congregacion: cong,
+          semana: semTitle
+        });
+        items.push({
+          id: `ministry-aux-${idx}`,
+          numero: num,
+          titulo: m.title || 'Asignación estudiantil',
+          tiempo: m.time || '3-4 min.',
+          sala: 'Sala Auxiliar',
+          estudiante: studentName,
+          ayudante: assistantName,
+          telefono: tel,
+          mensajeRaw: msg
+        });
+      }
+    });
+
+    return items;
+  });
+
+  filteredEstudiantesS89 = computed(() => {
+    const filter = this.filterS89Sala();
+    const list = this.estudiantesS89();
+    if (filter === 'todas') return list;
+    return list.filter(item => item.sala === filter);
+  });
 
   ngOnInit(): void {
     if (typeof window !== 'undefined') {
@@ -115,6 +259,83 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
     const availableWidth = Math.max(260, containerWidth - 32);
     const scale = Math.min(1, availableWidth / 794);
     this.previewScale.set(Math.round(scale * 1000) / 1000);
+  }
+
+  buildS89Message(data: {
+    estudiante: string;
+    ayudante?: string;
+    numero: number;
+    titulo: string;
+    tiempo: string;
+    sala: string;
+    congregacion: string;
+    semana: string;
+  }): string {
+    let msg = `📋 *ASIGNACIÓN: VIDA Y MINISTERIO CRISTIANOS*\n`;
+    msg += `🏛️ *Congregación:* ${data.congregacion}\n`;
+    msg += `🗓️ *Semana:* ${data.semana}\n\n`;
+    msg += `👤 *Estudiante:* ${data.estudiante}\n`;
+    if (data.ayudante && data.ayudante.trim()) {
+      msg += `👥 *Ayudante:* ${data.ayudante.trim()}\n`;
+    }
+    msg += `📍 *Sala:* ${data.sala}\n`;
+    msg += `📖 *Intervención:* Núm. ${data.numero} — ${data.titulo} (${data.tiempo})\n\n`;
+    msg += `¡Muchos éxitos en tu preparación y presentación! 🙏`;
+    return msg;
+  }
+
+  cleanPhoneNumber(phone: string): string {
+    if (!phone) return '';
+    let cleaned = phone.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) {
+      cleaned = cleaned.substring(1);
+    } else if (cleaned.startsWith('0')) {
+      cleaned = '593' + cleaned.substring(1);
+    }
+    return cleaned;
+  }
+
+  openS89Modal(): void {
+    this.showS89Modal.set(true);
+  }
+
+  closeS89Modal(): void {
+    this.showS89Modal.set(false);
+    this.selectedS89Preview.set(null);
+  }
+
+  setFilterS89Sala(sala: 'todas' | 'Auditorio Principal' | 'Sala Auxiliar'): void {
+    this.filterS89Sala.set(sala);
+  }
+
+  sendWhatsAppS89(item: EstudianteS89Item): void {
+    const rawPhone = item.telefonoManual || item.telefono;
+    if (!rawPhone) return;
+    const phone = this.cleanPhoneNumber(rawPhone);
+    const encoded = encodeURIComponent(item.mensajeRaw);
+    const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+    window.open(url, '_blank');
+  }
+
+  copyS89Message(item: EstudianteS89Item): void {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(item.mensajeRaw).then(() => {
+        this.copiedS89Id.set(item.id);
+        setTimeout(() => this.copiedS89Id.set(null), 2500);
+      });
+    }
+  }
+
+  previewS89Slip(item: EstudianteS89Item): void {
+    this.selectedS89Preview.set(item);
+  }
+
+  closeS89SlipPreview(): void {
+    this.selectedS89Preview.set(null);
+  }
+
+  printS89Slip(): void {
+    window.print();
   }
 
   loadInitialData(): void {

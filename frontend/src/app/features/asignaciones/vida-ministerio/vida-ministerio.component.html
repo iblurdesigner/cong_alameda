@@ -13,6 +13,13 @@
       </div>
 
       <div class="header-actions">
+        <button class="pill-btn btn-whatsapp" (click)="openS89Modal()" title="Enviar boleta S-89 por WhatsApp a los estudiantes">
+          <span class="material-symbols-outlined icon">send_to_mobile</span>
+          <span class="btn-label">Notificar S-89</span>
+          @if (estudiantesS89().length > 0) {
+            <span class="s89-count-badge">{{ estudiantesS89().length }}</span>
+          }
+        </button>
         <button class="pill-btn btn-secondary" (click)="exportWord()" title="Descargar documento de Word">
           <span class="material-symbols-outlined icon">description</span>
           <span class="btn-label">Word</span>
@@ -702,4 +709,214 @@
       <option [value]="u.nombre">{{ u.rol }}</option>
     }
   </datalist>
+
+  <!-- Modal de Notificaciones y Boletas S-89 por WhatsApp -->
+  @if (showS89Modal()) {
+    <div class="modal-backdrop wa-modal-backdrop no-print" (click)="closeS89Modal()">
+      <div class="modal-card s89-modal-card" (click)="$event.stopPropagation()">
+        <!-- Encabezado del Modal -->
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <div class="modal-icon-badge">
+              <span class="material-symbols-outlined">send_to_mobile</span>
+            </div>
+            <div>
+              <h3>Notificaciones S-89 por WhatsApp</h3>
+              <p class="modal-subtitle">Asignaciones estudiantiles — {{ formatDateRange(selectedSemana()) }}</p>
+            </div>
+          </div>
+          <button type="button" class="close-btn" (click)="closeS89Modal()" title="Cerrar modal">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Filtros por sala -->
+        <div class="s89-filter-bar">
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="filterS89Sala() === 'todas'" 
+            (click)="setFilterS89Sala('todas')">
+            Todos ({{ estudiantesS89().length }})
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="filterS89Sala() === 'Auditorio Principal'" 
+            (click)="setFilterS89Sala('Auditorio Principal')">
+            Auditorio Principal
+          </button>
+          <button 
+            type="button" 
+            class="filter-pill" 
+            [class.active]="filterS89Sala() === 'Sala Auxiliar'" 
+            (click)="setFilterS89Sala('Sala Auxiliar')">
+            Sala Auxiliar
+          </button>
+        </div>
+
+        <!-- Cuerpo con lista de estudiantes -->
+        <div class="modal-body s89-modal-body">
+          @if (filteredEstudiantesS89().length === 0) {
+            <div class="empty-state">
+              <span class="material-symbols-outlined">info</span>
+              <p>No se encontraron asignaciones estudiantiles para la selección actual.</p>
+            </div>
+          } @else {
+            <div class="s89-cards-grid">
+              @for (item of filteredEstudiantesS89(); track item.id) {
+                <div class="s89-card">
+                  <div class="s89-card-header">
+                    <span class="part-badge">Intervención #{{ item.numero }}</span>
+                    <span class="room-badge" [class.aux]="item.sala === 'Sala Auxiliar'">{{ item.sala }}</span>
+                  </div>
+
+                  <div class="s89-card-content">
+                    <h4 class="part-title">{{ item.titulo }} ({{ item.tiempo }})</h4>
+                    
+                    <div class="student-info-row">
+                      <span class="material-symbols-outlined icon">person</span>
+                      <span class="student-name"><strong>Estudiante:</strong> {{ item.estudiante }}</span>
+                    </div>
+
+                    @if (item.ayudante) {
+                      <div class="student-info-row assistant">
+                        <span class="material-symbols-outlined icon">group</span>
+                        <span class="student-name"><strong>Ayudante:</strong> {{ item.ayudante }}</span>
+                      </div>
+                    }
+
+                    <!-- Estado del Teléfono -->
+                    <div class="phone-status-row">
+                      <span class="material-symbols-outlined icon" [class.has-phone]="!!(item.telefonoManual || item.telefono)">
+                        {{ (item.telefonoManual || item.telefono) ? 'smartphone' : 'phone_disabled' }}
+                      </span>
+                      @if (item.telefono) {
+                        <span class="phone-text">{{ item.telefono }}</span>
+                      } @else {
+                        <div class="phone-input-wrap">
+                          <input 
+                            type="tel" 
+                            [(ngModel)]="item.telefonoManual" 
+                            placeholder="Ingresar cel. (09...)"
+                            class="manual-phone-input">
+                        </div>
+                      }
+                    </div>
+
+                    <!-- Previsualización del texto S-89 -->
+                    <details class="message-accordion">
+                      <summary>Ver mensaje que se enviará</summary>
+                      <pre class="message-preview-text">{{ item.mensajeRaw }}</pre>
+                    </details>
+                  </div>
+
+                  <div class="s89-card-actions">
+                    <button 
+                      type="button" 
+                      class="btn-send-whatsapp" 
+                      (click)="sendWhatsAppS89(item)" 
+                      [disabled]="!(item.telefonoManual || item.telefono)"
+                      [title]="(item.telefonoManual || item.telefono) ? 'Abrir chat en WhatsApp' : 'Debe tener número registrado'">
+                      <span class="material-symbols-outlined icon">chat</span>
+                      <span>WhatsApp</span>
+                    </button>
+
+                    <button 
+                      type="button" 
+                      class="btn-copy-msg" 
+                      (click)="copyS89Message(item)"
+                      title="Copiar texto al portapapeles">
+                      <span class="material-symbols-outlined icon">
+                        {{ copiedS89Id() === item.id ? 'check' : 'content_copy' }}
+                      </span>
+                      <span>{{ copiedS89Id() === item.id ? '¡Copiado!' : 'Copiar' }}</span>
+                    </button>
+
+                    <button 
+                      type="button" 
+                      class="btn-view-slip" 
+                      (click)="previewS89Slip(item)"
+                      title="Previsualizar boleta oficial S-89">
+                      <span class="material-symbols-outlined icon">assignment</span>
+                      <span>Boleta S-89</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="pill-btn btn-secondary" (click)="closeS89Modal()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal Visor de Boleta S-89 Individual Imprimible -->
+  @if (selectedS89Preview(); as slip) {
+    <div class="modal-backdrop s89-slip-backdrop" (click)="closeS89SlipPreview()">
+      <div class="s89-slip-modal" (click)="$event.stopPropagation()">
+        <div class="s89-slip-toolbar no-print">
+          <h4>Boleta Oficial S-89</h4>
+          <div class="slip-toolbar-actions">
+            <button type="button" class="pill-btn btn-primary" (click)="printS89Slip()">
+              <span class="material-symbols-outlined">print</span>
+              <span>Imprimir Boleta</span>
+            </button>
+            <button type="button" class="close-btn" (click)="closeS89SlipPreview()">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="s89-printable-slip" id="s89Slip">
+          <div class="slip-header">
+            <h3>ASIGNACIÓN PARA LA REUNIÓN</h3>
+            <h2>VIDA Y MINISTERIO CRISTIANOS</h2>
+          </div>
+
+          <div class="slip-body">
+            <div class="slip-field">
+              <span class="field-label">Nombre:</span>
+              <span class="field-value">{{ slip.estudiante }}</span>
+            </div>
+
+            <div class="slip-field">
+              <span class="field-label">Ayudante:</span>
+              <span class="field-value">{{ slip.ayudante || '—' }}</span>
+            </div>
+
+            <div class="slip-field">
+              <span class="field-label">Fecha:</span>
+              <span class="field-value">{{ formatDateRange(selectedSemana()) }}</span>
+            </div>
+
+            <div class="slip-field">
+              <span class="field-label">Intervención núm.:</span>
+              <span class="field-value">Núm. {{ slip.numero }} — {{ slip.titulo }} ({{ slip.tiempo }})</span>
+            </div>
+
+            <div class="slip-field room-field">
+              <span class="field-label">Lugar de presentación:</span>
+              <div class="checkbox-group">
+                <span class="checkbox-item" [class.checked]="slip.sala === 'Auditorio Principal'">
+                  [ {{ slip.sala === 'Auditorio Principal' ? 'X' : '  ' }} ] Auditorio Principal
+                </span>
+                <span class="checkbox-item" [class.checked]="slip.sala === 'Sala Auxiliar'">
+                  [ {{ slip.sala === 'Sala Auxiliar' ? 'X' : '  ' }} ] Sala Auxiliar
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="slip-footer">
+            <small>S-89-S 11/23</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>

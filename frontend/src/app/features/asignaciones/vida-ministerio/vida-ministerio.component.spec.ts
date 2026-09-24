@@ -31,8 +31,8 @@ describe('VidaMinisterioComponent', () => {
   ];
 
   const mockUsers: User[] = [
-    { id: 'u1', nombre: 'Juan Pérez', email: 'juan@test.com', rol: 'ANCIANO', activo: true, telefono_validado: true, notificaciones_email: true, notificaciones_whatsapp: true },
-    { id: 'u2', nombre: 'Carlos López', email: 'carlos@test.com', rol: 'SUPERINTENDENTE', activo: true, telefono_validado: true, notificaciones_email: true, notificaciones_whatsapp: true }
+    { id: 'u1', nombre: 'Juan Pérez', email: 'juan@test.com', rol: 'ANCIANO', activo: true, telefono: '0991234567', telefono_validado: true, notificaciones_email: true, notificaciones_whatsapp: true },
+    { id: 'u2', nombre: 'Carlos López', email: 'carlos@test.com', rol: 'SUPERINTENDENTE', activo: true, telefono: '0987654321', telefono_validado: true, notificaciones_email: true, notificaciones_whatsapp: true }
   ];
 
   const mockSemanaService = {
@@ -133,5 +133,59 @@ describe('VidaMinisterioComponent', () => {
     component.fitPreviewMobile.set(false);
     component.updatePreviewScale(400);
     expect(component.previewScale()).toBe(1);
+  });
+
+  it('debe extraer correctamente la lista de estudiantes para boletas S-89 y asociar teléfonos', () => {
+    component.p1.update(p => ({
+      ...p,
+      lectura_estudiante: 'Juan Pérez',
+      seamos_maestros_auditorio: [
+        { type: 'conversacion', startTime: '19:30', title: 'Primera conversación', time: '3 min.', student: 'Juan Pérez', assistant: 'Carlos López' }
+      ],
+      seamos_maestros_auxiliar: [
+        { type: 'conversacion', startTime: '19:30', title: 'Primera conversación', time: '3 min.', student: 'Carlos López', assistant: 'Juan Pérez' }
+      ]
+    }));
+
+    const estudiantes = component.estudiantesS89();
+    expect(estudiantes.length).toBe(3);
+
+    // Lectura de la biblia
+    const lectura = estudiantes.find(e => e.id === 'lectura-auditorio');
+    expect(lectura).toBeTruthy();
+    expect(lectura?.numero).toBe(3);
+    expect(lectura?.telefono).toBe('0991234567');
+    expect(lectura?.mensajeRaw).toContain('Lectura de la Biblia');
+    expect(lectura?.mensajeRaw).toContain('Juan Pérez');
+
+    // Auditorio Principal
+    const audPart = estudiantes.find(e => e.id === 'ministry-aud-0');
+    expect(audPart?.sala).toBe('Auditorio Principal');
+    expect(audPart?.ayudante).toBe('Carlos López');
+
+    // Sala Auxiliar
+    const auxPart = estudiantes.find(e => e.id === 'ministry-aux-0');
+    expect(auxPart?.sala).toBe('Sala Auxiliar');
+    expect(auxPart?.estudiante).toBe('Carlos López');
+    expect(auxPart?.telefono).toBe('0987654321');
+  });
+
+  it('debe normalizar números telefónicos ecuatorianos e internacionales', () => {
+    expect(component.cleanPhoneNumber('0991234567')).toBe('593991234567');
+    expect(component.cleanPhoneNumber('+593991234567')).toBe('593991234567');
+    expect(component.cleanPhoneNumber('099-123-4567')).toBe('593991234567');
+    expect(component.cleanPhoneNumber('')).toBe('');
+  });
+
+  it('debe gestionar apertura, cierre y filtros del modal S-89', () => {
+    expect(component.showS89Modal()).toBe(false);
+    component.openS89Modal();
+    expect(component.showS89Modal()).toBe(true);
+
+    component.setFilterS89Sala('Sala Auxiliar');
+    expect(component.filterS89Sala()).toBe('Sala Auxiliar');
+
+    component.closeS89Modal();
+    expect(component.showS89Modal()).toBe(false);
   });
 });

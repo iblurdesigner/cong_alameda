@@ -9,6 +9,7 @@ export interface MinistryItem {
   title: string;
   time: string;
   student: string;
+  assistant?: string;
   startTime: string;
 }
 
