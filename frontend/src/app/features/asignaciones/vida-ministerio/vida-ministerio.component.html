@@ -15,16 +15,16 @@
       <div class="header-actions">
         <button class="pill-btn btn-secondary" (click)="exportWord()" title="Descargar documento de Word">
           <span class="material-symbols-outlined icon">description</span>
-          <span>Word</span>
+          <span class="btn-label">Word</span>
         </button>
         <button class="pill-btn btn-secondary" (click)="printProgram()" title="Imprimir o guardar como PDF en 1 sola hoja A4">
           <span class="material-symbols-outlined icon">print</span>
-          <span>Imprimir / PDF</span>
+          <span class="btn-label">Imprimir / PDF</span>
         </button>
         @if (authService.isSuperintendente() || authService.isSuperAdmin() || authService.isAnciano()) {
           <button class="pill-btn btn-primary" (click)="savePrograma()" [disabled]="saving()">
             <span class="material-symbols-outlined icon">save</span>
-            <span>{{ saving() ? 'Guardando...' : 'Guardar Programa' }}</span>
+            <span class="btn-label">{{ saving() ? 'Guardando...' : 'Guardar' }}</span>
           </button>
         }
       </div>
@@ -46,7 +46,7 @@
     <div class="recent-weeks-bar">
       <div class="recent-label">
         <span class="material-symbols-outlined">history</span>
-        <span>Historial (Reemplazos rápidos):</span>
+        <span>Historial:</span>
       </div>
       <div class="chips-container">
         @for (sem of semanasRecientes(); track sem.id) {
@@ -60,6 +60,26 @@
           </button>
         }
       </div>
+    </div>
+
+    <!-- Alternador móvil de vista (Editor vs Previsualización A4) -->
+    <div class="mobile-view-tabs no-print">
+      <button 
+        type="button" 
+        class="mobile-view-tab" 
+        [class.active]="mobileTab() === 'editor'" 
+        (click)="mobileTab.set('editor')">
+        <span class="material-symbols-outlined">edit_note</span>
+        <span>Formulario de Edición</span>
+      </button>
+      <button 
+        type="button" 
+        class="mobile-view-tab" 
+        [class.active]="mobileTab() === 'preview'" 
+        (click)="mobileTab.set('preview')">
+        <span class="material-symbols-outlined">visibility</span>
+        <span>Vista Previa A4</span>
+      </button>
     </div>
 
     <!-- Alertas y Feedback -->
@@ -76,7 +96,7 @@
   <!-- Contenedor Principal: Editor a la Izquierda + Preview a la Derecha -->
   <div class="app-workspace">
     <!-- PANEL EDITOR -->
-    <aside class="editor-panel no-print">
+    <aside class="editor-panel no-print" [class.mobile-hidden]="mobileTab() !== 'editor'">
       <div class="editor-header">
         <h2>Editar Contenido</h2>
 
@@ -373,19 +393,32 @@
     </aside>
 
     <!-- PANEL DE PREVIEW (HOJA A4 CON 2 COPIAS VERTICALES) -->
-    <main class="preview-container">
+    <main class="preview-container" [class.mobile-hidden]="mobileTab() !== 'preview'">
       <div class="preview-toolbar no-print">
         <div class="preview-badge">
           <span class="material-symbols-outlined">preview</span>
-          <span>Previsualización A4 en tiempo real</span>
+          <span>Previsualización A4</span>
         </div>
         <div class="preview-hint">
-          2 programas verticales con línea de corte lista para imprimir
+          2 programas verticales con línea de corte
+        </div>
+        <div class="preview-controls">
+          <button 
+            type="button" 
+            class="fit-toggle-btn"
+            [class.active]="fitPreviewMobile()"
+            (click)="fitPreviewMobile.set(!fitPreviewMobile())"
+            title="Alternar entre vista adaptada y tamaño real">
+            <span class="material-symbols-outlined">{{ fitPreviewMobile() ? 'fit_screen' : 'zoom_out_map' }}</span>
+            <span>{{ fitPreviewMobile() ? 'Adaptar' : '100%' }}</span>
+          </button>
         </div>
       </div>
 
-      <div class="sheet-a4" id="sheetA4">
-        <!-- COPIA 1 (SUPERIOR) -->
+      <div class="sheet-scroller">
+        <div class="sheet-wrapper" [class.fit-screen]="fitPreviewMobile()">
+          <div class="sheet-a4" id="sheetA4">
+            <!-- COPIA 1 (SUPERIOR) -->
         <article class="program-card">
           <header class="header-row">
             <div class="congregation-name">{{ p1().nombre_congregacion || 'ALAMEDA' }}</div>
@@ -649,6 +682,8 @@
             </div>
           </div>
         </article>
+          </div>
+        </div>
       </div>
     </main>
   </div>

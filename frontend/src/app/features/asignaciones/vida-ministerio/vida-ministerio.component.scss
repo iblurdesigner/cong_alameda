@@ -240,6 +240,43 @@
   }
 }
 
+/* MOBILE VIEW TABS (SWITCH EDITOR / PREVIEW) */
+.mobile-view-tabs {
+  display: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px;
+  margin-top: 0.6rem;
+  gap: 4px;
+
+  .mobile-view-tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    span.material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    &.active {
+      background: #ffffff;
+      color: #1e293b;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+    }
+  }
+}
+
 /* WORKSPACE */
 .app-workspace {
   display: flex;
@@ -630,6 +667,56 @@
   }
 }
 
+.preview-controls {
+  display: flex;
+  align-items: center;
+
+  .fit-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 6px;
+    background: rgb(255 255 255 / 12%);
+    border: 1px solid rgb(255 255 255 / 20%);
+    color: #f1f5f9;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    span {
+      font-size: 16px;
+    }
+
+    &:hover,
+    &.active {
+      background: rgb(255 255 255 / 25%);
+      color: #fff;
+    }
+  }
+}
+
+.sheet-scroller {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  padding: 0.5rem 0 2rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-wrapper {
+  display: flex;
+  justify-content: center;
+  transition: transform 0.2s ease;
+  transform-origin: top center;
+
+  &.fit-screen {
+    max-width: 100%;
+  }
+}
+
 /* HOJA A4 EXACTA */
 .sheet-a4 {
   background: #fff;
@@ -797,6 +884,14 @@
     visibility: visible;
   }
 
+  .sheet-scroller,
+  .sheet-wrapper {
+    display: contents !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   .sheet-a4 {
     position: fixed;
     left: 0;
@@ -812,3 +907,287 @@
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   RESPONSIVE DESIGN BREAKPOINTS (TABLETS & SMARTPHONES)
+   ========================================================================== */
+
+/* TABLETS Y PANTALLAS COMPACTAS (<= 1024px) */
+@media (max-width: 1024px) {
+  :host {
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+
+  .vym-layout {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .top-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .mobile-view-tabs {
+    display: flex;
+  }
+
+  .app-workspace {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 210px);
+    overflow: visible;
+  }
+
+  .editor-panel {
+    width: 100%;
+    border-right: none;
+    height: auto;
+    overflow: visible;
+
+    &.mobile-hidden {
+      display: none !important;
+    }
+  }
+
+  .editor-content {
+    overflow-y: visible;
+    padding: 1rem 1rem 2.5rem;
+  }
+
+  .preview-container {
+    width: 100%;
+    min-height: calc(100vh - 210px);
+    padding: 1rem 0.5rem 3rem;
+    box-sizing: border-box;
+
+    &.mobile-hidden {
+      display: none !important;
+    }
+  }
+
+  .preview-toolbar {
+    width: 100%;
+    max-width: 210mm;
+    box-sizing: border-box;
+    padding: 0 0.5rem;
+  }
+
+  .sheet-wrapper.fit-screen {
+    transform: scale(0.85);
+    transform-origin: top center;
+    margin-bottom: -15%;
+  }
+}
+
+/* SMARTPHONES Y TABLETS PEQUEÑAS (<= 768px) */
+@media (max-width: 768px) {
+  .header-main {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .title-section {
+    gap: 0.6rem;
+
+    .icon-badge {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+
+      span {
+        font-size: 20px;
+      }
+    }
+
+    h1 {
+      font-size: 1.15rem;
+    }
+
+    .subtitle {
+      font-size: 0.75rem;
+    }
+  }
+
+  .header-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+
+    .pill-btn {
+      justify-content: center;
+      padding: 0.5rem 0.4rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  .nav-subtabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .subtab-item {
+      flex-shrink: 0;
+      font-size: 0.8rem;
+    }
+  }
+
+  .recent-weeks-bar {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .copy-selector-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+
+    .copy-tabs {
+      width: 100%;
+
+      .copy-tab {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    .copy-actions {
+      .btn-sync {
+        width: 100%;
+        justify-content: center;
+        padding: 0.45rem;
+      }
+    }
+  }
+
+  .form-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .form-group {
+    input {
+      font-size: 16px; /* Previene auto-zoom molesto en navegadores móviles (iOS Safari) */
+      padding: 0.48rem 0.6rem;
+      min-height: 40px;
+    }
+  }
+
+  .sheet-wrapper.fit-screen {
+    transform: scale(0.68);
+    transform-origin: top center;
+    margin-bottom: -32%;
+  }
+}
+
+/* SMARTPHONES COMPACTOS (<= 520px) */
+@media (max-width: 520px) {
+  .top-header {
+    padding: 0.6rem 0.75rem;
+  }
+
+  .header-actions {
+    grid-template-columns: 1fr 1fr;
+
+    .pill-btn.btn-primary {
+      grid-column: span 2;
+      padding: 0.6rem;
+    }
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group.w-time {
+    width: 100%;
+  }
+
+  .item-card {
+    padding: 0.6rem 0.5rem;
+
+    .item-card-header {
+      display: grid;
+      grid-template-columns: 20px 80px 1fr auto;
+      gap: 0.35rem;
+      align-items: center;
+
+      .input-time {
+        width: 100%;
+        min-height: 38px;
+        font-size: 15px;
+      }
+
+      .input-title {
+        grid-column: span 4;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 38px;
+        font-size: 15px;
+      }
+
+      .input-duration {
+        min-height: 38px;
+        font-size: 15px;
+      }
+
+      .btn-del {
+        padding: 6px;
+      }
+    }
+
+    .item-card-body {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.4rem;
+      margin-top: 0.3rem;
+
+      input {
+        min-height: 38px;
+        font-size: 15px;
+      }
+    }
+  }
+
+  .preview-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+
+    .preview-hint {
+      display: none;
+    }
+
+    .preview-controls {
+      align-self: flex-end;
+    }
+  }
+
+  .sheet-wrapper.fit-screen {
+    transform: scale(0.44);
+    transform-origin: top center;
+    margin-bottom: -56%;
+  }
+}
+
+/* SMARTPHONES EXTRA PEQUEÑOS (<= 380px) */
+@media (max-width: 380px) {
+  .sheet-wrapper.fit-screen {
+    transform: scale(0.36);
+    transform-origin: top center;
+    margin-bottom: -64%;
+  }
+}
+

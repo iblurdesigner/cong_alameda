@@ -52,6 +52,10 @@ export class VidaMinisterioComponent implements OnInit {
   saving = signal<boolean>(false);
   statusMessage = signal<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Control de vista adaptable en dispositivos móviles y tabletas
+  mobileTab = signal<'editor' | 'preview'>('editor');
+  fitPreviewMobile = signal<boolean>(true);
+
   ngOnInit(): void {
     this.loadInitialData();
   }

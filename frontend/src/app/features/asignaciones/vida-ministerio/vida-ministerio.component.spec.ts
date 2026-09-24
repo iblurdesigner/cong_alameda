@@ -99,4 +99,14 @@ describe('VidaMinisterioComponent', () => {
     const startIdx = component.getChristianLifeStartIndex(component.p1());
     expect(startIdx).toBe(6);
   });
+
+  it('debe gestionar el cambio de vista móvil (mobileTab y fitPreviewMobile)', () => {
+    expect(component.mobileTab()).toBe('editor');
+    component.mobileTab.set('preview');
+    expect(component.mobileTab()).toBe('preview');
+
+    expect(component.fitPreviewMobile()).toBe(true);
+    component.fitPreviewMobile.set(false);
+    expect(component.fitPreviewMobile()).toBe(false);
+  });
 });
