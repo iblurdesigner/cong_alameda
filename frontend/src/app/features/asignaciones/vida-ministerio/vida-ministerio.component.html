@@ -62,23 +62,31 @@
       </div>
     </div>
 
-    <!-- Alternador móvil de vista (Editor vs Previsualización A4) -->
+    <!-- Alternador de vista para móviles y tablets (< 1280px) -->
     <div class="mobile-view-tabs no-print">
       <button 
         type="button" 
         class="mobile-view-tab" 
         [class.active]="mobileTab() === 'editor'" 
-        (click)="mobileTab.set('editor')">
+        (click)="setMobileTab('editor')">
         <span class="material-symbols-outlined">edit_note</span>
-        <span>Formulario de Edición</span>
+        <span>Formulario</span>
       </button>
       <button 
         type="button" 
         class="mobile-view-tab" 
         [class.active]="mobileTab() === 'preview'" 
-        (click)="mobileTab.set('preview')">
+        (click)="setMobileTab('preview')">
         <span class="material-symbols-outlined">visibility</span>
         <span>Vista Previa A4</span>
+      </button>
+      <button 
+        type="button" 
+        class="mobile-view-tab tablet-split-btn" 
+        [class.active]="mobileTab() === 'split'" 
+        (click)="setMobileTab('split')">
+        <span class="material-symbols-outlined">vertical_split</span>
+        <span>Dividido</span>
       </button>
     </div>
 
@@ -94,9 +102,9 @@
   </header>
 
   <!-- Contenedor Principal: Editor a la Izquierda + Preview a la Derecha -->
-  <div class="app-workspace">
+  <div class="app-workspace" [class.layout-split]="mobileTab() === 'split'">
     <!-- PANEL EDITOR -->
-    <aside class="editor-panel no-print" [class.mobile-hidden]="mobileTab() !== 'editor'">
+    <aside class="editor-panel no-print" [class.mobile-hidden]="mobileTab() === 'preview'">
       <div class="editor-header">
         <h2>Editar Contenido</h2>
 
@@ -393,7 +401,7 @@
     </aside>
 
     <!-- PANEL DE PREVIEW (HOJA A4 CON 2 COPIAS VERTICALES) -->
-    <main class="preview-container" [class.mobile-hidden]="mobileTab() !== 'preview'">
+    <main class="preview-container" [class.mobile-hidden]="mobileTab() === 'editor'">
       <div class="preview-toolbar no-print">
         <div class="preview-badge">
           <span class="material-symbols-outlined">preview</span>
@@ -407,7 +415,7 @@
             type="button" 
             class="fit-toggle-btn"
             [class.active]="fitPreviewMobile()"
-            (click)="fitPreviewMobile.set(!fitPreviewMobile())"
+            (click)="toggleFitPreview()"
             title="Alternar entre vista adaptada y tamaño real">
             <span class="material-symbols-outlined">{{ fitPreviewMobile() ? 'fit_screen' : 'zoom_out_map' }}</span>
             <span>{{ fitPreviewMobile() ? 'Adaptar' : '100%' }}</span>
@@ -416,7 +424,7 @@
       </div>
 
       <div class="sheet-scroller">
-        <div class="sheet-wrapper" [class.fit-screen]="fitPreviewMobile()">
+        <div class="sheet-wrapper" [class.fit-screen]="fitPreviewMobile()" [style.--sheet-scale]="previewScale()">
           <div class="sheet-a4" id="sheetA4">
             <!-- COPIA 1 (SUPERIOR) -->
         <article class="program-card">

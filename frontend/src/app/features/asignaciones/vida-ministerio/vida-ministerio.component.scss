@@ -274,6 +274,10 @@
       color: #1e293b;
       box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
     }
+
+    &.tablet-split-btn {
+      display: none;
+    }
   }
 }
 
@@ -283,6 +287,24 @@
   flex: 1;
   height: calc(100vh - 145px);
   overflow: hidden;
+
+  &.layout-split {
+    flex-direction: row !important;
+
+    .editor-panel {
+      width: 48% !important;
+      max-width: 560px !important;
+      flex-shrink: 0;
+      border-right: 1px solid var(--color-border, #e2e8f0) !important;
+      display: flex !important;
+    }
+
+    .preview-container {
+      flex: 1 !important;
+      min-width: 0 !important;
+      display: flex !important;
+    }
+  }
 }
 
 /* EDITOR PANEL */
@@ -709,11 +731,19 @@
 .sheet-wrapper {
   display: flex;
   justify-content: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.15s ease-out, zoom 0.15s ease-out;
   transform-origin: top center;
 
   &.fit-screen {
-    max-width: 100%;
+    zoom: var(--sheet-scale, 1);
+  }
+}
+
+@supports not (zoom: 1) {
+  .sheet-wrapper.fit-screen {
+    transform: scale(var(--sheet-scale, 1));
+    transform-origin: top center;
+    margin-bottom: calc((1 - var(--sheet-scale, 1)) * -1123px);
   }
 }
 
@@ -912,8 +942,8 @@
    RESPONSIVE DESIGN BREAKPOINTS (TABLETS & SMARTPHONES)
    ========================================================================== */
 
-/* TABLETS Y PANTALLAS COMPACTAS (<= 1024px) */
-@media (max-width: 1024px) {
+/* TABLETS Y PANTALLAS COMPACTAS (<= 1280px) */
+@media (max-width: 1280px) {
   :host {
     height: auto;
     min-height: 100vh;
@@ -931,58 +961,81 @@
 
   .mobile-view-tabs {
     display: flex;
+
+    .mobile-view-tab.tablet-split-btn {
+      display: inline-flex;
+    }
   }
 
-  .app-workspace {
+  .app-workspace:not(.layout-split) {
     flex-direction: column;
     height: auto;
     min-height: calc(100vh - 210px);
     overflow: visible;
-  }
 
-  .editor-panel {
-    width: 100%;
-    border-right: none;
-    height: auto;
-    overflow: visible;
+    .editor-panel {
+      width: 100%;
+      border-right: none;
+      height: auto;
+      overflow: visible;
 
-    &.mobile-hidden {
-      display: none !important;
+      &.mobile-hidden {
+        display: none !important;
+      }
+    }
+
+    .editor-content {
+      overflow-y: visible;
+      padding: 1rem 1rem 2.5rem;
+    }
+
+    .preview-container {
+      width: 100%;
+      min-height: calc(100vh - 210px);
+      padding: 1rem 0.5rem 3rem;
+      box-sizing: border-box;
+
+      &.mobile-hidden {
+        display: none !important;
+      }
+    }
+
+    .preview-toolbar {
+      width: 100%;
+      max-width: 210mm;
+      box-sizing: border-box;
+      padding: 0 0.5rem;
     }
   }
 
-  .editor-content {
-    overflow-y: visible;
-    padding: 1rem 1rem 2.5rem;
-  }
+  .app-workspace.layout-split {
+    height: calc(100vh - 210px);
 
-  .preview-container {
-    width: 100%;
-    min-height: calc(100vh - 210px);
-    padding: 1rem 0.5rem 3rem;
-    box-sizing: border-box;
-
-    &.mobile-hidden {
-      display: none !important;
+    .editor-panel {
+      width: 48%;
+      max-width: 540px;
     }
-  }
 
-  .preview-toolbar {
-    width: 100%;
-    max-width: 210mm;
-    box-sizing: border-box;
-    padding: 0 0.5rem;
-  }
+    .preview-container {
+      flex: 1;
+      min-width: 0;
+      padding: 1rem 0.5rem;
+    }
 
-  .sheet-wrapper.fit-screen {
-    transform: scale(0.85);
-    transform-origin: top center;
-    margin-bottom: -15%;
+    .preview-toolbar {
+      width: 100%;
+    }
   }
 }
 
 /* SMARTPHONES Y TABLETS PEQUEÑAS (<= 768px) */
 @media (max-width: 768px) {
+  .mobile-view-tabs {
+    .mobile-view-tab.tablet-split-btn {
+      display: none !important;
+    }
+  }
+
   .header-main {
     flex-direction: column;
     align-items: stretch;
@@ -1083,12 +1136,6 @@
       min-height: 40px;
     }
   }
-
-  .sheet-wrapper.fit-screen {
-    transform: scale(0.68);
-    transform-origin: top center;
-    margin-bottom: -32%;
-  }
 }
 
 /* SMARTPHONES COMPACTOS (<= 520px) */
@@ -1173,21 +1220,6 @@
     .preview-controls {
       align-self: flex-end;
     }
-  }
-
-  .sheet-wrapper.fit-screen {
-    transform: scale(0.44);
-    transform-origin: top center;
-    margin-bottom: -56%;
-  }
-}
-
-/* SMARTPHONES EXTRA PEQUEÑOS (<= 380px) */
-@media (max-width: 380px) {
-  .sheet-wrapper.fit-screen {
-    transform: scale(0.36);
-    transform-origin: top center;
-    margin-bottom: -64%;
   }
 }
 

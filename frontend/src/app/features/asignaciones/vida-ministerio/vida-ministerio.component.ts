@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, AfterViewInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -18,7 +18,7 @@ import {
   templateUrl: './vida-ministerio.component.html',
   styleUrls: ['./vida-ministerio.component.scss']
 })
-export class VidaMinisterioComponent implements OnInit {
+export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy {
   private semanaService = inject(SemanaService);
   private userService = inject(UserService);
   private vymService = inject(ProgramaVyMService);
@@ -53,11 +53,68 @@ export class VidaMinisterioComponent implements OnInit {
   statusMessage = signal<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Control de vista adaptable en dispositivos móviles y tabletas
-  mobileTab = signal<'editor' | 'preview'>('editor');
+  mobileTab = signal<'editor' | 'preview' | 'split'>('editor');
   fitPreviewMobile = signal<boolean>(true);
+  previewScale = signal<number>(1);
+  private resizeObserver?: ResizeObserver;
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      if (window.innerWidth >= 1280) {
+        this.mobileTab.set('split');
+      } else {
+        this.mobileTab.set('editor');
+      }
+    }
     this.loadInitialData();
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
+      const container = document.querySelector('.preview-container') as HTMLElement;
+      if (container) {
+        this.resizeObserver = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            this.updatePreviewScale(entry.contentRect.width);
+          }
+        });
+        this.resizeObserver.observe(container);
+      }
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+  }
+
+  setMobileTab(tab: 'editor' | 'preview' | 'split'): void {
+    this.mobileTab.set(tab);
+    setTimeout(() => this.recalculateScale(), 60);
+  }
+
+  toggleFitPreview(): void {
+    this.fitPreviewMobile.update(v => !v);
+    this.recalculateScale();
+  }
+
+  recalculateScale(): void {
+    if (typeof document === 'undefined') return;
+    const container = document.querySelector('.preview-container') as HTMLElement;
+    if (container && container.clientWidth > 0) {
+      this.updatePreviewScale(container.clientWidth);
+    }
+  }
+
+  updatePreviewScale(containerWidth: number): void {
+    if (!this.fitPreviewMobile()) {
+      this.previewScale.set(1);
+      return;
+    }
+    // Ancho exacto de A4 en px: 210mm a 96dpi ≈ 793.7px
+    // Dejamos 32px de margen lateral
+    const availableWidth = Math.max(260, containerWidth - 32);
+    const scale = Math.min(1, availableWidth / 794);
+    this.previewScale.set(Math.round(scale * 1000) / 1000);
   }
 
   loadInitialData(): void {

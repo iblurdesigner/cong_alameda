@@ -100,13 +100,38 @@ describe('VidaMinisterioComponent', () => {
     expect(startIdx).toBe(6);
   });
 
-  it('debe gestionar el cambio de vista móvil (mobileTab y fitPreviewMobile)', () => {
+  it('debe gestionar el cambio de vista móvil y modo dividido (mobileTab y fitPreviewMobile)', () => {
+    component.setMobileTab('editor');
     expect(component.mobileTab()).toBe('editor');
-    component.mobileTab.set('preview');
+
+    component.setMobileTab('preview');
     expect(component.mobileTab()).toBe('preview');
 
+    component.setMobileTab('split');
+    expect(component.mobileTab()).toBe('split');
+
     expect(component.fitPreviewMobile()).toBe(true);
-    component.fitPreviewMobile.set(false);
+    component.toggleFitPreview();
     expect(component.fitPreviewMobile()).toBe(false);
+  });
+
+  it('debe calcular la escala correcta de la hoja A4 según el ancho del contenedor', () => {
+    // Modo fit activo
+    component.fitPreviewMobile.set(true);
+
+    // Contenedor angosto (pantalla móvil o split estrecho ~400px):
+    // availableWidth = 400 - 32 = 368px => scale = 368 / 794 ≈ 0.463
+    component.updatePreviewScale(400);
+    expect(component.previewScale()).toBeLessThan(1);
+    expect(component.previewScale()).toBeCloseTo(0.463, 2);
+
+    // Contenedor ancho (>= 826px): scale debe ser 1.0 (tamaño máximo original)
+    component.updatePreviewScale(1000);
+    expect(component.previewScale()).toBe(1);
+
+    // Si fitPreviewMobile está desactivado, siempre debe ser 1
+    component.fitPreviewMobile.set(false);
+    component.updatePreviewScale(400);
+    expect(component.previewScale()).toBe(1);
   });
 });
