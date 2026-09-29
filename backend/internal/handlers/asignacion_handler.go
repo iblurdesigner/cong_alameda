@@ -133,6 +133,9 @@ func (h *AsignacionHandler) Create(c *fiber.Ctx) error {
 		if errors.Is(err, services.ErrAseoSalonRequiresGrupo) {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "aseo_salon_requires_grupo"})
 		}
+		if errors.Is(err, services.ErrHospitalidadRequiresGrupo) {
+			return c.Status(400).JSON(dto.ErrorResponse{Error: "hospitalidad_requires_grupo"})
+		}
 		return c.Status(500).JSON(dto.ErrorResponse{Error: err.Error()})
 	}
 
@@ -205,6 +208,9 @@ func (h *AsignacionHandler) BulkCreate(c *fiber.Ctx) error {
 		if errors.Is(err, services.ErrAseoSalonRequiresGrupo) {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "aseo_salon_requires_grupo"})
 		}
+		if errors.Is(err, services.ErrHospitalidadRequiresGrupo) {
+			return c.Status(400).JSON(dto.ErrorResponse{Error: "hospitalidad_requires_grupo"})
+		}
 		return c.Status(500).JSON(dto.ErrorResponse{Error: err.Error()})
 	}
 
@@ -249,6 +255,9 @@ func (h *AsignacionHandler) Update(c *fiber.Ctx) error {
 	if err := h.asignacionService.Update(c.Context(), id, userID, grupoID, req.Observaciones); err != nil {
 		if errors.Is(err, services.ErrAseoSalonRequiresGrupo) {
 			return c.Status(400).JSON(dto.ErrorResponse{Error: "aseo_salon_requires_grupo"})
+		}
+		if errors.Is(err, services.ErrHospitalidadRequiresGrupo) {
+			return c.Status(400).JSON(dto.ErrorResponse{Error: "hospitalidad_requires_grupo"})
 		}
 		if err == repositories.ErrAsignacionNotFound {
 			return c.Status(404).JSON(dto.ErrorResponse{Error: "not_found"})

@@ -15,8 +15,16 @@ import (
 // without any grupo_id at all. The handler maps it to HTTP 400.
 var ErrAseoSalonRequiresGrupo = errors.New("aseo_salon requires grupo_id and forbids user_id")
 
-// aseoSalonNombre is the canonical nombre for the "Aseo del Salón" assignment type.
-const aseoSalonNombre = "ASEO_SALON"
+// ErrHospitalidadRequiresGrupo is returned when a HOSPITALIDAD assignment is
+// created/updated with a person (user_id) instead of a group (grupo_id), or
+// without any grupo_id at all. The handler maps it to HTTP 400.
+var ErrHospitalidadRequiresGrupo = errors.New("hospitalidad requires grupo_id and forbids user_id")
+
+// Canonical nombres for group-only assignment types.
+const (
+	aseoSalonNombre    = "ASEO_SALON"
+	hospitalidadNombre = "HOSPITALIDAD"
+)
 
 // asignacionRepo is the subset of the repository the service depends on. Using
 // an interface keeps the service unit-testable with in-memory mocks and matches
@@ -119,9 +127,9 @@ func (s *AsignacionService) GetSemanaConAsignaciones(ctx context.Context, semana
 	}, nil
 }
 
-// enforceAseoSalonPolicy validates the ASEO_SALON business rule: assignments of
-// this type MUST be group-only (GrupoID != nil) and MUST NOT carry a person
-// (UserID must be the zero value). Other types keep their current behavior.
+// enforceAseoSalonPolicy validates group-only business rules: assignments of
+// ASEO_SALON and HOSPITALIDAD MUST be group-only (GrupoID != nil) and MUST NOT
+// carry a person (UserID must be the zero value). Other types keep their current behavior.
 func (s *AsignacionService) enforceAseoSalonPolicy(ctx context.Context, tipoID uuid.UUID, userID uuid.UUID, grupoID *uuid.UUID) error {
 	tipo, err := s.tipoAsignRepo.GetByID(ctx, tipoID)
 	if err != nil {
@@ -129,11 +137,12 @@ func (s *AsignacionService) enforceAseoSalonPolicy(ctx context.Context, tipoID u
 	}
 
 	if tipo.Nombre == aseoSalonNombre {
-		if grupoID == nil {
+		if grupoID == nil || userID != uuid.Nil {
 			return ErrAseoSalonRequiresGrupo
 		}
-		if userID != uuid.Nil {
-			return ErrAseoSalonRequiresGrupo
+	} else if tipo.Nombre == hospitalidadNombre {
+		if grupoID == nil || userID != uuid.Nil {
+			return ErrHospitalidadRequiresGrupo
 		}
 	}
 

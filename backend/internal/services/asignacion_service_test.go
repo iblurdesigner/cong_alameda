@@ -299,3 +299,108 @@ func TestAsignacionService_BulkCreate_AseoSalonWithUserRejected(t *testing.T) {
 		t.Errorf("expected ErrAseoSalonRequiresGrupo, got %v", err)
 	}
 }
+
+const hospitalidadTipoID = "c20c74a7-ba4c-4a71-b639-1248aa404eb5"
+
+func hospitalidadUUID() uuid.UUID {
+	return uuid.MustParse(hospitalidadTipoID)
+}
+
+func TestAsignacionService_Create_HospitalidadWithUserRejected(t *testing.T) {
+	mockRepo := newMockAsignRepo()
+	tipoRepo := newMockTipoAsignRepo()
+	tipoRepo.byID[hospitalidadUUID()] = &models.TipoAsignacion{ID: hospitalidadUUID(), Nombre: "HOSPITALIDAD"}
+
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
+
+	err := svc.Create(context.Background(), &models.AsignacionSemanal{
+		SemanaID:         uuid.New(),
+		TipoAsignacionID: hospitalidadUUID(),
+		UserID:           uuid.New(),
+		GrupoID:          nil,
+		DiaSemana:        0,
+	})
+
+	if err == nil {
+		t.Fatal("expected error creating HOSPITALIDAD with user_id and no grupo, got nil")
+	}
+	if !errors.Is(err, ErrHospitalidadRequiresGrupo) {
+		t.Errorf("expected ErrHospitalidadRequiresGrupo, got %v", err)
+	}
+	if len(mockRepo.created) != 0 {
+		t.Errorf("expected no asignacion created, got %d", len(mockRepo.created))
+	}
+}
+
+func TestAsignacionService_Create_HospitalidadWithGrupoSucceeds(t *testing.T) {
+	mockRepo := newMockAsignRepo()
+	tipoRepo := newMockTipoAsignRepo()
+	tipoRepo.byID[hospitalidadUUID()] = &models.TipoAsignacion{ID: hospitalidadUUID(), Nombre: "HOSPITALIDAD"}
+
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
+
+	grupoID := uuid.New()
+	err := svc.Create(context.Background(), &models.AsignacionSemanal{
+		SemanaID:         uuid.New(),
+		TipoAsignacionID: hospitalidadUUID(),
+		UserID:           uuid.Nil,
+		GrupoID:          &grupoID,
+		DiaSemana:        0,
+	})
+
+	if err != nil {
+		t.Fatalf("expected success creating HOSPITALIDAD with grupo, got %v", err)
+	}
+	if len(mockRepo.created) != 1 {
+		t.Fatalf("expected 1 asignacion created, got %d", len(mockRepo.created))
+	}
+	if mockRepo.created[0].GrupoID == nil || *mockRepo.created[0].GrupoID != grupoID {
+		t.Errorf("expected persisted grupo_id to match, got %v", mockRepo.created[0].GrupoID)
+	}
+}
+
+func TestAsignacionService_Update_HospitalidadWithUserRejected(t *testing.T) {
+	mockRepo := newMockAsignRepo()
+	tipoRepo := newMockTipoAsignRepo()
+	tipoRepo.byID[hospitalidadUUID()] = &models.TipoAsignacion{ID: hospitalidadUUID(), Nombre: "HOSPITALIDAD"}
+
+	existingID := uuid.New()
+	mockRepo.byID[existingID] = &models.AsignacionSemanal{
+		ID:               existingID,
+		TipoAsignacionID: hospitalidadUUID(),
+	}
+
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
+
+	err := svc.Update(context.Background(), existingID, uuid.New(), nil, nil)
+	if err == nil {
+		t.Fatal("expected error updating HOSPITALIDAD with user_id and no grupo, got nil")
+	}
+	if !errors.Is(err, ErrHospitalidadRequiresGrupo) {
+		t.Errorf("expected ErrHospitalidadRequiresGrupo, got %v", err)
+	}
+}
+
+func TestAsignacionService_BulkCreate_HospitalidadWithUserRejected(t *testing.T) {
+	mockRepo := newMockAsignRepo()
+	tipoRepo := newMockTipoAsignRepo()
+	tipoRepo.byID[hospitalidadUUID()] = &models.TipoAsignacion{ID: hospitalidadUUID(), Nombre: "HOSPITALIDAD"}
+
+	svc := NewAsignacionService(mockRepo, tipoRepo, &mockSemanaRepo{}, &mockDiaRepo{}, &mockUserRepo{}, nil)
+
+	err := svc.BulkCreate(context.Background(), []*models.AsignacionSemanal{
+		{
+			SemanaID:         uuid.New(),
+			TipoAsignacionID: hospitalidadUUID(),
+			UserID:           uuid.New(),
+			GrupoID:          nil,
+			DiaSemana:        0,
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error bulk creating HOSPITALIDAD with user_id, got nil")
+	}
+	if !errors.Is(err, ErrHospitalidadRequiresGrupo) {
+		t.Errorf("expected ErrHospitalidadRequiresGrupo, got %v", err)
+	}
+}

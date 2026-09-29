@@ -200,9 +200,9 @@ import { forkJoin, Observable } from 'rxjs';
                 <span><strong>Semana:</strong> {{ getSelectedWeekDisplayTitle() }}</span>
               </div>
 
-              @if (editingTipo?.nombre === 'ASEO_SALON') {
+              @if (isGroupType(editingTipo?.nombre)) {
                 <div class="form-group">
-                  <label for="grupoSelect">Grupo de Servicio (Requerido para Aseo):</label>
+                  <label for="grupoSelect">Grupo de Servicio:</label>
                   <select id="grupoSelect" [(ngModel)]="assignForm.grupo_id" class="form-input">
                     <option value="">Selecciona un Grupo...</option>
                     @for (grupo of grupos(); track grupo.id) {
@@ -259,7 +259,7 @@ import { forkJoin, Observable } from 'rxjs';
                     </div>
 
                     <div class="role-input-group">
-                      @if (tipo.nombre === 'ASEO_SALON') {
+                      @if (isGroupType(tipo.nombre)) {
                         <select [(ngModel)]="dayFormMap[tipo.id].grupo_id" class="form-input">
                           <option value="">-- Sin asignar --</option>
                           @for (grupo of grupos(); track grupo.id) {
@@ -855,9 +855,14 @@ export class AsignacionListComponent implements OnInit {
       'ACOMODADOR_1': 'Acomodador 1',
       'ACOMODADOR_2': 'Acomodador 2',
       'PARQUEADERO': 'Parqueadero',
-      'ASEO_SALON': 'Aseo del Salón'
+      'ASEO_SALON': 'Aseo del Salón',
+      'HOSPITALIDAD': 'Hospitalidad'
     };
     return nombres[nombre] || nombre;
+  }
+
+  isGroupType(nombre?: string | null): boolean {
+    return nombre === 'ASEO_SALON' || nombre === 'HOSPITALIDAD';
   }
 
   getTiposList(): TipoAsignacion[] {
@@ -875,7 +880,8 @@ export class AsignacionListComponent implements OnInit {
             'ACOMODADOR_1': 6,
             'ACOMODADOR_2': 7,
             'PARQUEADERO': 8,
-            'ASEO_SALON': 9
+            'ASEO_SALON': 9,
+            'HOSPITALIDAD': 10
           };
           return (order[a.nombre] ?? 99) - (order[b.nombre] ?? 99);
         });
@@ -889,7 +895,8 @@ export class AsignacionListComponent implements OnInit {
       { id: '6', nombre: 'ACOMODADOR_1', icono: '🪑', descripcion: 'Acomodador 1' },
       { id: '7', nombre: 'ACOMODADOR_2', icono: '🪑', descripcion: 'Acomodador 2' },
       { id: '8', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
-      { id: '9', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' }
+      { id: '9', nombre: 'ASEO_SALON', icono: '🧹', descripcion: 'Aseo del Salón' },
+      { id: '10', nombre: 'HOSPITALIDAD', icono: '☕', descripcion: 'Hospitalidad' }
     ] as TipoAsignacion[];
   }
 
@@ -1038,10 +1045,10 @@ export class AsignacionListComponent implements OnInit {
     for (const tipo of tipos) {
       const form = this.dayFormMap[tipo.id];
       const existing = this.getAsignacionForDiaAndTipo(this.editingDiaSemana, tipo.id);
-      const isAseo = tipo.nombre === 'ASEO_SALON';
+      const isGroup = this.isGroupType(tipo.nombre);
 
-      const selectedUserId = !isAseo && form?.user_id ? form.user_id : undefined;
-      const selectedGrupoId = isAseo && form?.grupo_id ? form.grupo_id : undefined;
+      const selectedUserId = !isGroup && form?.user_id ? form.user_id : undefined;
+      const selectedGrupoId = isGroup && form?.grupo_id ? form.grupo_id : undefined;
 
       if (selectedUserId || selectedGrupoId) {
         if (existing) {

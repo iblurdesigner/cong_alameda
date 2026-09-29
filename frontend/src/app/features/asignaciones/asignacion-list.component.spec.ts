@@ -200,6 +200,64 @@ describe('AsignacionListComponent', () => {
     });
   });
 
+  describe('HOSPITALIDAD group-only behavior', () => {
+    const HOSPITALIDAD_UUID = 'hosp-1234-uuid';
+    const hospTipo: TipoAsignacion = {
+      id: HOSPITALIDAD_UUID,
+      nombre: 'HOSPITALIDAD',
+      descripcion: null,
+      icono: '☕',
+      created_at: new Date(),
+    } as unknown as TipoAsignacion;
+
+    function openHospitalidadModal() {
+      component.selectedSemanaId = 'some-semana';
+      component.openAssignModal(hospTipo, 0);
+      fixture.detectChanges();
+    }
+
+    it('should render ONLY the group selector for HOSPITALIDAD type', () => {
+      openHospitalidadModal();
+
+      const grupoSelect = fixture.nativeElement.querySelector('#grupoSelect');
+      const personaSelect = fixture.nativeElement.querySelector('#userSelect');
+
+      expect(grupoSelect).toBeTruthy();
+      expect(personaSelect).toBeNull();
+    });
+
+    it('should send grupo_id (not user_id) when saving a HOSPITALIDAD assignment', () => {
+      openHospitalidadModal();
+      component.assignForm.grupo_id = 'grupo-hosp-789';
+      component.saveAsignacion();
+
+      expect(mockAsignacionService.createAsignacion).toHaveBeenCalled();
+      const calls = mockAsignacionService.createAsignacion.mock.calls;
+      const lastCall = calls[calls.length - 1][0];
+      expect(lastCall.grupo_id).toBe('grupo-hosp-789');
+      expect(lastCall.user_id).toBeUndefined();
+    });
+
+    it('should send grupo_id (not user_id) for HOSPITALIDAD in saveDiaAsignaciones', () => {
+      component.selectedSemanaId = 'week-1';
+      component.openEditDiaModal(3);
+      component.dayFormMap[HOSPITALIDAD_UUID] = {
+        user_id: '',
+        grupo_id: 'grupo-hosp-456',
+        observaciones: 'Refrigerio hermanos'
+      };
+      jest.spyOn(component, 'getTiposList').mockReturnValue([hospTipo]);
+      component.saveDiaAsignaciones();
+
+      expect(mockAsignacionService.createAsignacion).toHaveBeenCalled();
+      const createCalls = mockAsignacionService.createAsignacion.mock.calls;
+      const hospCall = createCalls.find((call: any[]) => call[0].tipo_asignacion_id === HOSPITALIDAD_UUID);
+      expect(hospCall).toBeDefined();
+      expect(hospCall[0].grupo_id).toBe('grupo-hosp-456');
+      expect(hospCall[0].user_id).toBeNull();
+    });
+  });
+
   describe('Req 3 - select week from route queryParam (semana_id)', () => {
     it('should set selectedSemanaId from queryParams and load that week', () => {
       queryParamsSubject.next({ semana_id: 'XYZ' });

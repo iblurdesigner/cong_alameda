@@ -88,7 +88,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
                 </select>
               </div>
 
-              @if (assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4') {
+              @if (isGroupType(assignForm.tipo_id)) {
                 <div class="form-group">
                   <label for="grupoSelect">Seleccionar Grupo:</label>
                   <select id="grupoSelect" [(ngModel)]="assignForm.grupo_id">
@@ -101,7 +101,7 @@ import { GrupoService, Grupo } from '../../core/services/grupo.service';
               }
               
               <div class="form-group">
-                <label for="nuevaPersona">{{ assignForm.tipo_id === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4' ? 'O seleccionar Persona:' : 'Seleccionar Persona:' }}</label>
+                <label for="nuevaPersona">{{ isGroupType(assignForm.tipo_id) ? 'O seleccionar Persona:' : 'Seleccionar Persona:' }}</label>
                 <select id="nuevaPersona" [(ngModel)]="assignForm.user_id">
                   <option value="">Seleccionar persona...</option>
                   @for (user of users(); track user.id) {
@@ -513,9 +513,20 @@ export class SemanaEditarComponent implements OnInit {
       'Lectura': 'Lectura',
       'Tesoro': 'Tesoro',
       'LECTOR_ATALAYA': 'Lector Atalaya',
-      'PRESIDENTE': 'Presidente'
+      'PRESIDENTE': 'Presidente',
+      'ASEO_SALON': 'Aseo del Salón',
+      'HOSPITALIDAD': 'Hospitalidad'
     };
     return nombres[nombre] || nombre;
+  }
+
+  isGroupType(tipoId?: string): boolean {
+    if (!tipoId) return false;
+    const tipo = this.tipos().find(t => t.id === tipoId);
+    if (!tipo) {
+      return tipoId === 'b10c74a7-ba4c-4a71-b639-1248aa404eb4';
+    }
+    return tipo.nombre === 'ASEO_SALON' || tipo.nombre === 'HOSPITALIDAD' || tipo.nombre === 'Aseo Salon';
   }
 
   formatDateRange(): string {

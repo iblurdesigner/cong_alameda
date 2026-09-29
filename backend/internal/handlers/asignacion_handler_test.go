@@ -200,3 +200,59 @@ func TestAsignacionHandler_BulkCreate_AseoSalonRequiresGrupo_Returns400(t *testi
 		t.Errorf("expected error 'aseo_salon_requires_grupo', got '%v'", got)
 	}
 }
+
+// --- HOSPITALIDAD group violation tests ---
+
+func TestAsignacionHandler_Create_HospitalidadRequiresGrupo_Returns400(t *testing.T) {
+	h := newAsignacionTestHarness()
+	h.svc.createFunc = func(_ context.Context, _ *models.AsignacionSemanal) error {
+		return services.ErrHospitalidadRequiresGrupo
+	}
+	body := `{"semana_id":"` + uuid.New().String() + `","tipo_asignacion_id":"` + uuid.New().String() + `","user_id":"` + uuid.New().String() + `","dia_semana":0}`
+	resp, err := h.doRequest("POST", "/", body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
+	}
+	if got := decodeError(t, resp); got != "hospitalidad_requires_grupo" {
+		t.Errorf("expected error 'hospitalidad_requires_grupo', got '%v'", got)
+	}
+}
+
+func TestAsignacionHandler_Update_HospitalidadRequiresGrupo_Returns400(t *testing.T) {
+	h := newAsignacionTestHarness()
+	h.svc.updateFunc = func(_ context.Context, _, _ uuid.UUID, _ *uuid.UUID, _ *string) error {
+		return services.ErrHospitalidadRequiresGrupo
+	}
+	body := `{"user_id":"` + uuid.New().String() + `"}`
+	resp, err := h.doRequest("PUT", "/"+uuid.New().String(), body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
+	}
+	if got := decodeError(t, resp); got != "hospitalidad_requires_grupo" {
+		t.Errorf("expected error 'hospitalidad_requires_grupo', got '%v'", got)
+	}
+}
+
+func TestAsignacionHandler_BulkCreate_HospitalidadRequiresGrupo_Returns400(t *testing.T) {
+	h := newAsignacionTestHarness()
+	h.svc.bulkCreateFunc = func(_ context.Context, _ []*models.AsignacionSemanal) error {
+		return services.ErrHospitalidadRequiresGrupo
+	}
+	body := `{"semana_id":"` + uuid.New().String() + `","asignaciones":[{"tipo_asignacion_id":"` + uuid.New().String() + `","dia_semana":0}]}`
+	resp, err := h.doRequest("POST", "/bulk", body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.StatusCode != fiber.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
+	}
+	if got := decodeError(t, resp); got != "hospitalidad_requires_grupo" {
+		t.Errorf("expected error 'hospitalidad_requires_grupo', got '%v'", got)
+	}
+}
