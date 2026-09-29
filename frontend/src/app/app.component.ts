@@ -102,17 +102,25 @@ import { ThemeService } from './core/services/theme.service';
                 <span>Vida y Ministerio</span>
               </a>
             </li>
-            <!-- Backoffice - Solo SUPER_ADMIN -->
-            @if (authService.isSuperAdmin()) {
+            <!-- Backoffice - Administración -->
+            @if (authService.isSuperAdmin() || authService.isSuperintendente() || authService.isAnciano()) {
               <li class="nav-section">
                 <span class="section-label">Administración</span>
               </li>
               <li>
-                <a routerLink="/usuarios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
-                  <span class="material-symbols-outlined icon">manage_accounts</span>
-                  <span>Usuarios</span>
+                <a routerLink="/publicadores" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+                  <span class="material-symbols-outlined icon">groups</span>
+                  <span>Publicadores</span>
                 </a>
               </li>
+              @if (authService.isSuperAdmin()) {
+                <li>
+                  <a routerLink="/usuarios" routerLinkActive="active" (click)="closeSidebarOnMobile()">
+                    <span class="material-symbols-outlined icon">manage_accounts</span>
+                    <span>Usuarios</span>
+                  </a>
+                </li>
+              }
             }
           </ul>
           <div class="sidebar-footer">

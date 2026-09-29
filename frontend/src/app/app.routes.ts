@@ -105,7 +105,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/asignaciones/vida-ministerio/vida-ministerio.component').then(m => m.VidaMinisterioComponent),
     canActivate: [authGuard]
   },
-  // ====== Backoffice: Gestión de Usuarios ======
+  // ====== Backoffice: Directorio de Publicadores y Gestión de Usuarios ======
+  {
+    path: 'publicadores',
+    loadComponent: () => import('./features/admin/publicadores/publicadores-list.component').then(m => m.PublicadoresListComponent),
+    canActivate: [authGuard]
+  },
   {
     path: 'usuarios',
     loadComponent: () => import('./features/admin/usuarios/usuarios-list.component').then(m => m.UsuariosListComponent),

@@ -124,6 +124,11 @@ func main() {
 	programaVyMService := services.NewProgramaVyMService(programaVyMRepo)
 	programaVyMHandler := handlers.NewProgramaVyMHandler(programaVyMService)
 
+	// Initialize Publicador repo, service, handler
+	publicadorRepo := repositories.NewPublicadorRepository(db.Pool)
+	publicadorService := services.NewPublicadorService(publicadorRepo)
+	publicadorHandler := handlers.NewPublicadorHandler(publicadorService)
+
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 
@@ -204,6 +209,14 @@ func main() {
 	users.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Create)
 	users.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Update)
 	users.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN"), userHandler.Delete)
+
+	// Publicador routes
+	publicadores := protected.Group("/publicadores")
+	publicadores.Get("/", publicadorHandler.List)
+	publicadores.Get("/:id", publicadorHandler.GetByID)
+	publicadores.Post("/", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN", "ANCIANO"), publicadorHandler.Create)
+	publicadores.Put("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN", "ANCIANO"), publicadorHandler.Update)
+	publicadores.Delete("/:id", authMiddleware.RequireRole("SUPERINTENDENTE", "SUPER_ADMIN", "ANCIANO"), publicadorHandler.Delete)
 
 	// ====== FASE 2 ROUTES ======
 
