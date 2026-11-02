@@ -64,7 +64,15 @@ type AsignacionService struct {
 	semanaRepo     semanaRepo
 	diaRepo        diaRepo
 	userRepo       userRepo
-	notifService   *NotificacionService
+	notifService   notificacionCreator
+}
+
+// notificacionCreator is the subset of *NotificacionService used by
+// notifyAsignacion. Declared as a local interface (the same per-dependency
+// pattern used by the repo fields above) so the notification side-effect of
+// Create/Update/BulkCreate is unit-testable without a live database.
+type notificacionCreator interface {
+	CreateConReferencia(ctx context.Context, n *models.Notificacion) error
 }
 
 func NewAsignacionService(
@@ -75,13 +83,20 @@ func NewAsignacionService(
 	userRepo userRepo,
 	notifService *NotificacionService,
 ) *AsignacionService {
+	// Convert to the interface only when non-nil: storing a typed-nil
+	// *NotificacionService directly would produce a non-nil interface whose
+	// nil-check in notifyAsignacion could never fire (classic Go typed-nil trap).
+	var notif notificacionCreator
+	if notifService != nil {
+		notif = notifService
+	}
 	return &AsignacionService{
 		asignacionRepo: asignacionRepo,
 		tipoAsignRepo:  tipoAsignRepo,
 		semanaRepo:     semanaRepo,
 		diaRepo:        diaRepo,
 		userRepo:       userRepo,
-		notifService:   notifService,
+		notifService:   notif,
 	}
 }
 

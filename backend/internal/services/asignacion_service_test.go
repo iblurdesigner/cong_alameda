@@ -12,16 +12,14 @@ import (
 )
 
 // NOTE on mockability (Req 1 service coverage):
-// AsignacionService.notifService is the concrete *NotificacionService (no interface) and
-// NotificacionService.notifRepo is the concrete *repositories.NotificacionRepository (no
-// interface, requires a live Postgres). Under the no-production-edit / no-DB constraints this
-// makes it impossible to inject a mock NotificacionService into AsignacionService.notifyAsignacion
-// and observe the CreateConReferencia call directly. The contract that notifyAsignacion is
-// specified to satisfy — "call CreateConReferencia with ReferenciaID == &semanaID and
-// ReferenciaTipo == &RefTipoAsignacion" — is therefore exercised here through the same
-// CreateConReferencia method (the exact call notifyAsignacion performs) using the in-memory
-// mock repo (NotificacionRepositoryInterface / mockNotifRepo) already used by this package's
-// notificacion service tests. This is a pure in-memory test (no DB).
+// AsignacionService.notifService is typed as the local interface
+// `notificacionCreator` (subset of *NotificacionService: CreateConReferencia),
+// which lets tests inject an in-memory fake and observe the notification
+// side-effect of Create/Update/BulkCreate directly — see
+// asignacion_service_notify_test.go. The older contract test below remains as a
+// payload-level assertion of the ReferenciaID/ReferenciaTipo contract through
+// the same CreateConReferencia method using the in-memory mock repo
+// (NotificacionRepositoryInterface / mockNotifRepo). Pure in-memory tests, no DB.
 
 // TestAsignacionService_NotifyAsignacion_ReferenciaContract asserts the Req 1 service contract:
 // the notification sent by the asignacion flow carries ReferenciaID == semanaID and

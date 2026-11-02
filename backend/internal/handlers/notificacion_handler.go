@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -14,15 +15,35 @@ import (
 	"cong-alameda-backend/internal/services"
 )
 
+// notificacionServiceAPI is the subset of *services.NotificacionService used by
+// NotificacionHandler, declared as a local interface (the same per-dependency
+// pattern used by the services package) so the List/Read flows are
+// unit-testable without a live database.
+type notificacionServiceAPI interface {
+	GetByUserID(ctx context.Context, userID uuid.UUID, leida *bool, tipo string) ([]*models.Notificacion, int, error)
+	MarkAsRead(ctx context.Context, notificacionID, userID uuid.UUID) error
+	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
+	CleanupOldNotifications(ctx context.Context, dias int) (int, error)
+	GetVisitasProximasRekindle(ctx context.Context, dias int) ([]*models.Visita, error)
+	CreateVisitaNotification(ctx context.Context, tipo models.NotificacionTipo, destinatarios []uuid.UUID, mensaje string, visitaID uuid.UUID) error
+}
+
 type NotificacionHandler struct {
-	notificacionService *services.NotificacionService
+	notificacionService notificacionServiceAPI
 	userService         *services.UserService
 	casaService         *services.CasaService
 }
 
 func NewNotificacionHandler(notificacionService *services.NotificacionService, userService *services.UserService, casaService *services.CasaService) *NotificacionHandler {
+	// Convert to the interface only when non-nil: storing a typed-nil
+	// *NotificacionService would produce a non-nil interface that defeats
+	// nil-checks (classic Go typed-nil trap).
+	var notif notificacionServiceAPI
+	if notificacionService != nil {
+		notif = notificacionService
+	}
 	return &NotificacionHandler{
-		notificacionService: notificacionService,
+		notificacionService: notif,
 		userService:        userService,
 		casaService:        casaService,
 	}
