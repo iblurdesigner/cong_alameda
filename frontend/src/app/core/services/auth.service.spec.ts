@@ -206,7 +206,8 @@ describe('AuthService', () => {
     it('should call GET /users', () => {
       const mockUsers: User[] = [mockUser];
 
-      (mockHttpClient.get as jest.Mock).mockReturnValue(of(mockUsers));
+      // getUsers() unwraps the API envelope { data: User[] } via map(response => response.data)
+      (mockHttpClient.get as jest.Mock).mockReturnValue(of({ data: mockUsers }));
 
       let receivedUsers: User[] | null = null;
       service.getUsers().subscribe((users: User[]) => {
