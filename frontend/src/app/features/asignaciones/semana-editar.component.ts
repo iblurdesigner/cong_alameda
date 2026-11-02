@@ -514,6 +514,8 @@ export class SemanaEditarComponent implements OnInit {
       'Tesoro': 'Tesoro',
       'LECTOR_ATALAYA': 'Lector Atalaya',
       'PRESIDENTE': 'Presidente',
+      'AUDIO': 'Encargado de Audio',
+      'VIDEO': 'Encargado de Video',
       'ASEO_SALON': 'Aseo del Salón',
       'HOSPITALIDAD': 'Hospitalidad'
     };

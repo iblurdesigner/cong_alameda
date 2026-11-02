@@ -66,11 +66,6 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
             }
           </button>
         </form>
-        
-        <div class="demo-credentials">
-          <p>Credenciales de administrador:</p>
-          <code>davidisaac.floresmedrano&#64;gmail.com / admin123</code>
-        </div>
       </div>
     </div>
   `,
@@ -147,27 +142,6 @@ import { AuthService, LoginResponse } from '../../../core/services/auth.service'
         &:hover {
           color: var(--primary-hover);
         }
-      }
-    }
-
-    .demo-credentials {
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border-color);
-      text-align: center;
-      
-      p {
-        font-size: 0.75rem;
-        color: var(--text-secondary);
-        margin-bottom: 0.5rem;
-      }
-      
-      code {
-        display: block;
-        font-size: 0.75rem;
-        background: var(--background-color);
-        padding: 0.5rem;
-        border-radius: var(--radius-sm);
       }
     }
   `]

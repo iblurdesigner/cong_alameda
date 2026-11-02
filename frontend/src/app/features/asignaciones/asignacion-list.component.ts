@@ -99,8 +99,7 @@ import { forkJoin, Observable } from 'rxjs';
         <div class="empty-selection-card">
           <span class="material-symbols-outlined empty-icon">date_range</span>
           <h3>Selecciona una semana arriba para ver y gestionar las asignaciones</h3>
-          <p>Podrás ver los roles asignados día por día (Presidente, Lector, Micrófonos, Aseo, etc.)</p>
-          <p>Podrás ver y asignar la lista semanal de funciones (Presidente, Lector, Micrófonos, Plataforma, Aseo, etc.)</p>
+          <p>Podrás ver y asignar la lista semanal de funciones estructuradas por secciones.</p>
         </div>
       } @else if (loading()) {
         <div class="loading-card">
@@ -130,9 +129,15 @@ import { forkJoin, Observable } from 'rxjs';
               </div>
             </div>
 
-            <!-- Roles Slots List -->
+            <!-- Roles Slots List grouped by section -->
             <div class="roles-slot-list">
               @for (tipo of getTiposList(); track tipo.id) {
+                @if (getSeccionParaTipo(tipo.nombre); as seccion) {
+                  <div class="section-divider-banner">
+                    <span class="material-symbols-outlined">{{ seccion.icono }}</span>
+                    <span>{{ seccion.titulo | uppercase }}</span>
+                  </div>
+                }
                 @let asig = getAsignacionForTipo(tipo.id);
                 <div class="role-slot" [class.filled]="!!asig">
                   <div class="role-info">
@@ -216,9 +221,20 @@ import { forkJoin, Observable } from 'rxjs';
                   <select id="userSelect" [(ngModel)]="assignForm.user_id" class="form-input">
                     <option value="">Selecciona un Usuario...</option>
                     @for (user of getUsersList(); track user.id) {
-                      <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                      <option [value]="user.id">
+                        {{ user.nombre }} ({{ user.rol }}){{ getUserExistingAssignmentWarning(user.id, editingTipo?.id) }}
+                      </option>
                     }
                   </select>
+
+                  @if (getConflictMessageForSelectedUser(assignForm.user_id, editingTipo?.id); as conflict) {
+                    <div class="warning-conflict-box">
+                      <span class="material-symbols-outlined">warning</span>
+                      <p>
+                        <strong>Atención:</strong> {{ conflict }}. Si guardas, el hermano quedará asignado en más de una función.
+                      </p>
+                    </div>
+                  }
                 </div>
               }
 
@@ -252,6 +268,12 @@ import { forkJoin, Observable } from 'rxjs';
               
               <div class="day-roles-edit-list">
                 @for (tipo of getTiposList(); track tipo.id) {
+                  @if (getSeccionParaTipo(tipo.nombre); as seccion) {
+                    <div class="section-divider-banner">
+                      <span class="material-symbols-outlined">{{ seccion.icono }}</span>
+                      <span>{{ seccion.titulo | uppercase }}</span>
+                    </div>
+                  }
                   <div class="role-edit-row">
                     <div class="role-label-group">
                       <span class="role-icon">{{ tipo.icono || 'assignment' }}</span>
@@ -270,7 +292,9 @@ import { forkJoin, Observable } from 'rxjs';
                         <select [(ngModel)]="dayFormMap[tipo.id].user_id" class="form-input">
                           <option value="">-- Sin asignar --</option>
                           @for (user of getUsersList(); track user.id) {
-                            <option [value]="user.id">{{ user.nombre }} ({{ user.rol }})</option>
+                            <option [value]="user.id">
+                              {{ user.nombre }} ({{ user.rol }}){{ getUserExistingAssignmentWarningInBulk(user.id, tipo.id) }}
+                            </option>
                           }
                         </select>
                       }
@@ -399,6 +423,13 @@ import { forkJoin, Observable } from 'rxjs';
                                 </thead>
                                 <tbody>
                                   @for (tipo of getTiposList(); track tipo.id) {
+                                    @if (getSeccionParaTipo(tipo.nombre); as seccion) {
+                                      <tr class="pdf-section-header-row">
+                                        <td colspan="2" class="cell-section-title">
+                                          <strong>{{ seccion.titulo | uppercase }}</strong>
+                                        </td>
+                                      </tr>
+                                    }
                                     <tr>
                                       <td class="cell-role">
                                         <span>{{ getTipoNombre(tipo.nombre) }}:</span>
@@ -782,6 +813,52 @@ export class AsignacionListComponent implements OnInit {
     return null;
   }
 
+  getUserExistingAssignmentWarning(userId: string, currentTipoId?: string): string {
+    if (!userId) return '';
+    const map = this.asignacionMap();
+    for (const asig of map.values()) {
+      if (asig.user_id === userId && asig.tipo_asignacion_id !== currentTipoId) {
+        const tipo = this.tipos().find(t => t.id === asig.tipo_asignacion_id);
+        const tipoNombre = tipo ? this.getTipoNombre(tipo.nombre) : 'otra función';
+        return ` ⚠️ [Ya asignado en: ${tipoNombre}]`;
+      }
+    }
+    return '';
+  }
+
+  getConflictMessageForSelectedUser(userId: string, currentTipoId?: string): string | null {
+    if (!userId) return null;
+    const map = this.asignacionMap();
+    for (const asig of map.values()) {
+      if (asig.user_id === userId && asig.tipo_asignacion_id !== currentTipoId) {
+        const tipo = this.tipos().find(t => t.id === asig.tipo_asignacion_id);
+        const tipoNombre = tipo ? this.getTipoNombre(tipo.nombre) : 'otra función';
+        return `Este publicador ya tiene asignada la función "${tipoNombre}" en esta semana`;
+      }
+    }
+    return null;
+  }
+
+  getUserExistingAssignmentWarningInBulk(userId: string, currentTipoId: string): string {
+    if (!userId) return '';
+    for (const [tId, formVal] of Object.entries(this.dayFormMap)) {
+      if (tId !== currentTipoId && formVal.user_id === userId) {
+        const tipo = this.tipos().find(t => t.id === tId);
+        const tipoNombre = tipo ? this.getTipoNombre(tipo.nombre) : 'otra función';
+        return ` ⚠️ [Ya asignado en: ${tipoNombre}]`;
+      }
+    }
+    const map = this.asignacionMap();
+    for (const asig of map.values()) {
+      if (asig.user_id === userId && asig.tipo_asignacion_id !== currentTipoId && !this.dayFormMap[asig.tipo_asignacion_id]?.user_id) {
+        const tipo = this.tipos().find(t => t.id === asig.tipo_asignacion_id);
+        const tipoNombre = tipo ? this.getTipoNombre(tipo.nombre) : 'otra función';
+        return ` ⚠️ [Ya asignado en: ${tipoNombre}]`;
+      }
+    }
+    return '';
+  }
+
   getAsignacionForDiaAndTipo(diaSemana: number, tipoId: string): Asignacion | null {
     const map = this.asignacionMap();
     const key = `${diaSemana}-${tipoId}`;
@@ -855,10 +932,31 @@ export class AsignacionListComponent implements OnInit {
       'ACOMODADOR_1': 'Acomodador 1',
       'ACOMODADOR_2': 'Acomodador 2',
       'PARQUEADERO': 'Parqueadero',
+      'AUDIO': 'Encargado de Audio',
+      'VIDEO': 'Encargado de Video',
       'ASEO_SALON': 'Aseo del Salón',
       'HOSPITALIDAD': 'Hospitalidad'
     };
     return nombres[nombre] || nombre;
+  }
+
+  getSeccionParaTipo(nombre: string): { titulo: string; icono: string } | null {
+    if (nombre === 'PRESIDENTE') {
+      return { titulo: 'Presidencia y Lectura', icono: 'assignment_ind' };
+    }
+    if (nombre === 'AUDIO') {
+      return { titulo: 'Audio y Video', icono: 'perm_media' };
+    }
+    if (nombre === 'PLATAFORMA') {
+      return { titulo: 'Plataforma y Micrófonos', icono: 'mic' };
+    }
+    if (nombre === 'ACOMODADOR_1') {
+      return { titulo: 'Atención y Acomodadores', icono: 'diversity_3' };
+    }
+    if (nombre === 'ASEO_SALON') {
+      return { titulo: 'Servicios de Grupo', icono: 'groups' };
+    }
+    return null;
   }
 
   isGroupType(nombre?: string | null): boolean {
@@ -874,14 +972,16 @@ export class AsignacionListComponent implements OnInit {
           const order: Record<string, number> = {
             'PRESIDENTE': 1,
             'LECTOR_ATALAYA': 2,
-            'MICROFONO_IZQ': 3,
-            'MICROFONO_DER': 4,
+            'AUDIO': 3,
+            'VIDEO': 4,
             'PLATAFORMA': 5,
-            'ACOMODADOR_1': 6,
-            'ACOMODADOR_2': 7,
-            'PARQUEADERO': 8,
-            'ASEO_SALON': 9,
-            'HOSPITALIDAD': 10
+            'MICROFONO_IZQ': 6,
+            'MICROFONO_DER': 7,
+            'ACOMODADOR_1': 8,
+            'ACOMODADOR_2': 9,
+            'PARQUEADERO': 10,
+            'ASEO_SALON': 11,
+            'HOSPITALIDAD': 12
           };
           return (order[a.nombre] ?? 99) - (order[b.nombre] ?? 99);
         });
@@ -889,9 +989,11 @@ export class AsignacionListComponent implements OnInit {
     return [
       { id: '1', nombre: 'PRESIDENTE', icono: '🎯', descripcion: 'Presidente' },
       { id: '2', nombre: 'LECTOR_ATALAYA', icono: '📖', descripcion: 'Lector Atalaya' },
+      { id: '11', nombre: 'AUDIO', icono: 'volume_up', descripcion: 'Audio' },
+      { id: '12', nombre: 'VIDEO', icono: 'videocam', descripcion: 'Video' },
+      { id: '5', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
       { id: '3', nombre: 'MICROFONO_IZQ', icono: '🎤', descripcion: 'Micrófono Izquierda' },
       { id: '4', nombre: 'MICROFONO_DER', icono: '🎤', descripcion: 'Micrófono Derecha' },
-      { id: '5', nombre: 'PLATAFORMA', icono: '📺', descripcion: 'Plataforma' },
       { id: '6', nombre: 'ACOMODADOR_1', icono: '🪑', descripcion: 'Acomodador 1' },
       { id: '7', nombre: 'ACOMODADOR_2', icono: '🪑', descripcion: 'Acomodador 2' },
       { id: '8', nombre: 'PARQUEADERO', icono: '🚗', descripcion: 'Parqueadero' },
@@ -979,6 +1081,18 @@ export class AsignacionListComponent implements OnInit {
   saveAsignacion() {
     if (!this.assignForm.user_id && !this.assignForm.grupo_id) return;
 
+    if (this.assignForm.user_id) {
+      const conflict = this.getConflictMessageForSelectedUser(this.assignForm.user_id, this.editingTipo?.id);
+      if (conflict) {
+        const confirmar = window.confirm(
+          `Advertencia de asignación duplicada:\n\n${conflict}.\n\n¿Estás seguro de que deseas asignarle esta segunda función para la misma semana?`
+        );
+        if (!confirmar) {
+          return;
+        }
+      }
+    }
+
     if (this.editingAsignacion) {
       this.asignacionService.updateAsignacion(
         this.editingAsignacion.id,
@@ -1037,9 +1151,35 @@ export class AsignacionListComponent implements OnInit {
 
   saveDiaAsignaciones() {
     if (!this.selectedSemanaId || this.editingDiaSemana === -1) return;
+
+    // Detectar duplicados en el formulario masivo
+    const userCount: Record<string, string[]> = {};
+    const tipos = this.getTiposList();
+    for (const tipo of tipos) {
+      const uId = this.dayFormMap[tipo.id]?.user_id;
+      if (uId) {
+        if (!userCount[uId]) userCount[uId] = [];
+        userCount[uId].push(this.getTipoNombre(tipo.nombre));
+      }
+    }
+
+    const duplicates = Object.entries(userCount).filter(([_, roles]) => roles.length > 1);
+    if (duplicates.length > 0) {
+      const msgs = duplicates.map(([uId, roles]) => {
+        const u = this.users().find((usr: any) => usr.id === uId);
+        const name = u ? u.nombre : 'Un hermano';
+        return `• ${name} está asignado a: ${roles.join(', ')}`;
+      });
+      const confirmar = window.confirm(
+        `Advertencia de asignaciones repetidas en esta semana:\n\n${msgs.join('\n')}\n\n¿Deseas continuar y guardar con estas funciones duplicadas?`
+      );
+      if (!confirmar) {
+        return;
+      }
+    }
+
     this.savingDia = true;
 
-    const tipos = this.getTiposList();
     const requests: Observable<any>[] = [];
 
     for (const tipo of tipos) {
