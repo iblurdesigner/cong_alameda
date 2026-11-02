@@ -33,9 +33,9 @@
 ## Phase 4: Testing
 
 - [x] 4.1 Testear `GenerateResetToken` y `ValidateResetToken` en `backend/pkg/jwt/jwt_test.go`
-- [ ] 4.2 Testear handler `RecoverRequest` con email existente y no existente (httptest) - **PENDING: requiere test environment**
-- [ ] 4.3 Testear handler `RecoverPassword` con token válida, inválida y expirado (httptest) - **PENDING: requiere test environment**
-- [ ] 4.4 Testear `UpdatePassword` actualiza hash correcto (permite login con nueva password) - **PENDING: requiere test environment**
+- [x] 4.2 Testear handler `RecoverRequest` con email existente y no existente (httptest)
+- [x] 4.3 Testear handler `RecoverPassword` con token válida, inválida y expirado (httptest)
+- [x] 4.4 Testear `UpdatePassword` actualiza hash correcto (permite login con nueva password)
 
 ## Phase 5: Verificación
 
@@ -47,3 +47,12 @@
 - [x] 5.4 Verificar flow completo: request → email → recovery page → nueva password → login
   - Ruta /recovery configurada ✅
   - RecoveryComponent implementado con validaciones ✅
+## Closure Note (2026-11-01)
+
+The "requiere test environment" blocker no longer applies: `internal/handlers/auth_handler_recovery_test.go` covers all three tasks with in-process mocks (`mockRecoveryUserService`, `mockRecoveryEmailService`), no live DB/email needed.
+
+- 4.2: `TestRecoverRequest_EmailNotFound` (existing + non-existing email, no enumeration, empty-email validation) + `TestRecoverRequest_RateLimiting` (429).
+- 4.3: `TestRecoverPassword_Validation` (valid, invalid, expired token; short password; empty token).
+- 4.4: `TestUpdatePassword_Integration` (new password allows login, old password fails).
+
+All PASS on `go test ./internal/handlers -run 'Recover|Password'` (verified 2026-11-01).
