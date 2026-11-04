@@ -45,7 +45,11 @@
       </a>
       <a routerLink="/asignaciones/vida-y-ministerio" class="subtab-item active">
         <span class="material-symbols-outlined">menu_book</span>
-        <span>Vida y Ministerio ("Seamos Mejores Maestros")</span>
+        <span>Vida y Ministerio (\"Seamos Mejores Maestros\")</span>
+      </a>
+      <a routerLink="/asignaciones/publicadores-vym" class="subtab-item">
+        <span class="material-symbols-outlined">groups</span>
+        <span>Publicadores VyM</span>
       </a>
     </div>
 
@@ -276,9 +280,17 @@
                     <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>
-                <div class="item-card-body">
+                <div class="item-card-body student-assignment-row">
                   <span class="material-symbols-outlined input-icon">person</span>
-                  <input type="text" [(ngModel)]="item.student" list="publishersList" placeholder="Estudiante / Ayudante">
+                  <input type="text" [(ngModel)]="item.student" list="publicadoresVymList" placeholder="Estudiante / Ayudante (o escoger de VyM)">
+                  @if (getStudentDisponibilidad(item.student); as disp) {
+                    <div class="student-disp-tag" [class]="'disp-' + getEstadoDisponibilidad(disp)" [title]="getLabelDisponibilidad(disp)">
+                      <span class="material-symbols-outlined disp-icon">
+                        {{ disp.disponible ? 'check_circle' : (getEstadoDisponibilidad(disp) === 'pronto' ? 'schedule' : 'warning') }}
+                      </span>
+                      <span class="disp-text">{{ getLabelDisponibilidad(disp) }}</span>
+                    </div>
+                  }
                 </div>
               </div>
             }
@@ -309,9 +321,17 @@
                     <span class="material-symbols-outlined">delete</span>
                   </button>
                 </div>
-                <div class="item-card-body">
+                <div class="item-card-body student-assignment-row">
                   <span class="material-symbols-outlined input-icon">person</span>
-                  <input type="text" [(ngModel)]="item.student" list="publishersList" placeholder="Estudiante / Ayudante">
+                  <input type="text" [(ngModel)]="item.student" list="publicadoresVymList" placeholder="Estudiante / Ayudante (o escoger de VyM)">
+                  @if (getStudentDisponibilidad(item.student); as disp) {
+                    <div class="student-disp-tag" [class]="'disp-' + getEstadoDisponibilidad(disp)" [title]="getLabelDisponibilidad(disp)">
+                      <span class="material-symbols-outlined disp-icon">
+                        {{ disp.disponible ? 'check_circle' : (getEstadoDisponibilidad(disp) === 'pronto' ? 'schedule' : 'warning') }}
+                      </span>
+                      <span class="disp-text">{{ getLabelDisponibilidad(disp) }}</span>
+                    </div>
+                  }
                 </div>
               </div>
             }
@@ -707,6 +727,15 @@
   <datalist id="publishersList">
     @for (u of users(); track u.id) {
       <option [value]="u.nombre">{{ u.rol }}</option>
+    }
+  </datalist>
+
+  <!-- Datalist exclusivo para Seamos Mejores Maestros (Publicadores VyM) -->
+  <datalist id="publicadoresVymList">
+    @for (d of disponibilidad(); track d.publicador_vym_id) {
+      <option [value]="d.nombres + ' ' + d.apellidos">
+        {{ d.disponible ? '✓ Disponible' : ('⚠ No disp. (última: ' + (d.ultima_asignacion || 'reciente') + ')') }}
+      </option>
     }
   </datalist>
 

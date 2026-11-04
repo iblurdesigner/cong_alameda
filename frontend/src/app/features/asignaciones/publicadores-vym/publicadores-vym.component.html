@@ -1,0 +1,185 @@
+<div class="pvym-layout">
+  <!-- Header -->
+  <header class="top-header no-print">
+    <div class="header-main">
+      <div class="title-section">
+        <div class="icon-badge">
+          <span class="material-symbols-outlined">groups</span>
+        </div>
+        <div>
+          <h1>Publicadores Vida y Ministerio</h1>
+          <p class="subtitle">Hermanos que participan en la sección "Seamos Mejores Maestros"</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        @if (canEdit()) {
+          <button class="pill-btn btn-primary" (click)="openAddModal()">
+            <span class="material-symbols-outlined icon">person_add</span>
+            <span class="btn-label">Agregar hermano</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Subtabs -->
+    <div class="nav-subtabs">
+      <a routerLink="/asignaciones" class="subtab-item">
+        <span class="material-symbols-outlined">assignment</span>
+        <span>Funciones de Reunión</span>
+      </a>
+      <a routerLink="/asignaciones/vida-y-ministerio" class="subtab-item">
+        <span class="material-symbols-outlined">menu_book</span>
+        <span>Vida y Ministerio</span>
+      </a>
+      <a routerLink="/asignaciones/publicadores-vym" class="subtab-item active">
+        <span class="material-symbols-outlined">groups</span>
+        <span>Publicadores VyM</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Status feedback -->
+  @if (statusMessage()) {
+    <div class="status-toast" [class.error]="statusMessage()!.type === 'error'">
+      <span class="material-symbols-outlined">{{ statusMessage()!.type === 'success' ? 'check_circle' : 'error' }}</span>
+      {{ statusMessage()!.text }}
+    </div>
+  }
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="material-symbols-outlined">search</span>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o celular..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event)"
+      />
+    </div>
+    <label class="toggle-label">
+      <input type="checkbox" [ngModel]="showSoloActivos()" (ngModelChange)="showSoloActivos.set($event)" />
+      Solo activos
+    </label>
+    <span class="count-badge">{{ listaFiltrada().length }} hermanos</span>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="loading-state">
+      <span class="material-symbols-outlined spin">progress_activity</span>
+      Cargando...
+    </div>
+  }
+
+  <!-- Lista -->
+  @if (!loading()) {
+    <div class="pvym-grid">
+      @for (item of listaFiltrada(); track item.id) {
+        <div class="pvym-card" [class.inactivo]="!item.activo">
+          <div class="card-info">
+            <div class="avatar">{{ item.nombres[0] }}{{ item.apellidos[0] }}</div>
+            <div class="card-details">
+              <span class="card-name">{{ item.apellidos }}, {{ item.nombres }}</span>
+              @if (item.celular) {
+                <span class="card-celular">
+                  <span class="material-symbols-outlined">phone</span>
+                  {{ item.celular }}
+                </span>
+              }
+              @if (item.notas) {
+                <span class="card-notas">{{ item.notas }}</span>
+              }
+            </div>
+          </div>
+
+          <!-- Badge disponibilidad -->
+          @if (item.disponibilidad) {
+            <div class="disponibilidad-badge" [class]="'estado-' + getEstado(item.disponibilidad)">
+              <span class="material-symbols-outlined badge-icon">
+                {{ item.disponibilidad.disponible ? 'check_circle' : (getEstado(item.disponibilidad) === 'pronto' ? 'schedule' : 'cancel') }}
+              </span>
+              <span class="badge-label">{{ getLabel(item.disponibilidad) }}</span>
+              @if (item.disponibilidad.ultima_asignacion) {
+                <span class="badge-sub">Última: {{ item.disponibilidad.ultima_asignacion | date:'dd/MM/yy' }}</span>
+              }
+            </div>
+          }
+
+          <!-- Acciones -->
+          @if (canEdit()) {
+            <div class="card-actions">
+              <button
+                class="icon-btn"
+                [title]="item.activo ? 'Desactivar' : 'Activar'"
+                (click)="toggleActivo(item)"
+              >
+                <span class="material-symbols-outlined">
+                  {{ item.activo ? 'toggle_on' : 'toggle_off' }}
+                </span>
+              </button>
+              <button class="icon-btn danger" title="Quitar del listado VyM" (click)="removeFromVym(item)">
+                <span class="material-symbols-outlined">person_remove</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      @if (listaFiltrada().length === 0 && !loading()) {
+        <div class="empty-state">
+          <span class="material-symbols-outlined">groups</span>
+          <p>No hay hermanos en el listado VyM.</p>
+          @if (canEdit()) {
+            <button class="pill-btn btn-primary" (click)="openAddModal()">Agregar el primero</button>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Modal: Agregar publicador -->
+  @if (showAddModal()) {
+    <div class="modal-overlay" (click)="closeAddModal()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Agregar hermano a VyM</h2>
+          <button class="close-btn" (click)="closeAddModal()">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Hermano</label>
+            <select [ngModel]="selectedPublicadorId()" (ngModelChange)="selectedPublicadorId.set($event)">
+              <option value="">— Seleccionar publicador —</option>
+              @for (p of publicadoresParaAgregar(); track p.id) {
+                <option [value]="p.id">{{ getNombreCompleto(p) }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notas (opcional)</label>
+            <input
+              type="text"
+              [ngModel]="notasNuevo()"
+              (ngModelChange)="notasNuevo.set($event)"
+              placeholder="Ej: Preferencia de sala, disponibilidad..."
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="pill-btn btn-secondary" (click)="closeAddModal()">Cancelar</button>
+          <button
+            class="pill-btn btn-primary"
+            [disabled]="!selectedPublicadorId() || saving()"
+            (click)="confirmAdd()"
+          >
+            {{ saving() ? 'Guardando...' : 'Agregar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

@@ -2214,6 +2214,53 @@
     background: #ffffff !important;
     color: #000000 !important;
   }
+
+  /* Badge de disponibilidad para estudiantes en Seamos Mejores Maestros */
+  .student-assignment-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+
+    input {
+      flex: 1;
+      min-width: 180px;
+    }
+  }
+
+  .student-disp-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+
+    .disp-icon {
+      font-size: 0.9rem;
+    }
+
+    &.disp-disponible {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+      border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    &.disp-pronto {
+      background: rgba(234, 179, 8, 0.15);
+      color: #eab308;
+      border-color: rgba(234, 179, 8, 0.3);
+    }
+
+    &.disp-no-disponible {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+  }
 }
 
 

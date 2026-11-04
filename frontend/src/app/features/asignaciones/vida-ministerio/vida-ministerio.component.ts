@@ -10,6 +10,13 @@ import {
   ProgramaVyM, 
   createDefaultProgramaVyM 
 } from '../../../core/services/programa-vym.service';
+import {
+  PublicadorVymService,
+  DisponibilidadVyM,
+  getEstadoDisponibilidad,
+  getLabelDisponibilidad,
+  SyncHistorialItem
+} from '../../../core/services/publicador-vym.service';
 
 export interface EstudianteS89Item {
   id: string;
@@ -35,7 +42,13 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
   private semanaService = inject(SemanaService);
   private userService = inject(UserService);
   private vymService = inject(ProgramaVyMService);
+  private publicadorVymService = inject(PublicadorVymService);
   public authService = inject(AuthService);
+
+  // Disponibilidad de Publicadores VyM
+  disponibilidad = computed(() => this.publicadorVymService.disponibilidad());
+  getEstadoDisponibilidad = getEstadoDisponibilidad;
+  getLabelDisponibilidad = getLabelDisponibilidad;
 
   // Semanas
   semanas = computed(() => this.semanaService.semanas());
@@ -369,6 +382,7 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
     if (!semanaId) return;
     this.selectedSemanaId.set(semanaId);
     this.loadProgramaForSemana(semanaId);
+    this.publicadorVymService.loadDisponibilidad(semanaId).subscribe();
   }
 
   loadProgramaForSemana(semanaId: string): void {
@@ -479,6 +493,22 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
     this.current = { ...this.current, vida_cristiana_partes: list };
   }
 
+  // Obtener estado de validación para un estudiante en Seamos Mejores Maestros
+  getStudentDisponibilidad(studentNameOrCombined: string): DisponibilidadVyM | null {
+    if (!studentNameOrCombined || !studentNameOrCombined.trim()) return null;
+    let name = studentNameOrCombined.trim();
+    if (name.includes('/')) {
+      name = name.split('/')[0].trim();
+    }
+    const clean = name.toLowerCase();
+    const list = this.disponibilidad();
+    return list.find(d => {
+      const full = `${d.nombres} ${d.apellidos}`.toLowerCase();
+      const reverse = `${d.apellidos} ${d.nombres}`.toLowerCase();
+      return full === clean || reverse === clean || full.includes(clean) || clean.includes(d.apellidos.toLowerCase());
+    }) || null;
+  }
+
   // Guardar en Backend
   savePrograma(): void {
     const semanaId = this.selectedSemanaId();
@@ -487,12 +517,19 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
       return;
     }
 
+    const sem = this.selectedSemana();
+    const fechaSemana = sem ? sem.fecha_inicio : new Date().toISOString().split('T')[0];
+
     this.saving.set(true);
     // Guardamos el programa principal (P1) en la base de datos
     this.vymService.savePrograma(semanaId, this.p1()).subscribe({
       next: (saved) => {
-        this.saving.set(false);
         this.p1.set(saved);
+
+        // Sincronizar el historial de Seamos Mejores Maestros
+        this.syncHistorialSeamosMaestros(semanaId, fechaSemana, saved);
+
+        this.saving.set(false);
         this.showStatus('¡Programa guardado exitosamente en la base de datos!', 'success');
       },
       error: (err) => {
@@ -501,6 +538,65 @@ export class VidaMinisterioComponent implements OnInit, AfterViewInit, OnDestroy
         this.showStatus('Error al guardar el programa en el servidor', 'error');
       }
     });
+  }
+
+  private syncHistorialSeamosMaestros(semanaId: string, fechaSemana: string, prog: ProgramaVyM): void {
+    const dispList = this.disponibilidad();
+    const findPublicadorVyMID = (name: string): string | null => {
+      if (!name) return null;
+      const clean = name.trim().toLowerCase();
+      const found = dispList.find(d => {
+        const full = `${d.nombres} ${d.apellidos}`.toLowerCase();
+        const reverse = `${d.apellidos} ${d.nombres}`.toLowerCase();
+        return full === clean || reverse === clean || full.includes(clean) || clean.includes(d.apellidos.toLowerCase());
+      });
+      return found ? found.publicador_vym_id : null;
+    };
+
+    const auditorioItems: SyncHistorialItem[] = [];
+    (prog.seamos_maestros_auditorio || []).forEach(item => {
+      let student = item.student || '';
+      let assistant = item.assistant || '';
+      if (!assistant && student.includes('/')) {
+        const parts = student.split('/');
+        student = parts[0].trim();
+        assistant = parts[1].trim();
+      }
+      const stId = findPublicadorVyMID(student);
+      if (stId) auditorioItems.push({ publicador_vym_id: stId, rol: 'estudiante' });
+      const asId = findPublicadorVyMID(assistant);
+      if (asId) auditorioItems.push({ publicador_vym_id: asId, rol: 'ayudante' });
+    });
+
+    const auxiliarItems: SyncHistorialItem[] = [];
+    (prog.seamos_maestros_auxiliar || []).forEach(item => {
+      let student = item.student || '';
+      let assistant = item.assistant || '';
+      if (!assistant && student.includes('/')) {
+        const parts = student.split('/');
+        student = parts[0].trim();
+        assistant = parts[1].trim();
+      }
+      const stId = findPublicadorVyMID(student);
+      if (stId) auxiliarItems.push({ publicador_vym_id: stId, rol: 'estudiante' });
+      const asId = findPublicadorVyMID(assistant);
+      if (asId) auxiliarItems.push({ publicador_vym_id: asId, rol: 'ayudante' });
+    });
+
+    if (auditorioItems.length > 0 || auxiliarItems.length > 0) {
+      this.publicadorVymService.syncHistorial({
+        semana_id: semanaId,
+        fecha_semana: fechaSemana,
+        auditorio: auditorioItems,
+        auxiliar: auxiliarItems
+      }).subscribe({
+        next: () => {
+          // Recargar disponibilidad para actualizar badges
+          this.publicadorVymService.loadDisponibilidad(semanaId).subscribe();
+        },
+        error: (e) => console.error('Error sincronizando historial VyM:', e)
+      });
+    }
   }
 
   private showStatus(text: string, type: 'success' | 'error'): void {

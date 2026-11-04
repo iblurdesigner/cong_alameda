@@ -124,6 +124,11 @@ func main() {
 	programaVyMService := services.NewProgramaVyMService(programaVyMRepo)
 	programaVyMHandler := handlers.NewProgramaVyMHandler(programaVyMService)
 
+	// Initialize PublicadorVyM repo, service, handler
+	publicadorVyMRepo := repositories.NewPublicadorVyMRepository(db.Pool)
+	publicadorVyMService := services.NewPublicadorVyMService(publicadorVyMRepo)
+	publicadorVyMHandler := handlers.NewPublicadorVyMHandler(publicadorVyMService, semanaRepo)
+
 	// Initialize Publicador repo, service, handler
 	publicadorRepo := repositories.NewPublicadorRepository(db.Pool)
 	publicadorService := services.NewPublicadorService(publicadorRepo)
@@ -288,6 +293,15 @@ func main() {
 	programasVyM.Get("/semana/:semana_id", programaVyMHandler.GetBySemana)
 	programasVyM.Post("/semana/:semana_id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE", "ANCIANO"), programaVyMHandler.Upsert)
 	programasVyM.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), programaVyMHandler.Delete)
+
+	// ====== PUBLICADORES VYM ROUTES ======
+	publicadoresVyM := protected.Group("/publicadores-vym")
+	publicadoresVyM.Get("/", publicadorVyMHandler.List)
+	publicadoresVyM.Get("/disponibilidad", publicadorVyMHandler.GetDisponibilidad)
+	publicadoresVyM.Post("/historial", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), publicadorVyMHandler.SyncHistorial)
+	publicadoresVyM.Post("/", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), publicadorVyMHandler.Add)
+	publicadoresVyM.Put("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), publicadorVyMHandler.Update)
+	publicadoresVyM.Delete("/:id", authMiddleware.RequireRole("SUPER_ADMIN", "SUPERINTENDENTE"), publicadorVyMHandler.Delete)
 
 	// Graceful shutdown
 	c := make(chan os.Signal, 1)
